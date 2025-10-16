@@ -4,11 +4,11 @@
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>PawllPet | Pet Toys, Apparel, and Leashes</title>
-    <meta name="description" content="PawllPet — Quality pet toys, apparel, and leashes. Shop curated essentials for your pets." />
+    <title>Pawll | Pet Toys, Apparel, and Leashes</title>
+    <meta name="description" content="Pawll — Quality pet toys, apparel, and leashes. Shop curated essentials for your pets." />
 
     <!-- Open Graph -->
-    <meta property="og:title" content="PawllPet | Pet Toys, Apparel, and Leashes" />
+    <meta property="og:title" content="Pawll | Pet Toys, Apparel, and Leashes" />
     <meta property="og:description" content="Quality pet toys, apparel, and leashes. Curated essentials for your pets." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://pawllpet.com/" />
@@ -22,7 +22,10 @@
   <body>
     <header class="site-header">
       <div class="container header-inner">
-        <a class="logo" href="#home" aria-label="PawllPet Home">PawllPet</a>
+        <a class="logo" href="#home" aria-label="Pawll Home">
+          <img src="logo.svg" alt="Pawll" class="logo-img" />
+          Pawll
+        </a>
         <nav class="nav" aria-label="Primary">
           <button id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="primaryNav" aria-label="Open menu">☰</button>
           <ul id="primaryNav" class="nav-list">
@@ -39,6 +42,7 @@
           <button id="langToggle" class="lang-toggle" aria-label="Switch language" data-lang="en">EN</button>
           <a href="#cart" class="icon-btn" aria-label="Cart" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></a>
           <a href="#login" class="btn btn-secondary small" id="loginBtn" data-i18n="auth.login">Login</a>
+          <a href="#signup" class="btn btn-primary small" id="signupBtn" data-i18n="auth.signup">Sign Up</a>
         </div>
       </div>
     </header>
@@ -76,7 +80,7 @@
 
       <section id="about" class="section">
         <div class="container narrow">
-          <h2 class="section-title" data-i18n="about.title">About PawllPet</h2>
+          <h2 class="section-title" data-i18n="about.title">About Pawll</h2>
           <p data-i18n="about.desc">
             We are pet lovers dedicated to curating quality gear that’s safe, durable, and delightful—so you can enjoy every moment with your pets.
           </p>
@@ -88,8 +92,9 @@
           <h2 class="section-title" data-i18n="contact.title">Contact Us</h2>
           <p data-i18n="contact.desc">For partnerships or inquiries, reach us at:</p>
           <ul class="contact-list">
-            <li><span data-i18n="contact.email">Email:</span> <a href="mailto:hello@pawllpet.com">hello@pawllpet.com</a></li>
-            <li>Instagram: <a href="https://instagram.com/pawllpet" target="_blank" rel="noopener">@pawllpet</a></li>
+            <li><span data-i18n="contact.email">Email:</span> <a href="mailto:pawll.pet.llc@gmail.com">pawll.pet.llc@gmail.com</a></li>
+            <li><a href="https://instagram.com/pawllpet" target="_blank" rel="noopener" data-i18n="contact.instagram">Instagram: @pawllpet</a></li>
+            <li><a href="https://tiktok.com/@pawllpet" target="_blank" rel="noopener" data-i18n="contact.tiktok">TikTok: @pawllpet</a></li>
           </ul>
         </div>
       </section>
@@ -97,7 +102,7 @@
 
     <footer class="site-footer">
       <div class="container footer-inner">
-        <span>© <span id="year"></span> PawllPet. <span data-i18n="footer.allRights">All rights reserved.</span></span>
+        <span>© <span id="year"></span> Pawll. <span data-i18n="footer.allRights">All rights reserved.</span></span>
         <a href="#home" class="back-to-top" aria-label="Back to top" data-i18n="footer.backToTop">↑ Back to top</a>
       </div>
     </footer>

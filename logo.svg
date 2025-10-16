@@ -1,0 +1,63 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle (partial) -->
+  <path d="M 60 10 A 50 50 0 1 1 110 60 L 110 70 A 40 40 0 1 0 60 20 Z" fill="none" stroke="#1a237e" stroke-width="3"/>
+  
+  <!-- Dog (left side, turquoise) -->
+  <g transform="translate(35, 45)">
+    <!-- Dog head -->
+    <ellipse cx="15" cy="15" rx="18" ry="16" fill="#00bcd4"/>
+    <!-- Dog ears -->
+    <ellipse cx="8" cy="8" rx="8" ry="12" fill="#ff8a65" transform="rotate(-25 8 8)"/>
+    <ellipse cx="22" cy="8" rx="8" ry="12" fill="#ff8a65" transform="rotate(25 22 8)"/>
+    <!-- Dog eyes -->
+    <circle cx="12" cy="12" r="2" fill="white"/>
+    <circle cx="18" cy="12" r="2" fill="white"/>
+    <!-- Dog mouth -->
+    <path d="M 12 18 Q 15 20 18 18" stroke="white" stroke-width="1.5" fill="none"/>
+    <!-- Dog sparkles -->
+    <g fill="white">
+      <polygon points="8,6 9,8 11,8 9.5,9.5 10,11 8,10 6,11 6.5,9.5 5,8 7,8"/>
+      <polygon points="20,4 21,6 23,6 21.5,7.5 22,9 20,8 18,9 18.5,7.5 17,6 19,6"/>
+    </g>
+  </g>
+  
+  <!-- Cat (right side, hot pink) -->
+  <g transform="translate(65, 45)">
+    <!-- Cat head -->
+    <ellipse cx="15" cy="15" rx="18" ry="16" fill="#e91e63"/>
+    <!-- Cat ears -->
+    <polygon points="8,6 12,6 10,12" fill="#e91e63"/>
+    <polygon points="18,6 22,6 20,12" fill="#e91e63"/>
+    <!-- Cat inner ears -->
+    <polygon points="9,7 11,7 10,10" fill="#f8bbd9"/>
+    <polygon points="19,7 21,7 20,10" fill="#f8bbd9"/>
+    <!-- Cat eyes -->
+    <circle cx="12" cy="12" r="2" fill="white"/>
+    <circle cx="18" cy="12" r="2" fill="white"/>
+    <!-- Cat mouth -->
+    <path d="M 12 18 Q 15 20 18 18" stroke="white" stroke-width="1.5" fill="none"/>
+    <!-- Cat whiskers -->
+    <line x1="6" y1="15" x2="2" y2="15" stroke="white" stroke-width="1.5"/>
+    <line x1="6" y1="17" x2="2" y2="17" stroke="white" stroke-width="1.5"/>
+    <line x1="24" y1="15" x2="28" y2="15" stroke="white" stroke-width="1.5"/>
+    <line x1="24" y1="17" x2="28" y2="17" stroke="white" stroke-width="1.5"/>
+    <!-- Cat sparkle -->
+    <g fill="white">
+      <polygon points="26,6 27,8 29,8 27.5,9.5 28,11 26,10 24,11 24.5,9.5 23,8 25,8"/>
+    </g>
+  </g>
+  
+  <!-- Paw print for 'a' in Pawll -->
+  <g transform="translate(55, 85)">
+    <ellipse cx="8" cy="12" rx="6" ry="8" fill="#e91e63"/>
+    <circle cx="4" cy="8" r="3" fill="#e91e63"/>
+    <circle cx="12" cy="8" r="3" fill="#e91e63"/>
+    <circle cx="8" cy="5" r="2.5" fill="#e91e63"/>
+  </g>
+  
+  <!-- Text "Pawll" -->
+  <text x="10" y="105" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1a237e">P</text>
+  <text x="50" y="105" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1a237e">w</text>
+  <text x="70" y="105" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1a237e">l</text>
+  <text x="85" y="105" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1a237e">l</text>
+</svg>
