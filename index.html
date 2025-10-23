@@ -1,114 +1,361 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PawLL | Pet Toys, Apparel, and Leashes</title>
-    <meta name="description" content="PawLL — Quality pet toys, apparel, and leashes. Shop curated essentials for your pets." />
+    <meta name="description" content="PawLL — Quality pet toys, apparel, and leashes. Shop curated essentials for your pets.">
 
     <!-- Open Graph -->
-    <meta property="og:title" content="PawLL | Pet Toys, Apparel, and Leashes" />
-    <meta property="og:description" content="Quality pet toys, apparel, and leashes. Curated essentials for your pets." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://pawllpet.com/" />
-
-    <link rel="icon" href="favicon.ico" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
+    <meta property="og:title" content="PawLL | Pet Toys, Apparel, and Leashes">
+    <meta property="og:description" content="Quality pet toys, apparel, and leashes. Curated essentials for your pets.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pawllpet.com/">
+    
+    <link rel="icon" href="favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
+    <!-- Top Banner -->
+    <div class="top-banner">
+        <div class="container">
+            <p>Free shipping over $50 • 30-day returns • Secure checkout</p>
+        </div>
+    </div>
+
+    <!-- Header -->
     <header class="site-header">
       <div class="container header-inner">
+            <!-- Logo -->
         <a class="logo" href="#home" aria-label="PawLL Home">
-          <img src="logo.svg" alt="PawLL" class="logo-img" />
-          PawLL
-        </a>
+                <div class="logo-icon">
+                    <div class="paw-print"></div>
+                </div>
+                <span class="logo-text">PawLL</span>
+            </a>
+
+            <!-- Navigation -->
         <nav class="nav" aria-label="Primary">
-          <button id="navToggle" class="nav-toggle" aria-expanded="false" aria-controls="primaryNav" aria-label="Open menu">☰</button>
-          <ul id="primaryNav" class="nav-list">
-            <li><a data-i18n="nav.products" href="#products">Products</a></li>
-            <li><a data-i18n="nav.about" href="#about">About</a></li>
-            <li><a data-i18n="nav.contact" href="#contact">Contact</a></li>
+                <ul class="nav-list">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#collections">Shop</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#support">Support</a></li>
           </ul>
         </nav>
+
+            <!-- Header Actions -->
         <div class="header-actions">
-          <form id="searchForm" class="search" role="search" aria-label="Site search" action="#products">
-            <input id="searchInput" class="search-input" type="search" name="q" placeholder="Search products" aria-label="Search products" />
-            <button class="search-btn" type="submit" aria-label="Search">🔎</button>
-          </form>
-          <button id="langToggle" class="lang-toggle" aria-label="Switch language" data-lang="en">EN</button>
-          <a href="#cart" class="icon-btn" aria-label="Cart" id="cartBtn">🛒<span class="badge" id="cartCount">0</span></a>
-          <a href="#login" class="btn btn-secondary small" id="loginBtn" data-i18n="auth.login">Login</a>
-          <a href="#signup" class="btn btn-primary small" id="signupBtn" data-i18n="auth.signup">Sign Up</a>
-        </div>
+                <!-- Search Box -->
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search toys / apparel / leashes">
+                    <button class="search-btn" type="button">🔍</button>
+                </div>
+
+                <!-- Language Selector -->
+                <div class="language-selector">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="zh">中文</button>
+                </div>
+
+                <!-- Cart -->
+                <a href="#cart" class="cart-btn" aria-label="Cart">
+                    🛒
+                    <span class="cart-badge" id="cartCount">0</span>
+                </a>
+
+                <!-- Auth Buttons -->
+                <button class="btn-login" id="loginBtn">Log in</button>
+                <button class="btn-signup" id="signupBtn">Sign up</button>
+            </div>
       </div>
     </header>
 
-    <main id="home">
-      <section class="hero section">
+    <!-- Main Content -->
+    <main>
+        <!-- Hero Section -->
+        <section class="hero" id="home">
         <div class="container hero-inner">
-          <h1 class="hero-title" data-i18n="hero.title">Happier Pets, Better Gear</h1>
-          <p class="hero-subtitle" data-i18n="hero.subtitle">Curated toys, apparel, and leashes for every adventure together.</p>
-          <div class="hero-cta">
-            <a class="btn btn-primary" href="#products" data-i18n="cta.shop">Shop Now</a>
+                <div class="hero-content">
+                    <h1 class="hero-title">Closer with your pet— play happy, dress cute, walk safe.</h1>
+                    <p class="hero-description">PawLL focuses on toys, apparel, and leashes & collars. We do not sell any food or wash/care products—just trusted everyday essentials for you and your pet.</p>
+                    <div class="hero-buttons">
+                        <button class="btn-primary">Shop Toys</button>
+                        <button class="btn-secondary">Shop Leashes</button>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img src="https://images.unsplash.com/photo-1552053831-71594a27632d?w=600&h=400&fit=crop&crop=center" alt="Corgi jumping with frisbee" class="hero-img">
           </div>
         </div>
       </section>
 
-      <section id="products" class="section alt">
+        <!-- Features Section -->
+        <section class="features">
         <div class="container">
-          <h2 class="section-title" data-i18n="products.title">Featured Products</h2>
-          <div class="grid">
-            <div class="grid-item">
-              <h3 data-i18n="products.toys.title">Toys</h3>
-              <p data-i18n="products.toys.desc">Durable, safe toys for play, enrichment, and training.</p>
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <div class="shield-icon"></div>
+                        </div>
+                        <h3>Safe Materials</h3>
+                        <p>Bite-tested, non-toxic fabrics & rubber</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <div class="heart-icon"></div>
+                        </div>
+                        <h3>Comfy Fit</h3>
+                        <p>Pet-friendly patterns, machine-washable, broad sizing</p>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <div class="lock-icon"></div>
+                        </div>
+                        <h3>Secure & Adjustable</h3>
+                        <p>Durable hardware, adjustable length, safer walks</p>
+                    </div>
+                </div>
             </div>
-            <div class="grid-item">
-              <h3 data-i18n="products.apparel.title">Apparel</h3>
-              <p data-i18n="products.apparel.desc">Comfortable, stylish outfits for all seasons and sizes.</p>
+        </section>
+
+        <!-- Featured Collections -->
+        <section class="collections" id="collections">
+            <div class="container">
+                <h2 class="section-title">Featured Collections</h2>
+                <div class="collections-grid">
+                    <div class="collection-card">
+                        <div class="collection-image">
+                            <img src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&h=300&fit=crop&crop=center" alt="Plush toys">
+                        </div>
+                        <h3>Toys</h3>
+                        <p>Interactive, enrichment, chew-friendly</p>
+                        <a href="#" class="explore-link">Explore →</a>
+                    </div>
+                    <div class="collection-card">
+                        <div class="collection-image">
+                            <img src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=300&fit=crop&crop=center" alt="Dog in floral dress">
+                        </div>
+                        <h3>Apparel</h3>
+                        <p>Seasonal wear, raincoats, festive fits</p>
+                        <a href="#" class="explore-link">Explore →</a>
+                    </div>
+                    <div class="collection-card">
+                        <div class="collection-image">
+                            <img src="https://images.unsplash.com/photo-1605568427561-40dd23c2acea?w=400&h=300&fit=crop&crop=center" alt="Dog with leash">
             </div>
-            <div class="grid-item">
-              <h3 data-i18n="products.leashes.title">Leashes & Walk</h3>
-              <p data-i18n="products.leashes.desc">Leashes, harnesses, and walk essentials for safety and comfort.</p>
+                        <h3>Leashes & Collars</h3>
+                        <p>Anti-pull, reflective, everyday walks</p>
+                        <a href="#" class="explore-link">Explore →</a>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="about" class="section">
-        <div class="container narrow">
-          <h2 class="section-title" data-i18n="about.title">About PawLL</h2>
-          <p data-i18n="about.desc">
-            We are pet lovers dedicated to curating quality gear that’s safe, durable, and delightful—so you can enjoy every moment with your pets.
-          </p>
+        <!-- Bestsellers -->
+        <section class="bestsellers">
+            <div class="container">
+                <h2 class="section-title">Bestsellers</h2>
+                <div class="products-grid">
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1605568427561-40dd23c2acea?w=300&h=300&fit=crop&crop=center" alt="PawLL Reflective Adjustable Leash">
+                        </div>
+                        <h3>PawLL Reflective Adjustable Leash</h3>
+                        <p>Light yet sturdy comfort</p>
+                        <div class="product-price">$29.99</div>
+                        <button class="btn-add-cart">Add to Cart</button>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=300&h=300&fit=crop&crop=center" alt="Durable Puzzle Toy Ball">
+                        </div>
+                        <h3>Durable Puzzle Toy Ball</h3>
+                        <p>Hidden treat channel (feature only; PawLL does not sell food)</p>
+                        <div class="product-price">$18.99</div>
+                        <button class="btn-add-cart">Add to Cart</button>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=300&h=300&fit=crop&crop=center" alt="Cozy Pet Hoodie">
+                        </div>
+                        <h3>Cozy Pet Hoodie</h3>
+                        <p>Soft fleece, machine-washable</p>
+                        <div class="product-price">$24.99</div>
+                        <button class="btn-add-cart">Add to Cart</button>
+                    </div>
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=300&h=300&fit=crop&crop=center" alt="Chew-Proof Rope Toy">
+                        </div>
+                        <h3>Chew-Proof Rope Toy</h3>
+                        <p>Interactive tug & dental health</p>
+                        <div class="product-price">$14.99</div>
+                        <button class="btn-add-cart">Add to Cart</button>
+                    </div>
+                </div>
         </div>
       </section>
 
-      <section id="contact" class="section alt">
-        <div class="container narrow">
-          <h2 class="section-title" data-i18n="contact.title">Contact Us</h2>
-          <p data-i18n="contact.desc">For partnerships or inquiries, reach us at:</p>
-          <ul class="contact-list">
-            <li><span data-i18n="contact.email">Email:</span> <a href="mailto:pawll.pet.llc@gmail.com">pawll.pet.llc@gmail.com</a></li>
-            <li><span data-i18n="contact.instagram">Instagram:</span> <a href="https://instagram.com/pawllpet" target="_blank" rel="noopener">@pawllpet</a></li>
-            <li><span data-i18n="contact.tiktok">TikTok:</span> <a href="https://tiktok.com/@pawllpet" target="_blank" rel="noopener">@pawllpet</a></li>
-          </ul>
+        <!-- About Section -->
+        <section class="about" id="about">
+            <div class="container about-inner">
+                <div class="about-content">
+                    <h2>About PawLL</h2>
+                    <p>At PawLL, pets are family. We focus on the everyday essentials—toys, apparel, leashes & collars—not food or wash products. We make every moment together warmer and easier.</p>
+                </div>
+                <div class="about-image">
+                    <img src="https://images.unsplash.com/photo-1552053831-71594a27632d?w=500&h=400&fit=crop&crop=center" alt="Cute puppy" class="about-img">
+                </div>
         </div>
       </section>
     </main>
 
+    <!-- Footer -->
     <footer class="site-footer">
-      <div class="container footer-inner">
-        <span>© <span id="year"></span> PawLL. <span data-i18n="footer.allRights">All rights reserved.</span></span>
-        <a href="#home" class="back-to-top" aria-label="Back to top" data-i18n="footer.backToTop">↑ Back to top</a>
+        <!-- Newsletter Section -->
+        <div class="newsletter">
+            <div class="container">
+                <div class="newsletter-content">
+                    <div class="newsletter-icon">✉️</div>
+                    <h3>Join PawLL for new drops & exclusive deals</h3>
+                    <div class="newsletter-form">
+                        <input type="email" placeholder="Enter your email" class="newsletter-input">
+                        <button class="newsletter-btn">Subscribe</button>
+                    </div>
+                    <p class="newsletter-disclaimer">You can unsubscribe anytime</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Footer -->
+        <div class="footer-main">
+            <div class="container">
+                <div class="footer-grid">
+                    <div class="footer-section">
+                        <div class="footer-logo">
+                            <div class="footer-logo-icon">
+                                <div class="paw-print"></div>
+                            </div>
+                            <span>PawLL</span>
+                        </div>
+                        <p>Category scope: PawLL does not sell any food or wash/care products.</p>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Shop</h4>
+                        <ul>
+                            <li><a href="#">Toys</a></li>
+                            <li><a href="#">Apparel</a></li>
+                            <li><a href="#">Leashes & Collars</a></li>
+                            <li><a href="#">New In</a></li>
+                            <li><a href="#">Bestsellers</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Information</h4>
+                        <ul>
+                            <li><a href="#">About</a></li>
+                            <li><a href="#">Size Guide</a></li>
+                            <li><a href="#">Shipping & Returns</a></li>
+                            <li><a href="#">FAQ</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Support</h4>
+                        <div class="contact-info">
+                            <p>Contact</p>
+                            <p>📧 pawll.pet.llc@gmail.com</p>
+                            <p>Mon-Fri 10:00-18:00</p>
+                        </div>
+                        <div class="social-links">
+                            <h5>Follow Us</h5>
+                            <div class="social-icons">
+                                <a href="#" class="social-link">📷 @pawllpet</a>
+                                <a href="#" class="social-link">🎵 @pawllpet</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Bottom -->
+        <div class="footer-bottom">
+            <div class="container">
+                <div class="footer-bottom-content">
+                    <p>Free shipping over $50; 30-day returns (see policy).</p>
+                    <p>© 2025 PawLL. All rights reserved.</p>
+                </div>
+            </div>
       </div>
     </footer>
 
-    <script src="script.js" defer></script>
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Log In</h2>
+                <button class="modal-close" id="closeLogin">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form class="auth-form">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Log In</button>
+                </form>
+                <div class="auth-footer">
+                    <p>Don't have an account? <a href="#" id="switchToSignup">Sign up</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal" id="signupModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Sign Up</h2>
+                <button class="modal-close" id="closeSignup">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form class="auth-form">
+                    <div class="form-group">
+                        <label for="signupName">Full Name</label>
+                        <input type="text" id="signupName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupEmail">Email</label>
+                        <input type="email" id="signupEmail" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <input type="password" id="signupPassword" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="btn-submit">Sign Up</button>
+                </form>
+                <div class="auth-footer">
+                    <p>Already have an account? <a href="#" id="switchToLogin">Log in</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Button -->
+    <button class="help-btn" id="helpBtn">?</button>
+
+    <script src="script.js"></script>
   </body>
   </html>
-
-

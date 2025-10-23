@@ -1,146 +1,260 @@
-document.addEventListener('DOMContentLoaded', function () {
-  var navToggle = document.getElementById('navToggle');
-  var primaryNav = document.getElementById('primaryNav');
-  if (navToggle && primaryNav) {
-    navToggle.addEventListener('click', function () {
-      var isOpen = primaryNav.classList.toggle('open');
-      navToggle.setAttribute('aria-expanded', String(isOpen));
-    });
-  }
+// DOM Elements
+const loginBtn = document.getElementById('loginBtn');
+const signupBtn = document.getElementById('signupBtn');
+const loginModal = document.getElementById('loginModal');
+const signupModal = document.getElementById('signupModal');
+const closeLogin = document.getElementById('closeLogin');
+const closeSignup = document.getElementById('closeSignup');
+const switchToSignup = document.getElementById('switchToSignup');
+const switchToLogin = document.getElementById('switchToLogin');
+const searchInput = document.getElementById('searchInput');
+const cartCount = document.getElementById('cartCount');
+const helpBtn = document.getElementById('helpBtn');
 
-  var yearSpan = document.getElementById('year');
-  if (yearSpan) {
-    yearSpan.textContent = String(new Date().getFullYear());
-  }
+// Modal functionality
+function openModal(modal) {
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
 
-  document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
-    anchor.addEventListener('click', function (e) {
-      var href = anchor.getAttribute('href');
-      if (!href) return;
-      var id = href.slice(1);
-      var target = document.getElementById(id);
-      if (target) {
-        e.preventDefault();
-        target.scrollIntoView({ behavior: 'smooth' });
-      }
-    });
-  });
+function closeModal(modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
 
-  // --- i18n ---
-  var translations = {
-    en: {
-      'nav.products': 'Products',
-      'nav.about': 'About',
-      'nav.contact': 'Contact',
-      'auth.login': 'Login',
-      'auth.signup': 'Sign Up',
-      'hero.title': 'Happier Pets, Better Gear',
-      'hero.subtitle': 'Curated toys, apparel, and leashes for every adventure together.',
-      'cta.shop': 'Shop Now',
-      'products.title': 'Featured Products',
-      'products.toys.title': 'Toys',
-      'products.toys.desc': 'Durable, safe toys for play, enrichment, and training.',
-      'products.apparel.title': 'Apparel',
-      'products.apparel.desc': 'Comfortable, stylish outfits for all seasons and sizes.',
-      'products.leashes.title': 'Leashes & Walk',
-      'products.leashes.desc': 'Leashes, harnesses, and walk essentials for safety and comfort.',
-      'about.title': 'About PawLL',
-      'about.desc': 'We are pet lovers dedicated to curating quality gear that's safe, durable, and delightful—so you can enjoy every moment with your pets.',
-      'contact.title': 'Contact Us',
-      'contact.desc': 'For partnerships or inquiries, reach us at:',
-      'contact.email': 'Email:',
-      'footer.allRights': 'All rights reserved.',
-      'footer.backToTop': '↑ Back to top'
-    },
-    zh: {
-      'nav.products': '用品',
-      'nav.about': '关于我们',
-      'nav.contact': '联系',
-      'auth.login': '登录',
-      'auth.signup': '注册',
-      'hero.title': '让宠物更快乐，装备更出色',
-      'hero.subtitle': '甄选玩具、衣服与牵引绳，陪你与爱宠每一次出行与互动。',
-      'cta.shop': '立即选购',
-      'products.title': '精选用品',
-      'products.toys.title': '玩具',
-      'products.toys.desc': '耐咬安全，适合互动、训练与益智玩耍。',
-      'products.apparel.title': '衣服',
-      'products.apparel.desc': '舒适有型，适配四季与不同体型。',
-      'products.leashes.title': '牵引与出行',
-      'products.leashes.desc': '牵引绳、胸背和出行必备，安心舒适。',
-      'about.title': '关于 PawLL',
-      'about.desc': '我们热爱宠物，专注甄选安全耐用、设计友好的用品，让你与爱宠尽享美好时光。',
-      'contact.title': '联系我们',
-      'contact.desc': '商务合作或咨询，欢迎通过以下方式联系：',
-      'contact.email': '邮箱：',
-      'contact.instagram': 'Instagram：',
-      'contact.tiktok': 'TikTok：',
-      'footer.allRights': '保留所有权利。',
-      'footer.backToTop': '↑ 返回顶部'
-    }
-  };
+// Event Listeners for modals
+loginBtn.addEventListener('click', () => openModal(loginModal));
+signupBtn.addEventListener('click', () => openModal(signupModal));
 
-  function applyTranslations(lang) {
-    var dict = translations[lang] || translations.en;
-    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
-    document.querySelectorAll('[data-i18n]').forEach(function (el) {
-      var key = el.getAttribute('data-i18n');
-      var value = dict[key];
-      if (typeof value === 'string') {
-        el.textContent = value;
-      }
-    });
-    var searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-      searchInput.placeholder = lang === 'zh' ? '搜索商品' : 'Search products';
-      searchInput.setAttribute('aria-label', searchInput.placeholder);
-    }
-    var langToggle = document.getElementById('langToggle');
-    if (langToggle) {
-      langToggle.textContent = lang === 'zh' ? '中文' : 'EN';
-      langToggle.dataset.lang = lang;
-    }
-  }
+closeLogin.addEventListener('click', () => closeModal(loginModal));
+closeSignup.addEventListener('click', () => closeModal(signupModal));
 
-  // Default to English
-  var initialLang = 'en';
-  try {
-    var saved = localStorage.getItem('pawll_lang');
-    if (saved === 'en' || saved === 'zh') initialLang = saved;
-  } catch (e) {}
-  applyTranslations(initialLang);
-
-  var langToggleBtn = document.getElementById('langToggle');
-  if (langToggleBtn) {
-    langToggleBtn.addEventListener('click', function () {
-      var next = (langToggleBtn.dataset.lang === 'en') ? 'zh' : 'en';
-      applyTranslations(next);
-      try { localStorage.setItem('pawll_lang', next); } catch (e) {}
-    });
-  }
-
-  // --- search submit scroll to products ---
-  var searchForm = document.getElementById('searchForm');
-  if (searchForm) {
-    searchForm.addEventListener('submit', function (e) {
-      // For now, just scroll to products; wire to real search later
-      e.preventDefault();
-      var products = document.getElementById('products');
-      if (products) products.scrollIntoView({ behavior: 'smooth' });
-    });
-  }
-
-  // --- mock cart count increment when clicking category cards ---
-  var cartCount = document.getElementById('cartCount');
-  function incCart() {
-    if (!cartCount) return;
-    var n = parseInt(cartCount.textContent || '0', 10) || 0;
-    cartCount.textContent = String(n + 1);
-  }
-  document.querySelectorAll('#products .grid-item').forEach(function (item) {
-    item.addEventListener('click', function () { incCart(); });
-    item.style.cursor = 'pointer';
-  });
+switchToSignup.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeModal(loginModal);
+    openModal(signupModal);
 });
 
+switchToLogin.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeModal(signupModal);
+    openModal(loginModal);
+});
 
+// Close modals when clicking outside
+window.addEventListener('click', (e) => {
+    if (e.target === loginModal) {
+        closeModal(loginModal);
+    }
+    if (e.target === signupModal) {
+        closeModal(signupModal);
+    }
+});
+
+// Search functionality
+searchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value;
+    console.log('Searching for:', searchTerm);
+    // Here you would implement actual search functionality
+    // For now, we'll just log the search term
+});
+
+searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const searchTerm = e.target.value;
+        console.log('Search submitted:', searchTerm);
+        // Implement search functionality here
+        alert(`Searching for: ${searchTerm}`);
+    }
+});
+
+// Language selector functionality
+const langBtns = document.querySelectorAll('.lang-btn');
+langBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Remove active class from all buttons
+        langBtns.forEach(b => b.classList.remove('active'));
+        // Add active class to clicked button
+        btn.classList.add('active');
+        
+        const selectedLang = btn.dataset.lang;
+        console.log('Language changed to:', selectedLang);
+        // Implement language switching here
+    });
+});
+
+// Cart functionality
+let cartItems = 0;
+
+function updateCartCount() {
+    cartCount.textContent = cartItems;
+}
+
+// Add to cart buttons
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('btn-add-cart')) {
+        cartItems++;
+        updateCartCount();
+        
+        // Add visual feedback
+        e.target.textContent = 'Added!';
+        e.target.style.background = '#28a745';
+        
+        setTimeout(() => {
+            e.target.textContent = 'Add to Cart';
+            e.target.style.background = '#D4B28C';
+        }, 1000);
+    }
+});
+
+// Form submissions
+document.addEventListener('submit', (e) => {
+    if (e.target.classList.contains('auth-form')) {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        
+        if (e.target.closest('#loginModal')) {
+            console.log('Login attempt:', data);
+            // Implement login logic here
+            alert('Login functionality would be implemented here');
+            closeModal(loginModal);
+        } else if (e.target.closest('#signupModal')) {
+            console.log('Signup attempt:', data);
+            
+            // Basic validation
+            if (data.password !== data.confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            // Implement signup logic here
+            alert('Signup functionality would be implemented here');
+            closeModal(signupModal);
+        }
+    }
+});
+
+// Newsletter subscription
+const newsletterForm = document.querySelector('.newsletter-form');
+if (newsletterForm) {
+    newsletterForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = e.target.querySelector('.newsletter-input').value;
+        console.log('Newsletter subscription:', email);
+        alert('Thank you for subscribing to our newsletter!');
+        e.target.reset();
+    });
+}
+
+// Help button functionality
+helpBtn.addEventListener('click', () => {
+    alert('Welcome to PawLL! How can we help you today?\n\nYou can:\n- Browse our products\n- Search for specific items\n- Create an account\n- Contact us for support');
+});
+
+// Smooth scrolling for navigation links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+
+// Hero section buttons functionality
+document.addEventListener('click', (e) => {
+    if (e.target.textContent === 'Shop Toys') {
+        // Scroll to collections section
+        document.getElementById('collections').scrollIntoView({
+            behavior: 'smooth'
+        });
+    } else if (e.target.textContent === 'Shop Leashes') {
+        // Scroll to collections section
+        document.getElementById('collections').scrollIntoView({
+            behavior: 'smooth'
+        });
+    }
+});
+
+// Collection explore links
+document.querySelectorAll('.explore-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const category = e.target.closest('.collection-card').querySelector('h3').textContent;
+        console.log('Exploring category:', category);
+        alert(`Exploring ${category} category - this would navigate to the category page`);
+    });
+});
+
+// Mobile menu toggle (if needed)
+const navToggle = document.getElementById('navToggle');
+const navList = document.querySelector('.nav-list');
+
+if (navToggle && navList) {
+    navToggle.addEventListener('click', () => {
+        navList.classList.toggle('active');
+        const isExpanded = navList.classList.contains('active');
+        navToggle.setAttribute('aria-expanded', isExpanded);
+    });
+}
+
+// Initialize cart count
+updateCartCount();
+
+// Add some interactive animations
+document.addEventListener('DOMContentLoaded', () => {
+    // Animate elements on scroll
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+
+    // Observe sections for animation
+    document.querySelectorAll('.feature-item, .collection-card, .product-card').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(el);
+    });
+});
+
+// Search suggestions (basic implementation)
+const searchSuggestions = [
+    'toys', 'apparel', 'leashes', 'collars', 'puzzle toys', 
+    'hoodies', 'raincoats', 'reflective', 'adjustable'
+];
+
+searchInput.addEventListener('focus', () => {
+    // Could implement search suggestions here
+    console.log('Search input focused');
+});
+
+// Keyboard navigation for modals
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (loginModal.style.display === 'block') {
+            closeModal(loginModal);
+        }
+        if (signupModal.style.display === 'block') {
+            closeModal(signupModal);
+        }
+    }
+});
+
+console.log('PawLL website loaded successfully!');
