@@ -55,34 +55,9 @@ body {
     font-size: 24px;
 }
 
-.logo-icon {
-    width: 40px;
+.logo-img {
     height: 40px;
-    background: linear-gradient(135deg, #ff6b9d, #4ecdc4, #45b7d1);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.paw-print {
-    width: 20px;
-    height: 20px;
-    background: white;
-    border-radius: 50%;
-    position: relative;
-}
-
-.paw-print::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 12px;
-    height: 12px;
-    background: #ff6b9d;
-    border-radius: 50%;
+    width: auto;
 }
 
 /* Navigation */
@@ -637,14 +612,9 @@ body {
     font-size: 20px;
 }
 
-.footer-logo-icon {
-    width: 30px;
+.footer-logo img {
     height: 30px;
-    background: linear-gradient(135deg, #ff6b9d, #4ecdc4, #45b7d1);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: auto;
 }
 
 .contact-info p {
