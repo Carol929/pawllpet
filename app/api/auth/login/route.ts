@@ -1,6 +1,9 @@
 // 用户登录API
 // POST /api/auth/login
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
@@ -65,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (!user.emailVerified) {
       return NextResponse.json(
         {
-          error: 'Please verify your email first. Check your inbox for the verification link.',
+          error: 'Please verify your email first. Check your inbox for the 6-digit code.',
           requiresVerification: true,
         },
         { status: 403 }

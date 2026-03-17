@@ -1,6 +1,9 @@
 // 获取当前登录用户信息API
 // GET /api/auth/me
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { jwtVerify } from 'jose'

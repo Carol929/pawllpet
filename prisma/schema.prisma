@@ -92,4 +92,3 @@ model EmailVerificationToken {
 
   @@map("email_verification_tokens")
 }
-
