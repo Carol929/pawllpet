@@ -1,0 +1,2 @@
+import { notFound } from 'next/navigation'; import { blogPosts } from '@/lib/catalog';
+export default function Page({params}:{params:{slug:string}}){const post=blogPosts.find(p=>p.slug===params.slug); if(!post) return notFound(); return <main className='container page-stack'><h1>{post.title}</h1><p>{post.excerpt}</p><p>PawLL editorial content module is CMS-ready via BlogPost data model.</p></main>}

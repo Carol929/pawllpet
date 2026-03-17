@@ -12,7 +12,9 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && next build"
   },
   "dependencies": {
     "next": "^14.2.0",
@@ -36,6 +38,8 @@
     "tsx": "^4.7.0",
     "eslint": "^8.56.0",
     "eslint-config-next": "^14.2.0"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }
-
