@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
 export default function Footer() {
@@ -5,6 +6,10 @@ export default function Footer() {
     <footer className="site-footer">
       <div className="container footer-grid">
         <div>
+          <div className="footer-brand">
+            <Image src="/logo.svg" alt="PawLL Pet" width={42} height={42} />
+            <h4>PawLL Pet</h4>
+          </div>
           <h4>PawLL Pet</h4>
           <p>Premium pet essentials with collectible drop energy.</p>
         </div>
@@ -22,6 +27,13 @@ export default function Footer() {
           <Link href="/returns-policy">Returns</Link>
         </div>
         <div>
+          <h4>Follow</h4>
+          <a href="https://www.tiktok.com/@pawllpet?is_from_webapp=1&sender_device=pc" target="_blank" rel="noreferrer">
+            TikTok @pawllpet
+          </a>
+          <a href="https://www.instagram.com/pawllpet?igsh=Y3B5aXl5eXN2M2Nx&utm_source=qr" target="_blank" rel="noreferrer">
+            Instagram @pawllpet
+          </a>
           <h4>Company</h4>
           <Link href="/about">About</Link>
           <Link href="/blog">Journal</Link>

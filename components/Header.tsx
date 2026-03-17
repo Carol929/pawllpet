@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
 const nav = [
@@ -14,6 +15,16 @@ export default function Header() {
     <header className="site-header">
       <div className="top-banner">Free shipping over $65 • Earn Paw Points on every order</div>
       <div className="container header-inner">
+        <Link href="/" className="logo" aria-label="PawLL Pet Home">
+          <Image src="/logo.svg" alt="PawLL Pet" width={44} height={44} priority />
+          <span>PawLL Pet</span>
+        </Link>
+        <nav className="nav-list">
+          {nav.map(([label, href]) => (
+            <Link key={href} href={href}>
+              {label}
+            </Link>
+          ))}
         <Link href="/" className="logo">PawLL Pet</Link>
         <nav className="nav-list">
           {nav.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
