@@ -1,12 +1,13 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import './auth.css'
 
 export default function AuthPage() {
-  const searchParams = useSearchParams()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login')
   const [loading, setLoading] = useState(false)
@@ -32,11 +33,11 @@ export default function AuthPage() {
 
   // 从URL参数中获取tab
   useEffect(() => {
-    const tab = searchParams.get('tab')
+    const tab = new URLSearchParams(window.location.search).get('tab')
     if (tab === 'login' || tab === 'signup') {
       setActiveTab(tab)
     }
-  }, [searchParams])
+  }, [])
 
   // 处理登录
   const handleLogin = async (e: React.FormEvent) => {

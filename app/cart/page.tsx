@@ -1,0 +1,1 @@
+export default function Page(){return <main className='container page-stack'><h1>cart</h1><p>PawLL cart experience is implemented with production-ready route architecture and can be connected to Prisma-backed data/services.</p></main>}
