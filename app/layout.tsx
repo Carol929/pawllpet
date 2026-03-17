@@ -1,29 +1,20 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
-const inter = Inter({ subsets: ['latin'] })
-
-export const metadata: Metadata = {
-  title: 'PawLL | Pet Toys, Apparel, and Leashes',
-  description: 'PawLL — Quality pet toys, apparel, and leashes. Shop curated essentials for your pets.',
+export const metadata = {
+  title: 'PawLL Pet | Premium Pet Commerce',
+  description: 'PawLL Pet offers premium pet essentials, curated bundles, and limited drops.',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en-US">
+      <body>
         <Header />
-        <main>{children}</main>
+        {children}
         <Footer />
       </body>
     </html>
   )
 }
-
