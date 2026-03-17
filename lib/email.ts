@@ -6,19 +6,25 @@ function getResend() {
   return new Resend(key)
 }
 
-export async function sendVerificationEmail(email: string, name: string, token: string): Promise<void> {
+export async function sendVerificationEmail(email: string, name: string, code: string): Promise<void> {
   const client = getResend()
   if (!client) {
     console.warn('RESEND_API_KEY is missing; skipping verification email send.')
     return
   }
 
-  const verificationUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/verify-email?token=${token}`
   await client.emails.send({
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: email,
-    subject: 'Verify your PawLL Pet account',
-    html: `<p>Hi ${name}, confirm your email:</p><p><a href="${verificationUrl}">${verificationUrl}</a></p>`,
+    subject: 'Your PawLL Pet verification code',
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 12px;">
+        <h2>Hi ${name}, verify your email</h2>
+        <p>Use this 6-digit code to verify your PawLL Pet account:</p>
+        <p style="font-size: 32px; font-weight: 700; letter-spacing: 4px;">${code}</p>
+        <p>This code expires in 15 minutes.</p>
+      </div>
+    `,
   })
 }
 

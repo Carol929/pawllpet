@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (!user.emailVerified) {
       return NextResponse.json(
         {
-          error: 'Please verify your email first. Check your inbox for the verification link.',
+          error: 'Please verify your email first. Check your inbox for the 6-digit code.',
           requiresVerification: true,
         },
         { status: 403 }

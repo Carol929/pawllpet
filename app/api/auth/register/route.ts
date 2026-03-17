@@ -7,7 +7,6 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
-import { generateEmailVerificationToken } from '@/lib/utils'
 import { sendVerificationEmail } from '@/lib/email'
 import { z } from 'zod'
 
@@ -69,23 +68,19 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // 生成邮箱验证token
-    const token = generateEmailVerificationToken()
-    const expires = new Date()
-    expires.setHours(expires.getHours() + 24) // 24小时后过期
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    const expires = new Date(Date.now() + 1000 * 60 * 15)
 
-    // 保存验证token
     await prisma.emailVerificationToken.create({
       data: {
-        token,
+        token: code,
         userId: user.id,
         expires,
       },
     })
 
-    // 发送验证邮件
     try {
-      await sendVerificationEmail(user.email, user.fullName, token)
+      await sendVerificationEmail(user.email, user.fullName, code)
     } catch (emailError) {
       console.error('发送验证邮件失败:', emailError)
       // 即使邮件发送失败，也返回成功（用户可以在登录时重发）
@@ -94,7 +89,7 @@ export async function POST(request: NextRequest) {
     // 返回成功响应（不返回密码）
     return NextResponse.json(
       {
-        message: 'Registration successful. Please check your email to verify your account.',
+        message: 'Registration successful. A 6-digit verification code has been sent to your email.',
         user: {
           id: user.id,
           username: user.username,

@@ -158,7 +158,7 @@ export default function AuthPage() {
         )}
         {success && (
           <div className="auth-message auth-success">
-            {success}
+            {success} <Link href="/verify-email">Verify Email</Link>
           </div>
         )}
 
