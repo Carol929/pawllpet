@@ -1,0 +1,1 @@
+export default function Page(){return <main className='container page-stack'><h1>Mystery boxes</h1><p>Monthly themed boxes with surprise pet-safe picks, loyalty multipliers, and early-drop access.</p></main>}
