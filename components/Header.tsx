@@ -25,6 +25,9 @@ export default function Header() {
               {label}
             </Link>
           ))}
+        <Link href="/" className="logo">PawLL Pet</Link>
+        <nav className="nav-list">
+          {nav.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
         </nav>
         <div className="header-actions">
           <Link href="/search">Search</Link>

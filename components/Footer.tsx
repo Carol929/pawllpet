@@ -10,6 +10,7 @@ export default function Footer() {
             <Image src="/logo.svg" alt="PawLL Pet" width={42} height={42} />
             <h4>PawLL Pet</h4>
           </div>
+          <h4>PawLL Pet</h4>
           <p>Premium pet essentials with collectible drop energy.</p>
         </div>
         <div>
@@ -33,6 +34,10 @@ export default function Footer() {
           <a href="https://www.instagram.com/pawllpet?igsh=Y3B5aXl5eXN2M2Nx&utm_source=qr" target="_blank" rel="noreferrer">
             Instagram @pawllpet
           </a>
+          <h4>Company</h4>
+          <Link href="/about">About</Link>
+          <Link href="/blog">Journal</Link>
+          <Link href="/rewards">Rewards</Link>
           <Link href="/contact">Contact</Link>
         </div>
       </div>

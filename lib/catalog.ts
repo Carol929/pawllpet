@@ -38,6 +38,7 @@ export const products: Product[] = Array.from({ length: 36 }, (_, i) => {
     isDrop: i % 7 === 0,
     isBundle: i % 6 === 0,
     image: '/product-placeholder.svg',
+    image: `https://source.unsplash.com/900x900/?pet,product&sig=${i + 1}`,
     description: `Premium ${category.replace('-', ' ')} pick engineered for comfort, durability, and pet-safe use.`,
   }
 })
