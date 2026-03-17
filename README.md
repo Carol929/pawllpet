@@ -100,36 +100,6 @@ Checklist:
 3. Confirm build command is `npm run vercel-build` (also pinned in `vercel.json`).
 4. Verify Production env vars are set (`DATABASE_URL`, `NEXTAUTH_SECRET`, etc.).
 5. Click **Redeploy** the latest commit and then click **Refresh** on domain entries.
-6. If Preview still fails while local and `npm run vercel-build` pass, set **Node.js Version** in Vercel project settings to **20.x** (this repo pins `engines.node` and `.nvmrc` to 20).
-
-Useful smoke checks after deploy:
-- `https://pawllpet.com/`
-- `https://pawllpet.com/api/auth/me` (should return JSON 401 when not logged in, not platform 404)
-```
-
-## Build checks
-```bash
-npm run lint
-npm run db:generate
-npm run build
-```
-
-## Redeploy steps (Vercel)
-1. Pull latest commit.
-2. Set env vars above in Vercel project settings.
-3. Ensure build command is `npm run vercel-build` (or keep default with `postinstall`).
-4. Trigger a new deploy.
-
-
-## Troubleshooting: `404 NOT_FOUND` on custom domain
-If Vercel shows a platform-level `404: NOT_FOUND` page (with an ID from Vercel), it usually means the domain is not currently pointing at a successful production deployment alias, rather than a Next.js route-level 404.
-
-Checklist:
-1. Open **Deployments** and confirm at least one recent **Production** deployment is `Ready`.
-2. In **Project Settings → Domains**, confirm `pawllpet.com` and `www.pawllpet.com` are attached to this exact project.
-3. Confirm build command is `npm run vercel-build` (also pinned in `vercel.json`).
-4. Verify Production env vars are set (`DATABASE_URL`, `NEXTAUTH_SECRET`, etc.).
-5. Click **Redeploy** the latest commit and then click **Refresh** on domain entries.
 
 Useful smoke checks after deploy:
 - `https://pawllpet.com/`
