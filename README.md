@@ -1,49 +1,30 @@
 # PawLL Pet Ecommerce Platform
 
-PawLL Pet is a Next.js + Prisma ecommerce foundation that preserves the existing PawLL brand style/logo while expanding to modern ecommerce architecture.
+PawLL Pet is a Next.js + Prisma ecommerce foundation for premium pet commerce, with storefront merchandising, account/self-service architecture, loyalty scaffolding, and admin operations shells.
 
-## What exists now
-- Branded storefront route architecture: home, shop, product, collections, blog, policies, rewards, account, and admin shells.
-- Custom auth APIs (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`, `/api/auth/logout`) with Prisma-backed user auth.
-- Prisma seed bootstrap with admin + sample customers.
+## Repo audit summary
+The starting codebase included a simple homepage and custom auth APIs. This iteration upgrades architecture toward a production-grade ecommerce platform with:
+- Expanded Prisma domain models (catalog, ordering, aftersales, loyalty, CMS, support, settings)
+- 30+ seeded products and core operation entities
+- Full route architecture for storefront, account, support, and admin
+- Updated docs + environment contract
 
-## Vercel build fix (auth/prisma)
-The build failure came from auth routes being evaluated in static/build contexts and Prisma/auth code not being explicitly runtime-scoped.
+## Stack
+- Next.js (App Router) + TypeScript
+- Prisma ORM + PostgreSQL
+- Custom JWT auth APIs (existing) with schema compatibility for Auth.js tables
+- Zod validation (in auth APIs)
 
-Applied fixes:
-- Auth API routes now explicitly set:
-  - `export const runtime = "nodejs"`
-  - `export const dynamic = "force-dynamic"`
-- Added production-safe Prisma singleton in `lib/prisma.ts` and re-export from `lib/db.ts`.
-- Added package scripts:
-  - `postinstall`: `prisma generate`
-  - `vercel-build`: `prisma generate && next build`
+## Key routes
+- Storefront: `/`, `/shop`, `/products/[slug]`, `/collections/[slug]`, `/new-arrivals`, `/best-sellers`, `/limited-drops`, `/bundles`, `/mystery-boxes`, `/search`
+- Content + trust: `/about`, `/faq`, `/shipping-policy`, `/returns-policy`, `/contact`, `/blog`, `/blog/[slug]`, `/store-locator`
+- Engagement + service: `/pet-quiz`, `/rewards`, `/track-order`, `/help-center`, `/shop-by-pet`, `/shop-by-need`
+- User/admin architecture: `/account`, `/cart`, `/admin`, `/admin/products`, `/admin/orders`, `/admin/content`
 
-## Branding updates
-- Preserved existing PawLL logo asset and used it in header/footer.
-- Added clickable social links:
-  - TikTok: https://www.tiktok.com/@pawllpet?is_from_webapp=1&sender_device=pc
-  - Instagram: https://www.instagram.com/pawllpet?igsh=Y3B5aXl5eXN2M2Nx&utm_source=qr
+## Environment variables
+Copy `.env.example` into `.env.local` and fill values.
 
-## Required environment variables (Vercel)
-```bash
-DATABASE_URL=
-DIRECT_URL=
-NEXTAUTH_SECRET=
-AUTH_SECRET=
-NEXTAUTH_URL=
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-RESEND_API_KEY=
-EMAIL_FROM=
-EMAIL_FROM_NAME=
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-NEXT_PUBLIC_SITE_URL=
-```
-
-## Local development
+## Local setup
 ```bash
 npm install
 npm run db:generate
@@ -52,15 +33,20 @@ npm run db:seed
 npm run dev
 ```
 
-## Build checks
+## Commands
 ```bash
 npm run lint
-npm run db:generate
 npm run build
+npm run db:studio
 ```
 
-## Redeploy steps (Vercel)
-1. Pull latest commit.
-2. Set env vars above in Vercel project settings.
-3. Ensure build command is `npm run vercel-build` (or keep default with `postinstall`).
-4. Trigger a new deploy.
+## Deployment (Vercel)
+1. Push to Git provider and import project in Vercel.
+2. Provision PostgreSQL and set `DATABASE_URL`.
+3. Set all env vars from `.env.example`.
+4. Run build command `npm run build` and start command `npm run start`.
+5. Execute migrations/seed in production workflow (without default admin password).
+
+## Notes
+- Brand identity is original to PawLL Pet and intentionally avoids third-party IP/trade dress.
+- This version prioritizes architecture completeness and scalable scaffolding; payments/notifications can now be wired to Stripe/Resend via existing models and env contract.
