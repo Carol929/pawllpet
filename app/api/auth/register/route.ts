@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
     }
     console.error('Registration failed:', error)
-    return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: `Registration failed: ${message}` }, { status: 500 })
   }
 }

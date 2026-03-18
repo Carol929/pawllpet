@@ -216,6 +216,16 @@
   gap: 15px;
 }
 
+.form-row .form-group {
+  min-width: 0;
+}
+
+.form-row .form-group input,
+.form-row .form-group select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* Code input */
 .code-input {
   letter-spacing: 6px;
@@ -263,8 +273,8 @@
 }
 
 .birthday-input {
-  width: 40px;
-  padding: 12px 4px;
+  width: 48px;
+  padding: 12px 6px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 16px;
@@ -278,7 +288,7 @@
 }
 
 .birthday-input-year {
-  width: 56px;
+  width: 68px;
 }
 
 .birthday-sep {
