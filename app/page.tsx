@@ -8,7 +8,7 @@ export default function HomePage() {
 
   return (
     <main className="container page-stack">
-      <section className="hero-panel">
+      <section className="hero-panel section-oval section-oval--hero">
         <p className="eyebrow">PawLL Pet • Premium Pet Commerce</p>
         <h1>Curated pet essentials with drop-day excitement.</h1>
         <p>Shop toys, treats, grooming, beds, apparel, travel picks, and mystery boxes with loyalty rewards.</p>
@@ -18,7 +18,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section>
+      <section className="section-oval section-oval--collections">
         <h2>Featured collections</h2>
         <div className="collections-grid">
           {collections.map((c) => (
@@ -31,8 +31,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section><h2>New arrivals</h2><ProductGrid items={newArrivals} /></section>
-      <section><h2>Best sellers</h2><ProductGrid items={best} /></section>
+      <section className="section-oval section-oval--arrivals">
+        <h2>New arrivals</h2>
+        <ProductGrid items={newArrivals} />
+      </section>
+
+      <section className="section-oval section-oval--best">
+        <h2>Best sellers</h2>
+        <ProductGrid items={best} />
+      </section>
     </main>
   )
 }
