@@ -38,17 +38,30 @@ export const { handlers, auth } = NextAuth({
             fullName: user.name || 'Google User',
             username,
             emailVerified: true,
+            avatarUrl: user.image || undefined,
             role: 'user',
           },
         })
-      } else if (!existing.emailVerified) {
+      } else {
+        // Update existing user: verify email if needed, update avatar if missing
         await prisma.user.update({
           where: { id: existing.id },
-          data: { emailVerified: true },
+          data: {
+            ...(!existing.emailVerified ? { emailVerified: true } : {}),
+            ...(!existing.avatarUrl && user.image ? { avatarUrl: user.image } : {}),
+            lastLoginAt: new Date(),
+          },
         })
       }
 
       return true
+    },
+    async redirect({ url, baseUrl }) {
+      // After Google sign-in, redirect to our bridge page
+      if (url.includes('/api/auth/callback')) {
+        return `${baseUrl}/auth/google-callback`
+      }
+      return url.startsWith(baseUrl) ? url : baseUrl
     },
   },
 })
