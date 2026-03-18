@@ -16,7 +16,7 @@ export default function Header() {
       <div className="top-banner">Free shipping over $65 • Earn Paw Points on every order</div>
       <div className="container header-inner">
         <Link href="/" className="logo" aria-label="PawLL Pet Home">
-          <Image src="/logo.svg" alt="PawLL Pet" width={58} height={58} priority />
+          <Image src="/logo.jpg" alt="PawLL Pet" width={58} height={58} priority />
         </Link>
         <nav className="nav-list">
           {nav.map(([label, href]) => (

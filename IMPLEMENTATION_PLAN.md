@@ -1,7 +1,7 @@
 # PawLL Pet Implementation Plan
 
 ## 1) Audit & preserve
-- Preserve PawLL logo (`/logo.svg`) and existing warm playful style.
+- Preserve PawLL logo (`/logo.jpg`) and existing warm playful style.
 - Keep current navigation rhythm and card/button language; extend instead of redesign.
 
 ## 2) Build reliability + auth hardening

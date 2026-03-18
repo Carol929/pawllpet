@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="container footer-grid">
         <div>
           <div className="footer-brand">
-            <Image src="/logo.svg" alt="PawLL Pet" width={68} height={68} />
+            <Image src="/logo.jpg" alt="PawLL Pet" width={68} height={68} />
           </div>
           <p>Premium pet essentials with collectible drop energy.</p>
         </div>
