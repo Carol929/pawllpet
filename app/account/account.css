@@ -207,6 +207,51 @@
   opacity: 1;
 }
 
+/* Button style override for account page */
+.account-section .btn-secondary {
+  background: #fff;
+  color: #D4B28C;
+  border: 1px solid #D4B28C;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-family: inherit;
+}
+.account-section .btn-secondary:hover {
+  background: #fdf6ef;
+  border-color: #c4a078;
+}
+
+/* Birthday input group for account edit */
+.account-birthday-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.account-birthday-input {
+  width: 48px;
+  padding: 12px 4px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.3s;
+}
+.account-birthday-input:focus {
+  border-color: #D4B28C;
+}
+.account-birthday-input-year {
+  width: 90px;
+}
+.account-birthday-sep {
+  color: #999;
+  font-size: 16px;
+}
+
 @media (max-width: 900px) {
   .account-layout {
     grid-template-columns: 1fr;

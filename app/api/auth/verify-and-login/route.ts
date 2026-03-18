@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
         id: user.id, username: user.username, email: user.email,
         fullName: user.fullName, role: user.role, phone: user.phone,
         petType: user.petType, gender: user.gender, birthday: user.birthday,
-        emailVerified: user.emailVerified, createdAt: user.createdAt,
-        lastLoginAt: new Date(),
+        avatarUrl: user.avatarUrl, emailVerified: user.emailVerified,
+        createdAt: user.createdAt, lastLoginAt: new Date(),
       },
     })
 

@@ -28,6 +28,7 @@ export default function AuthPage() {
   const [signupData, setSignupData] = useState({
     firstName: '',
     lastName: '',
+    username: '',
     email: '',
     petType: '' as string,
     gender: '',
@@ -87,6 +88,7 @@ export default function AuthPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fullName: `${signupData.firstName} ${signupData.lastName}`.trim(),
+          username: signupData.username || undefined,
           email: signupData.email,
           petType: signupData.petType || undefined,
           gender: signupData.gender || undefined,
@@ -252,6 +254,16 @@ export default function AuthPage() {
                     required placeholder="Last name"
                   />
                 </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="signupUsername">Username *</label>
+                <input
+                  type="text" id="signupUsername"
+                  value={signupData.username}
+                  onChange={(e) => setSignupData({ ...signupData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                  required placeholder="Choose a username"
+                  minLength={3} maxLength={30}
+                />
               </div>
               <div className="form-group">
                 <label htmlFor="signupEmail">{t('auth', 'email')} *</label>

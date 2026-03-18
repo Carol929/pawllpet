@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -65,6 +65,16 @@ export default function Header() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userMenuTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const openUserMenu = useCallback(() => {
+    if (userMenuTimer.current) { clearTimeout(userMenuTimer.current); userMenuTimer.current = null }
+    setUserMenuOpen(true)
+  }, [])
+
+  const closeUserMenu = useCallback(() => {
+    userMenuTimer.current = setTimeout(() => setUserMenuOpen(false), 200)
+  }, [])
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -89,7 +99,7 @@ export default function Header() {
       <div className="top-banner">{t('header', 'topBanner')}</div>
       <div className="container header-inner">
         <Link href="/" className="logo" aria-label="PawLL Pet Home">
-          <Image src="/logo.png" alt="PawLL Pet" width={100} height={100} priority />
+          <Image src="/logo.png" alt="PawLL Pet" width={120} height={120} priority />
         </Link>
 
         <nav className="nav-list">
@@ -144,8 +154,8 @@ export default function Header() {
           {!authLoading && user && (
             <div
               className="user-menu-wrapper"
-              onMouseEnter={() => setUserMenuOpen(true)}
-              onMouseLeave={() => setUserMenuOpen(false)}
+              onMouseEnter={openUserMenu}
+              onMouseLeave={closeUserMenu}
             >
               <button className="user-menu-trigger" aria-haspopup="true" aria-expanded={userMenuOpen}>
                 {user.avatarUrl ? (
@@ -158,18 +168,20 @@ export default function Header() {
               </button>
               {userMenuOpen && (
                 <div className="user-menu-dropdown" role="menu">
-                  <Link href="/account" className="user-menu-item" role="menuitem" onClick={() => setUserMenuOpen(false)}>
-                    <User size={16} /> {t('userMenu', 'myAccount')}
-                  </Link>
-                  <Link href="/account#orders" className="user-menu-item" role="menuitem" onClick={() => setUserMenuOpen(false)}>
-                    <Package size={16} /> {t('userMenu', 'orderHistory')}
-                  </Link>
-                  <Link href="/account#settings" className="user-menu-item" role="menuitem" onClick={() => setUserMenuOpen(false)}>
-                    <Settings size={16} /> {t('userMenu', 'settings')}
-                  </Link>
-                  <button className="user-menu-item user-menu-logout" role="menuitem" onClick={handleLogout}>
-                    <LogOut size={16} /> {t('userMenu', 'logOut')}
-                  </button>
+                  <div className="user-menu-dropdown-box">
+                    <Link href="/account" className="user-menu-item" role="menuitem" onClick={() => setUserMenuOpen(false)}>
+                      <User size={16} /> {t('userMenu', 'myAccount')}
+                    </Link>
+                    <Link href="/account#orders" className="user-menu-item" role="menuitem" onClick={() => setUserMenuOpen(false)}>
+                      <Package size={16} /> {t('userMenu', 'orderHistory')}
+                    </Link>
+                    <Link href="/account#settings" className="user-menu-item" role="menuitem" onClick={() => setUserMenuOpen(false)}>
+                      <Settings size={16} /> {t('userMenu', 'settings')}
+                    </Link>
+                    <button className="user-menu-item user-menu-logout" role="menuitem" onClick={handleLogout}>
+                      <LogOut size={16} /> {t('userMenu', 'logOut')}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

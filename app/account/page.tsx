@@ -19,7 +19,7 @@ export default function AccountPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [editData, setEditData] = useState({
-    fullName: '', phone: '', gender: '', birthday: '', petType: '',
+    fullName: '', phone: '', gender: '', birthdayMonth: '', birthdayDay: '', birthdayYear: '', petType: '',
   })
 
   const [pwData, setPwData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
@@ -34,11 +34,15 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (user) {
+      const bday = user.birthday ? user.birthday.split('T')[0] : ''
+      const [y, m, d] = bday ? bday.split('-') : ['', '', '']
       setEditData({
         fullName: user.fullName || '',
         phone: user.phone || '',
         gender: user.gender || '',
-        birthday: user.birthday ? user.birthday.split('T')[0] : '',
+        birthdayMonth: m || '',
+        birthdayDay: d || '',
+        birthdayYear: y || '',
         petType: user.petType || '',
       })
     }
@@ -62,10 +66,13 @@ export default function AccountPage() {
     setMessage(null)
 
     try {
+      const birthday = editData.birthdayYear && editData.birthdayMonth && editData.birthdayDay
+        ? `${editData.birthdayYear}-${editData.birthdayMonth.padStart(2, '0')}-${editData.birthdayDay.padStart(2, '0')}`
+        : ''
       const res = await fetch('/api/auth/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editData),
+        body: JSON.stringify({ ...editData, birthday, birthdayMonth: undefined, birthdayDay: undefined, birthdayYear: undefined }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to update')
@@ -255,7 +262,40 @@ export default function AccountPage() {
                   </div>
                   <div className="form-group">
                     <label>{t('auth', 'birthday')}</label>
-                    <input type="date" value={editData.birthday} onChange={(e) => setEditData({ ...editData, birthday: e.target.value })} />
+                    <div className="account-birthday-group">
+                      <input
+                        type="text" inputMode="numeric" maxLength={2}
+                        placeholder="MM"
+                        value={editData.birthdayMonth}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/\D/g, '').slice(0, 2)
+                          setEditData({ ...editData, birthdayMonth: v })
+                        }}
+                        className="account-birthday-input"
+                      />
+                      <span className="account-birthday-sep">/</span>
+                      <input
+                        type="text" inputMode="numeric" maxLength={2}
+                        placeholder="DD"
+                        value={editData.birthdayDay}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/\D/g, '').slice(0, 2)
+                          setEditData({ ...editData, birthdayDay: v })
+                        }}
+                        className="account-birthday-input"
+                      />
+                      <span className="account-birthday-sep">/</span>
+                      <input
+                        type="text" inputMode="numeric" maxLength={4}
+                        placeholder="YYYY"
+                        value={editData.birthdayYear}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/\D/g, '').slice(0, 4)
+                          setEditData({ ...editData, birthdayYear: v })
+                        }}
+                        className="account-birthday-input account-birthday-input-year"
+                      />
+                    </div>
                   </div>
                   <div className="form-group">
                     <label>{t('auth', 'petType')}</label>

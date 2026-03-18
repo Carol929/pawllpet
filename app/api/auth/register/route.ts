@@ -9,6 +9,7 @@ import { z } from 'zod'
 
 const registerSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
+  username: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/, 'Username can only contain lowercase letters, numbers, and underscores').optional(),
   email: z.string().email('Invalid email address'),
   petType: z.enum(['Dog', 'Cat', 'Both', 'None']).optional(),
   gender: z.string().optional(),
@@ -26,10 +27,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email already exists' }, { status: 400 })
     }
 
-    const username = await generateUniqueUsername(data.email, async (candidate) => {
-      const hit = await prisma.user.findUnique({ where: { username: candidate } })
-      return Boolean(hit)
-    })
+    let username: string
+    if (data.username) {
+      const existingByUsername = await prisma.user.findUnique({ where: { username: data.username } })
+      if (existingByUsername) {
+        return NextResponse.json({ error: 'Username already taken' }, { status: 400 })
+      }
+      username = data.username
+    } else {
+      username = await generateUniqueUsername(data.email, async (candidate) => {
+        const hit = await prisma.user.findUnique({ where: { username: candidate } })
+        return Boolean(hit)
+      })
+    }
 
     const user = await prisma.user.create({
       data: {
