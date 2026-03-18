@@ -89,7 +89,7 @@ export default function Header() {
       <div className="top-banner">{t('header', 'topBanner')}</div>
       <div className="container header-inner">
         <Link href="/" className="logo" aria-label="PawLL Pet Home">
-          <Image src="/logo.png" alt="PawLL Pet" width={72} height={72} priority />
+          <Image src="/logo.png" alt="PawLL Pet" width={100} height={100} priority />
         </Link>
 
         <nav className="nav-list">
@@ -148,7 +148,11 @@ export default function Header() {
               onMouseLeave={() => setUserMenuOpen(false)}
             >
               <button className="user-menu-trigger" aria-haspopup="true" aria-expanded={userMenuOpen}>
-                <span className="user-avatar">{userInitial}</span>
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" className="user-avatar" style={{ objectFit: 'cover' }} />
+                ) : (
+                  <span className="user-avatar">{userInitial}</span>
+                )}
                 <span className="user-name-display">{user.fullName.split(' ')[0]}</span>
                 <ChevronDown size={14} className={`nav-chevron ${userMenuOpen ? 'nav-chevron--open' : ''}`} />
               </button>
@@ -227,7 +231,11 @@ export default function Header() {
           {!authLoading && user && (
             <div className="mobile-user-section">
               <div className="mobile-user-info">
-                <span className="user-avatar">{userInitial}</span>
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="" className="user-avatar" style={{ objectFit: 'cover' }} />
+                ) : (
+                  <span className="user-avatar">{userInitial}</span>
+                )}
                 <span>{user.fullName}</span>
               </div>
               <Link href="/account" className="mobile-user-link" onClick={() => setMobileMenuOpen(false)}>

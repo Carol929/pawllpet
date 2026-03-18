@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth-context'
+import PasswordRequirements, { passwordMeetsAllRules } from '@/components/PasswordRequirements'
 import '../auth/auth.css'
 
 export default function SetPasswordPage() {
@@ -72,6 +73,7 @@ export default function SetPasswordPage() {
               required minLength={8}
               placeholder={t('auth', 'passwordPlaceholder')}
             />
+            <PasswordRequirements password={password} />
           </div>
           <div className="form-group">
             <label htmlFor="confirmPw">{t('auth', 'confirmPassword')}</label>
@@ -83,7 +85,7 @@ export default function SetPasswordPage() {
               placeholder={t('auth', 'confirmPasswordPlaceholder')}
             />
           </div>
-          <button type="submit" className="btn-submit" disabled={loading}>
+          <button type="submit" className="btn-submit" disabled={loading || !passwordMeetsAllRules(password)}>
             {loading ? t('auth', 'setting') : t('auth', 'setPasswordBtn')}
           </button>
         </form>

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useLocale } from '@/lib/i18n'
-import { User, Package, MapPin, Star, Lock, LogOut } from 'lucide-react'
+import { User, Package, MapPin, Star, Lock, LogOut, Camera } from 'lucide-react'
+import PasswordRequirements, { passwordMeetsAllRules } from '@/components/PasswordRequirements'
 import './account.css'
 
 export default function AccountPage() {
@@ -22,6 +23,8 @@ export default function AccountPage() {
   })
 
   const [pwData, setPwData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -109,6 +112,38 @@ export default function AccountPage() {
     router.refresh()
   }
 
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { setError('Please select an image file'); return }
+    if (file.size > 375_000) { setError('Image too large (max 375KB)'); return }
+
+    setUploadingAvatar(true)
+    setError(null)
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      const res = await fetch('/api/auth/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarBase64: base64 }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to upload avatar')
+      await refresh()
+      setMessage('Avatar updated!')
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setUploadingAvatar(false)
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
+    }
+  }
+
   const sections = [
     { key: 'profile', icon: User, label: t('account', 'profile') },
     { key: 'orders', icon: Package, label: t('account', 'orders') },
@@ -122,7 +157,11 @@ export default function AccountPage() {
       <div className="account-layout">
         <aside className="account-sidebar">
           <div className="account-sidebar-user">
-            <span className="user-avatar user-avatar--large">{userInitial}</span>
+            {user.avatarUrl ? (
+              <img src={user.avatarUrl} alt="" className="user-avatar user-avatar--large" style={{ objectFit: 'cover' }} />
+            ) : (
+              <span className="user-avatar user-avatar--large">{userInitial}</span>
+            )}
             <div>
               <div className="account-sidebar-name">{user.fullName}</div>
               <div className="account-sidebar-email">{user.email}</div>
@@ -151,6 +190,37 @@ export default function AccountPage() {
           {activeSection === 'profile' && (
             <section className="account-section">
               <h2>{t('account', 'profile')}</h2>
+
+              {/* Avatar upload */}
+              <div className="avatar-upload-area">
+                <div className="avatar-upload-preview" onClick={() => avatarInputRef.current?.click()}>
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="" className="avatar-upload-img" />
+                  ) : (
+                    <span className="user-avatar" style={{ width: 80, height: 80, fontSize: '2rem' }}>{userInitial}</span>
+                  )}
+                  <div className="avatar-upload-overlay">
+                    <Camera size={20} />
+                  </div>
+                </div>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleAvatarChange}
+                />
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ fontSize: '.85rem' }}
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                >
+                  {uploadingAvatar ? 'Uploading...' : 'Change Avatar'}
+                </button>
+              </div>
+
               {!editing ? (
                 <div className="profile-display">
                   <div className="profile-row"><span className="profile-label">{t('auth', 'fullName')}</span><span>{user.fullName}</span></div>
@@ -254,12 +324,13 @@ export default function AccountPage() {
                 <div className="form-group">
                   <label>{t('account', 'newPassword')}</label>
                   <input type="password" value={pwData.newPassword} onChange={(e) => setPwData({ ...pwData, newPassword: e.target.value })} required minLength={8} />
+                  <PasswordRequirements password={pwData.newPassword} />
                 </div>
                 <div className="form-group">
                   <label>{t('auth', 'confirmPassword')}</label>
                   <input type="password" value={pwData.confirmPassword} onChange={(e) => setPwData({ ...pwData, confirmPassword: e.target.value })} required minLength={8} />
                 </div>
-                <button type="submit" className="btn-submit" disabled={saving} style={{ maxWidth: 200 }}>
+                <button type="submit" className="btn-submit" disabled={saving || !passwordMeetsAllRules(pwData.newPassword)} style={{ maxWidth: 200 }}>
                   {saving ? t('account', 'saving') : t('account', 'changePassword')}
                 </button>
               </form>

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth-context'
+import PasswordRequirements, { passwordMeetsAllRules } from '@/components/PasswordRequirements'
 import './auth.css'
 
 type Tab = 'login' | 'signup' | 'forgot'
@@ -401,8 +402,9 @@ export default function AuthPage() {
                     minLength={8}
                     placeholder={t('auth', 'newPasswordPlaceholder')}
                   />
+                  <PasswordRequirements password={forgotNewPassword} />
                 </div>
-                <button type="submit" className="btn-submit" disabled={loading}>
+                <button type="submit" className="btn-submit" disabled={loading || (forgotNewPassword.length > 0 && !passwordMeetsAllRules(forgotNewPassword))}>
                   {loading ? t('auth', 'verifying') : t('auth', 'verifyAndLogin')}
                 </button>
               </form>

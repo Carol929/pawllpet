@@ -11,6 +11,7 @@ export type AuthUser = {
   petType: string | null
   gender: string | null
   birthday: string | null
+  avatarUrl: string | null
   role: string
   emailVerified: boolean
   createdAt: string

@@ -14,7 +14,13 @@ const JWT_SECRET = new TextEncoder().encode(
 const schema = z.object({
   email: z.string().email(),
   code: z.string().length(6, 'Code must be 6 digits'),
-  newPassword: z.string().min(8).optional(),
+  newPassword: z.string()
+    .min(8)
+    .regex(/[A-Z]/)
+    .regex(/[a-z]/)
+    .regex(/[0-9]/)
+    .regex(/[^A-Za-z0-9]/)
+    .optional(),
 })
 
 export async function POST(request: NextRequest) {
