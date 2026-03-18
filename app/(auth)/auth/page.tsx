@@ -25,12 +25,15 @@ export default function AuthPage() {
 
   // Signup state
   const [signupData, setSignupData] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     petType: '' as string,
     gender: '',
     phone: '',
-    birthday: '',
+    birthdayMonth: '',
+    birthdayDay: '',
+    birthdayYear: '',
   })
 
   // Forgot password state
@@ -75,16 +78,19 @@ export default function AuthPage() {
     setSuccess(null)
 
     try {
+      const birthday = signupData.birthdayMonth && signupData.birthdayDay && signupData.birthdayYear
+        ? `${signupData.birthdayYear}-${signupData.birthdayMonth.padStart(2, '0')}-${signupData.birthdayDay.padStart(2, '0')}`
+        : undefined
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: signupData.fullName,
+          fullName: `${signupData.firstName} ${signupData.lastName}`.trim(),
           email: signupData.email,
           petType: signupData.petType || undefined,
           gender: signupData.gender || undefined,
           phone: signupData.phone || undefined,
-          birthday: signupData.birthday || undefined,
+          birthday,
         }),
       })
       const data = await res.json()
@@ -226,14 +232,25 @@ export default function AuthPage() {
         {activeTab === 'signup' && (
           <div className="auth-form-container">
             <form onSubmit={handleSignup} className="auth-form">
-              <div className="form-group">
-                <label htmlFor="signupName">{t('auth', 'fullName')} *</label>
-                <input
-                  type="text" id="signupName"
-                  value={signupData.fullName}
-                  onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
-                  required placeholder={t('auth', 'fullNamePlaceholder')}
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="signupFirstName">First Name *</label>
+                  <input
+                    type="text" id="signupFirstName"
+                    value={signupData.firstName}
+                    onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value })}
+                    required placeholder="First name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="signupLastName">Last Name *</label>
+                  <input
+                    type="text" id="signupLastName"
+                    value={signupData.lastName}
+                    onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
+                    required placeholder="Last name"
+                  />
+                </div>
               </div>
               <div className="form-group">
                 <label htmlFor="signupEmail">{t('auth', 'email')} *</label>
@@ -245,19 +262,19 @@ export default function AuthPage() {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="signupPetType">{t('auth', 'petType')} *</label>
-                <select
-                  id="signupPetType"
-                  value={signupData.petType}
-                  onChange={(e) => setSignupData({ ...signupData, petType: e.target.value })}
-                  required
-                >
-                  <option value="">{t('auth', 'selectPetType')}</option>
-                  <option value="Cat">{t('auth', 'cat')}</option>
-                  <option value="Dog">{t('auth', 'dog')}</option>
-                  <option value="Both">{t('auth', 'both')}</option>
-                  <option value="Other">{t('auth', 'other')}</option>
-                </select>
+                <label>{t('auth', 'petType')}</label>
+                <div className="pet-type-group">
+                  {(['Dog', 'Cat', 'Both', 'None'] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      className={`pet-type-btn ${signupData.petType === type ? 'active' : ''}`}
+                      onClick={() => setSignupData({ ...signupData, petType: signupData.petType === type ? '' : type })}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -275,12 +292,45 @@ export default function AuthPage() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label htmlFor="signupBirthday">{t('auth', 'birthday')}</label>
-                  <input
-                    type="date" id="signupBirthday"
-                    value={signupData.birthday}
-                    onChange={(e) => setSignupData({ ...signupData, birthday: e.target.value })}
-                  />
+                  <label>{t('auth', 'birthday')}</label>
+                  <div className="birthday-input-group">
+                    <input
+                      type="text" inputMode="numeric" maxLength={2}
+                      placeholder="MM"
+                      value={signupData.birthdayMonth}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, '').slice(0, 2)
+                        setSignupData({ ...signupData, birthdayMonth: v })
+                        if (v.length === 2) document.getElementById('signupBdayDay')?.focus()
+                      }}
+                      className="birthday-input"
+                    />
+                    <span className="birthday-sep">/</span>
+                    <input
+                      type="text" inputMode="numeric" maxLength={2}
+                      id="signupBdayDay"
+                      placeholder="DD"
+                      value={signupData.birthdayDay}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, '').slice(0, 2)
+                        setSignupData({ ...signupData, birthdayDay: v })
+                        if (v.length === 2) document.getElementById('signupBdayYear')?.focus()
+                      }}
+                      className="birthday-input"
+                    />
+                    <span className="birthday-sep">/</span>
+                    <input
+                      type="text" inputMode="numeric" maxLength={4}
+                      id="signupBdayYear"
+                      placeholder="YYYY"
+                      value={signupData.birthdayYear}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, '').slice(0, 4)
+                        setSignupData({ ...signupData, birthdayYear: v })
+                      }}
+                      className="birthday-input birthday-input-year"
+                    />
+                  </div>
                 </div>
               </div>
               <div className="form-group">

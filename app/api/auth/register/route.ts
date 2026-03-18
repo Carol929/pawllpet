@@ -10,7 +10,7 @@ import { z } from 'zod'
 const registerSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   email: z.string().email('Invalid email address'),
-  petType: z.enum(['Cat', 'Dog', 'Both', 'Other']),
+  petType: z.enum(['Dog', 'Cat', 'Both', 'None']).optional(),
   gender: z.string().optional(),
   phone: z.string().optional(),
   birthday: z.string().optional(),

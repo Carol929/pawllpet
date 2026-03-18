@@ -224,6 +224,68 @@
   font-weight: 600;
 }
 
+/* Pet type toggle buttons */
+.pet-type-group {
+  display: flex;
+  gap: 8px;
+}
+
+.pet-type-btn {
+  flex: 1;
+  padding: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  background: white;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.pet-type-btn:hover {
+  border-color: #D4B28C;
+  color: #D4B28C;
+}
+
+.pet-type-btn.active {
+  background: #D4B28C;
+  border-color: #D4B28C;
+  color: white;
+}
+
+/* Birthday input group */
+.birthday-input-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.birthday-input {
+  width: 40px;
+  padding: 12px 4px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.birthday-input:focus {
+  border-color: #D4B28C;
+}
+
+.birthday-input-year {
+  width: 56px;
+}
+
+.birthday-sep {
+  color: #999;
+  font-size: 16px;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .auth-card {
