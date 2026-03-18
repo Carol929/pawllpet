@@ -273,8 +273,8 @@
 }
 
 .birthday-input {
-  width: 48px;
-  padding: 12px 6px;
+  width: 42px;
+  padding: 12px 4px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 16px;
@@ -288,7 +288,7 @@
 }
 
 .birthday-input-year {
-  width: 68px;
+  width: 72px;
 }
 
 .birthday-sep {
