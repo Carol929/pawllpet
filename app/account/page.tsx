@@ -236,7 +236,7 @@ export default function AccountPage() {
                   <div className="profile-row"><span className="profile-label">{t('auth', 'gender')}</span><span>{user.gender || '—'}</span></div>
                   <div className="profile-row"><span className="profile-label">{t('auth', 'birthday')}</span><span>{user.birthday ? user.birthday.split('T')[0] : '—'}</span></div>
                   <div className="profile-row"><span className="profile-label">{t('auth', 'petType')}</span><span>{user.petType || '—'}</span></div>
-                  <button className="btn-submit" style={{ marginTop: '1rem', maxWidth: 200 }} onClick={() => setEditing(true)}>
+                  <button className="btn-secondary" style={{ marginTop: '1rem', maxWidth: 200 }} onClick={() => setEditing(true)}>
                     {t('account', 'editProfile')}
                   </button>
                 </div>

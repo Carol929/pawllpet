@@ -99,7 +99,7 @@ export default function Header() {
       <div className="top-banner">{t('header', 'topBanner')}</div>
       <div className="container header-inner">
         <Link href="/" className="logo" aria-label="PawLL Pet Home">
-          <Image src="/logo.png" alt="PawLL Pet" width={120} height={120} priority />
+          <Image src="/logo.png" alt="PawLL Pet" width={150} height={150} priority />
         </Link>
 
         <nav className="nav-list">
