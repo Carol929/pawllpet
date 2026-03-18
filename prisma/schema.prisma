@@ -19,7 +19,10 @@ model User {
   emailVerified Boolean   @default(false) // 邮箱是否已验证
   password      String?   // 密码哈希（可选，Google登录用户可能没有）
   phone         String?   // 手机号（可选）
-  petType       String?   // 宠物类型："Cat", "Dog", "Both", "None yet"
+  petType       String?   // 宠物类型："Cat", "Dog", "Both", "Other"
+  gender        String?   // 性别："Male", "Female", "Other", "Prefer not to say"
+  birthday      DateTime? // 生日
+  avatarUrl     String?   // 头像URL（预留）
   role          String    @default("user") // 用户角色："user" 或 "admin"
   isBlocked     Boolean   @default(false) // 是否被禁用
   createdAt     DateTime  @default(now()) // 创建时间

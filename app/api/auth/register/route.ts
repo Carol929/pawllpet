@@ -1,70 +1,48 @@
-// 用户注册API
-// POST /api/auth/register
-
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import bcrypt from 'bcryptjs'
 import { sendVerificationEmail } from '@/lib/email'
+import { generateUniqueUsername } from '@/lib/utils'
 import { z } from 'zod'
 
-// 注册表单验证schema
 const registerSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
-  username: z.string().min(3, 'Username must be at least 3 characters').max(20, 'Username must be at most 20 characters'),
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  petType: z.enum(['Cat', 'Dog', 'Both', 'Other']),
+  gender: z.string().optional(),
   phone: z.string().optional(),
-  petType: z.enum(['Cat', 'Dog', 'Both', 'None yet']).optional(),
+  birthday: z.string().optional(),
 })
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const data = registerSchema.parse(body)
 
-    // 验证输入数据
-    const validatedData = registerSchema.parse(body)
-
-    // 检查用户名是否已存在
-    const existingUserByUsername = await prisma.user.findUnique({
-      where: { username: validatedData.username },
-    })
-
-    if (existingUserByUsername) {
-      return NextResponse.json(
-        { error: 'Username already exists' },
-        { status: 400 }
-      )
+    const existingByEmail = await prisma.user.findUnique({ where: { email: data.email } })
+    if (existingByEmail) {
+      return NextResponse.json({ error: 'Email already exists' }, { status: 400 })
     }
 
-    // 检查邮箱是否已存在
-    const existingUserByEmail = await prisma.user.findUnique({
-      where: { email: validatedData.email },
+    const username = await generateUniqueUsername(data.email, async (candidate) => {
+      const hit = await prisma.user.findUnique({ where: { username: candidate } })
+      return Boolean(hit)
     })
 
-    if (existingUserByEmail) {
-      return NextResponse.json(
-        { error: 'Email already exists' },
-        { status: 400 }
-      )
-    }
-
-    // 加密密码
-    const hashedPassword = await bcrypt.hash(validatedData.password, 10)
-
-    // 创建用户
     const user = await prisma.user.create({
       data: {
-        fullName: validatedData.fullName,
-        username: validatedData.username,
-        email: validatedData.email,
-        password: hashedPassword,
-        phone: validatedData.phone || null,
-        petType: validatedData.petType || null,
-        emailVerified: false, // 注册时邮箱未验证
-        role: 'user', // 默认角色为普通用户
+        fullName: data.fullName,
+        username,
+        email: data.email,
+        password: null,
+        phone: data.phone || null,
+        petType: data.petType,
+        gender: data.gender || null,
+        birthday: data.birthday ? new Date(data.birthday) : null,
+        emailVerified: false,
+        role: 'user',
       },
     })
 
@@ -72,49 +50,27 @@ export async function POST(request: NextRequest) {
     const expires = new Date(Date.now() + 1000 * 60 * 15)
 
     await prisma.emailVerificationToken.create({
-      data: {
-        token: code,
-        userId: user.id,
-        expires,
-      },
+      data: { token: code, userId: user.id, expires },
     })
 
     try {
       await sendVerificationEmail(user.email, user.fullName, code)
     } catch (emailError) {
-      console.error('发送验证邮件失败:', emailError)
-      // 即使邮件发送失败，也返回成功（用户可以在登录时重发）
+      console.error('Failed to send verification email:', emailError)
     }
 
-    // 返回成功响应（不返回密码）
     return NextResponse.json(
       {
         message: 'Registration successful. A 6-digit verification code has been sent to your email.',
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          fullName: user.fullName,
-        },
+        user: { id: user.id, email: user.email, fullName: user.fullName },
       },
       { status: 201 }
     )
   } catch (error) {
-    console.error('注册失败:', error)
-
-    // Zod验证错误
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
     }
-
-    // 其他错误
-    return NextResponse.json(
-      { error: 'Registration failed. Please try again.' },
-      { status: 500 }
-    )
+    console.error('Registration failed:', error)
+    return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 })
   }
 }
-
