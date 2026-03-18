@@ -1,8 +1,13 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
 import { Product } from '@/lib/catalog'
+import { useLocale } from '@/lib/i18n'
 
 export function ProductGrid({ items }: { items: Product[] }) {
+  const { t } = useLocale()
+
   return (
     <div className="products-grid">
       {items.map((product) => (
@@ -14,7 +19,7 @@ export function ProductGrid({ items }: { items: Product[] }) {
             <span>${product.price.toFixed(2)}</span>
             <span>★ {product.rating}</span>
           </div>
-          <Link href={`/products/${product.slug}`} className="btn-secondary">View details</Link>
+          <Link href={`/products/${product.slug}`} className="btn-secondary">{t('home', 'viewDetails')}</Link>
         </article>
       ))}
     </div>
