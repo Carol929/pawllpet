@@ -123,6 +123,7 @@ export async function POST(request: NextRequest) {
           emailVerified: user.emailVerified,
           createdAt: user.createdAt,
           lastLoginAt: new Date(),
+          hasPassword: true,
         },
       },
       { status: 200 }

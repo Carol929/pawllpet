@@ -173,6 +173,12 @@
   border: 1px solid #cfc;
 }
 
+.auth-info {
+  background: #e8f4fd;
+  color: #1a73e8;
+  border: 1px solid #b8daf5;
+}
+
 .auth-footer {
   margin-top: 30px;
   text-align: center;

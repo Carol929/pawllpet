@@ -53,11 +53,9 @@ export const { handlers, auth } = NextAuth({
       return true
     },
     async redirect({ url, baseUrl }) {
-      // After Google sign-in, redirect to our bridge page
-      if (url.includes('/api/auth/callback')) {
-        return `${baseUrl}/auth/google-callback`
-      }
-      return url.startsWith(baseUrl) ? url : baseUrl
+      if (url.startsWith('/')) return `${baseUrl}${url}`
+      if (url.startsWith(baseUrl)) return url
+      return baseUrl
     },
   },
 })

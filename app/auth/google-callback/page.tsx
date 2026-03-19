@@ -23,7 +23,8 @@ export default function GoogleCallbackPage() {
         router.push('/account')
         router.refresh()
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('Google callback error:', err)
         router.push('/auth?tab=login')
       })
   }, [setAuthUser, router])

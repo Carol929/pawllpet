@@ -16,6 +16,7 @@ export type AuthUser = {
   emailVerified: boolean
   createdAt: string
   lastLoginAt: string | null
+  hasPassword: boolean
 }
 
 interface AuthContextValue {

@@ -4,37 +4,74 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
-import { SignJWT } from 'jose'
+import { SignJWT, jwtVerify } from 'jose'
 import { z } from 'zod'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.NEXTAUTH_SECRET || 'your-secret-key-change-in-production'
 )
 
-const schema = z.object({
+const passwordSchema = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
+
+const emailSchema = z.object({
   email: z.string().email(),
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  password: passwordSchema,
 })
+
+const authSchema = z.object({
+  password: passwordSchema,
+})
+
+async function getUserIdFromToken(request: NextRequest): Promise<string | null> {
+  const cookieHeader = request.headers.get('cookie')
+  if (!cookieHeader) return null
+  const match = cookieHeader.match(/auth-token=([^;]+)/)
+  if (!match) return null
+  try {
+    const { payload } = await jwtVerify(match[1], JWT_SECRET)
+    return payload.userId as string
+  } catch {
+    return null
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password } = schema.parse(body)
 
-    const user = await prisma.user.findUnique({ where: { email } })
-    if (!user) {
-      return NextResponse.json({ error: 'Account not found' }, { status: 404 })
-    }
-    if (!user.emailVerified) {
-      return NextResponse.json({ error: 'Please verify your email first' }, { status: 403 })
+    let user
+
+    // Try JWT auth first (logged-in user from account page)
+    const userId = await getUserIdFromToken(request)
+    if (userId) {
+      const { password } = authSchema.parse(body)
+      user = await prisma.user.findUnique({ where: { id: userId } })
+      if (!user) {
+        return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+      }
+      if (user.password) {
+        return NextResponse.json({ error: 'Password already set. Use change password instead.' }, { status: 400 })
+      }
+      body._password = password
+    } else {
+      // Fall back to email-based flow (post-registration)
+      const { email, password } = emailSchema.parse(body)
+      user = await prisma.user.findUnique({ where: { email } })
+      if (!user) {
+        return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+      }
+      if (!user.emailVerified) {
+        return NextResponse.json({ error: 'Please verify your email first' }, { status: 403 })
+      }
+      body._password = password
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(body._password, 10)
     await prisma.user.update({
       where: { id: user.id },
       data: { password: hashedPassword, lastLoginAt: new Date() },
@@ -53,7 +90,7 @@ export async function POST(request: NextRequest) {
         fullName: user.fullName, role: user.role, phone: user.phone,
         petType: user.petType, gender: user.gender, birthday: user.birthday,
         avatarUrl: user.avatarUrl, emailVerified: user.emailVerified,
-        createdAt: user.createdAt, lastLoginAt: new Date(),
+        createdAt: user.createdAt, lastLoginAt: new Date(), hasPassword: true,
       },
     })
 

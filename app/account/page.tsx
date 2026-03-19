@@ -23,6 +23,7 @@ export default function AccountPage() {
   })
 
   const [pwData, setPwData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [setPwData2, setSetPwData] = useState({ newPassword: '', confirmPassword: '' })
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
@@ -106,6 +107,34 @@ export default function AccountPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to change password')
       setPwData({ currentPassword: '', newPassword: '', confirmPassword: '' })
       setMessage(t('account', 'passwordChanged'))
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleSetPassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (setPwData2.newPassword !== setPwData2.confirmPassword) {
+      setError(t('auth', 'passwordsMismatch'))
+      return
+    }
+    setSaving(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const res = await fetch('/api/auth/set-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: setPwData2.newPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to set password')
+      setSetPwData({ newPassword: '', confirmPassword: '' })
+      setMessage(t('account', 'passwordChanged'))
+      await refresh()
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -355,25 +384,51 @@ export default function AccountPage() {
           {activeSection === 'settings' && (
             <section className="account-section">
               <h2>{t('account', 'securitySettings')}</h2>
-              <h3>{t('account', 'changePassword')}</h3>
-              <form onSubmit={handleChangePassword} className="auth-form" style={{ maxWidth: 400 }}>
-                <div className="form-group">
-                  <label>{t('account', 'currentPassword')}</label>
-                  <input type="password" value={pwData.currentPassword} onChange={(e) => setPwData({ ...pwData, currentPassword: e.target.value })} required />
-                </div>
-                <div className="form-group">
-                  <label>{t('account', 'newPassword')}</label>
-                  <input type="password" value={pwData.newPassword} onChange={(e) => setPwData({ ...pwData, newPassword: e.target.value })} required minLength={8} />
-                  <PasswordRequirements password={pwData.newPassword} />
-                </div>
-                <div className="form-group">
-                  <label>{t('auth', 'confirmPassword')}</label>
-                  <input type="password" value={pwData.confirmPassword} onChange={(e) => setPwData({ ...pwData, confirmPassword: e.target.value })} required minLength={8} />
-                </div>
-                <button type="submit" className="btn-submit" disabled={saving || !passwordMeetsAllRules(pwData.newPassword)} style={{ maxWidth: 200 }}>
-                  {saving ? t('account', 'saving') : t('account', 'changePassword')}
-                </button>
-              </form>
+
+              {!user.hasPassword ? (
+                <>
+                  <div className="auth-message auth-info" style={{ marginBottom: '1.5rem' }}>
+                    {t('auth', 'googlePasswordHint')}
+                  </div>
+                  <h3>{t('auth', 'setPasswordAccount')}</h3>
+                  <form onSubmit={handleSetPassword} className="auth-form" style={{ maxWidth: 400 }}>
+                    <div className="form-group">
+                      <label>{t('account', 'newPassword')}</label>
+                      <input type="password" value={setPwData2.newPassword} onChange={(e) => setSetPwData({ ...setPwData2, newPassword: e.target.value })} required minLength={8} />
+                      <PasswordRequirements password={setPwData2.newPassword} />
+                    </div>
+                    <div className="form-group">
+                      <label>{t('auth', 'confirmPassword')}</label>
+                      <input type="password" value={setPwData2.confirmPassword} onChange={(e) => setSetPwData({ ...setPwData2, confirmPassword: e.target.value })} required minLength={8} />
+                    </div>
+                    <button type="submit" className="btn-submit" disabled={saving || !passwordMeetsAllRules(setPwData2.newPassword)} style={{ maxWidth: 200 }}>
+                      {saving ? t('account', 'saving') : t('auth', 'setPasswordAccount')}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <h3>{t('account', 'changePassword')}</h3>
+                  <form onSubmit={handleChangePassword} className="auth-form" style={{ maxWidth: 400 }}>
+                    <div className="form-group">
+                      <label>{t('account', 'currentPassword')}</label>
+                      <input type="password" value={pwData.currentPassword} onChange={(e) => setPwData({ ...pwData, currentPassword: e.target.value })} required />
+                    </div>
+                    <div className="form-group">
+                      <label>{t('account', 'newPassword')}</label>
+                      <input type="password" value={pwData.newPassword} onChange={(e) => setPwData({ ...pwData, newPassword: e.target.value })} required minLength={8} />
+                      <PasswordRequirements password={pwData.newPassword} />
+                    </div>
+                    <div className="form-group">
+                      <label>{t('auth', 'confirmPassword')}</label>
+                      <input type="password" value={pwData.confirmPassword} onChange={(e) => setPwData({ ...pwData, confirmPassword: e.target.value })} required minLength={8} />
+                    </div>
+                    <button type="submit" className="btn-submit" disabled={saving || !passwordMeetsAllRules(pwData.newPassword)} style={{ maxWidth: 200 }}>
+                      {saving ? t('account', 'saving') : t('account', 'changePassword')}
+                    </button>
+                  </form>
+                </>
+              )}
             </section>
           )}
         </div>

@@ -55,6 +55,7 @@ const translations = {
     loggingIn: { en: 'Logging in...', zh: '登录中...' },
     forgotPassword: { en: 'Forgot password?', zh: '忘记密码？' },
     continueWithGoogle: { en: 'Continue with Google', zh: '使用 Google 登录' },
+    signUpWithGoogle: { en: 'Sign up with Google', zh: '使用 Google 注册' },
     fullName: { en: 'Full Name', zh: '姓名' },
     fullNamePlaceholder: { en: 'Enter your full name', zh: '输入姓名' },
     email: { en: 'Email', zh: '邮箱' },
@@ -95,6 +96,8 @@ const translations = {
     setPasswordBtn: { en: 'Set Password & Continue', zh: '设置密码并继续' },
     setting: { en: 'Setting...', zh: '设置中...' },
     passwordsMismatch: { en: 'Passwords do not match', zh: '两次密码不一致' },
+    googlePasswordHint: { en: 'You signed in with Google. Set a password to also log in with email and password.', zh: '你通过 Google 登录。设置密码后也可以用邮箱密码登录。' },
+    setPasswordAccount: { en: 'Set Password', zh: '设置密码' },
   },
   userMenu: {
     myAccount: { en: 'My Account', zh: '我的账户' },

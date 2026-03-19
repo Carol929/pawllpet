@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { ShoppingCart, Search, Menu, X, ChevronDown, Globe, User, LogOut, Package, Settings } from 'lucide-react'
 import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth-context'
+import { useCart } from '@/lib/cart-context'
 
 type SubItem = { labelKey: string; href: string; color: string }
 type NavItem = { labelKey: string; href: string; subs: SubItem[] }
@@ -60,6 +61,7 @@ export default function Header() {
   const router = useRouter()
   const { locale, setLocale, t } = useLocale()
   const { user, loading: authLoading, logout } = useAuth()
+  const { totalItems } = useCart()
   const [query, setQuery] = useState('')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
@@ -194,6 +196,7 @@ export default function Header() {
 
           <Link href="/cart" className="header-cart-btn" aria-label={t('header', 'cartLabel')}>
             <ShoppingCart size={22} strokeWidth={1.8} />
+            {totalItems > 0 && <span className="cart-badge">{totalItems > 99 ? '99+' : totalItems}</span>}
           </Link>
 
           <button

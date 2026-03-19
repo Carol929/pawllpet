@@ -16,6 +16,7 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function GET() {
   try {
     const session = await auth()
+    console.log('Google session bridge - session:', JSON.stringify(session))
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'No Google session found' }, { status: 401 })
@@ -38,6 +39,7 @@ export async function GET() {
         isBlocked: true,
         createdAt: true,
         lastLoginAt: true,
+        password: true,
       },
     })
 
@@ -56,7 +58,8 @@ export async function GET() {
       .setExpirationTime('7d')
       .sign(JWT_SECRET)
 
-    const response = NextResponse.json({ user })
+    const { password, ...userWithoutPassword } = user
+    const response = NextResponse.json({ user: { ...userWithoutPassword, hasPassword: Boolean(password) } })
 
     response.cookies.set('auth-token', token, {
       httpOnly: true,

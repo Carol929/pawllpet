@@ -80,6 +80,7 @@ export async function GET(request: NextRequest) {
         isBlocked: true,
         createdAt: true,
         lastLoginAt: true,
+        password: true,
       },
     })
 
@@ -98,7 +99,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(user, { status: 200 })
+    const { password, ...userWithoutPassword } = user
+    return NextResponse.json({ ...userWithoutPassword, hasPassword: Boolean(password) }, { status: 200 })
   } catch (error) {
     console.error('获取用户信息失败:', error)
     return NextResponse.json(
