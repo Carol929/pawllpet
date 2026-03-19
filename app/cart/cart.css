@@ -45,6 +45,15 @@
   min-width: 0;
 }
 
+.cart-item-link {
+  text-decoration: none;
+  color: inherit;
+  transition: color .15s;
+}
+.cart-item-link:hover {
+  color: #D4B28C;
+}
+
 .cart-item-name {
   font-weight: 600;
   font-size: 1rem;

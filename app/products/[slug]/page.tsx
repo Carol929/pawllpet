@@ -2,18 +2,26 @@
 
 import { notFound } from 'next/navigation'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { products } from '@/lib/catalog'
 import { useCart } from '@/lib/cart-context'
+import { useAuth } from '@/lib/auth-context'
 import { Check } from 'lucide-react'
 
 export default function ProductDetail({ params }: { params: { slug: string } }) {
   const item = products.find((p) => p.slug === params.slug)
   const { addItem } = useCart()
+  const { user } = useAuth()
+  const router = useRouter()
   const [added, setAdded] = useState(false)
 
   if (!item) return notFound()
 
   function handleAdd() {
+    if (!user) {
+      router.push('/auth?tab=login')
+      return
+    }
     addItem(item!.id)
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)

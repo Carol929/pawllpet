@@ -38,9 +38,11 @@ export default function CartPage() {
         <div className="cart-items">
           {cartProducts.map((p) => (
             <div key={p.id} className="cart-item">
-              <img src={p.image} alt={p.name} className="cart-item-image" />
+              <Link href={`/products/${p.slug}`}>
+                <img src={p.image} alt={p.name} className="cart-item-image" />
+              </Link>
               <div className="cart-item-info">
-                <div className="cart-item-name">{p.name}</div>
+                <Link href={`/products/${p.slug}`} className="cart-item-name cart-item-link">{p.name}</Link>
                 <div className="cart-item-category">{p.category.replace('-', ' ')}</div>
               </div>
               <div className="qty-selector">
