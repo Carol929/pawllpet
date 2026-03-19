@@ -252,6 +252,74 @@
   font-size: 16px;
 }
 
+/* Security / Password forms */
+.account-section .auth-info {
+  background: #e8f4fd;
+  color: #1a73e8;
+  border: 1px solid #b8daf5;
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
+  font-size: .9rem;
+  line-height: 1.5;
+}
+
+.account-section .auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.account-section .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.account-section .form-group label {
+  font-size: .88rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.account-section .form-group input {
+  padding: .7rem .9rem;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: .95rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  background: #faf9f7;
+}
+
+.account-section .form-group input:focus {
+  border-color: #D4B28C;
+  box-shadow: 0 0 0 3px rgba(212, 178, 140, .15);
+  background: #fff;
+}
+
+.account-section .btn-submit {
+  padding: .7rem 1.5rem;
+  background: #1f2e44;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: .95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.account-section .btn-submit:hover {
+  background: #2a3f5c;
+}
+
+.account-section .btn-submit:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
 @media (max-width: 900px) {
   .account-layout {
     grid-template-columns: 1fr;
