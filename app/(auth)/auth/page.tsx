@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
@@ -14,6 +14,14 @@ import './auth.css'
 type Tab = 'login' | 'signup' | 'forgot'
 
 export default function AuthPage() {
+  return (
+    <Suspense>
+      <AuthPageInner />
+    </Suspense>
+  )
+}
+
+function AuthPageInner() {
   const router = useRouter()
   const { t } = useLocale()
   const { login: setAuthUser } = useAuth()
