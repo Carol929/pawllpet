@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useLocale } from '@/lib/i18n'
@@ -45,10 +45,12 @@ export default function AuthPage() {
   const [forgotCode, setForgotCode] = useState('')
   const [forgotNewPassword, setForgotNewPassword] = useState('')
 
+  const searchParams = useSearchParams()
+
   useEffect(() => {
-    const tab = new URLSearchParams(window.location.search).get('tab')
+    const tab = searchParams.get('tab')
     if (tab === 'login' || tab === 'signup') setActiveTab(tab)
-  }, [])
+  }, [searchParams])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
