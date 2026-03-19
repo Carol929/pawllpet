@@ -20,37 +20,41 @@ export const { handlers, auth } = NextAuth({
     async signIn({ user, account }) {
       if (account?.provider !== 'google' || !user.email) return true
 
-      const existing = await prisma.user.findUnique({ where: { email: user.email } })
+      try {
+        const existing = await prisma.user.findUnique({ where: { email: user.email } })
 
-      if (!existing) {
-        const username = await generateUniqueUsername(user.email, async (candidate) => {
-          const hit = await prisma.user.findUnique({ where: { username: candidate } })
-          return Boolean(hit)
-        })
+        if (!existing) {
+          const username = await generateUniqueUsername(user.email, async (candidate) => {
+            const hit = await prisma.user.findUnique({ where: { username: candidate } })
+            return Boolean(hit)
+          })
 
-        await prisma.user.create({
-          data: {
-            email: user.email,
-            fullName: user.name || 'Google User',
-            username,
-            emailVerified: true,
-            avatarUrl: user.image || undefined,
-            role: 'user',
-          },
-        })
-      } else {
-        // Update existing user: verify email if needed, update avatar if missing
-        await prisma.user.update({
-          where: { id: existing.id },
-          data: {
-            ...(!existing.emailVerified ? { emailVerified: true } : {}),
-            ...(!existing.avatarUrl && user.image ? { avatarUrl: user.image } : {}),
-            lastLoginAt: new Date(),
-          },
-        })
+          await prisma.user.create({
+            data: {
+              email: user.email,
+              fullName: user.name || 'Google User',
+              username,
+              emailVerified: true,
+              avatarUrl: user.image || undefined,
+              role: 'user',
+            },
+          })
+        } else {
+          await prisma.user.update({
+            where: { id: existing.id },
+            data: {
+              ...(!existing.emailVerified ? { emailVerified: true } : {}),
+              ...(!existing.avatarUrl && user.image ? { avatarUrl: user.image } : {}),
+              lastLoginAt: new Date(),
+            },
+          })
+        }
+
+        return true
+      } catch (error) {
+        console.error('Google signIn callback error:', error)
+        return true // Still allow sign-in even if DB fails
       }
-
-      return true
     },
     async redirect({ url, baseUrl }) {
       if (url.startsWith('/')) return `${baseUrl}${url}`
