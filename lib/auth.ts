@@ -56,6 +56,25 @@ export const { handlers, auth } = NextAuth({
         return true // Still allow sign-in even if DB fails
       }
     },
+    async jwt({ token, user, account }) {
+      // On initial sign-in, look up the user's role from DB
+      if (account && user?.email) {
+        const dbUser = await prisma.user.findUnique({ where: { email: user.email } })
+        if (dbUser) {
+          token.userId = dbUser.id
+          token.role = dbUser.role
+        }
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        const u = session.user as { id?: unknown; role?: unknown }
+        u.id = token.userId
+        u.role = token.role
+      }
+      return session
+    },
     async redirect({ url, baseUrl }) {
       if (url.startsWith('/')) return `${baseUrl}${url}`
       if (url.startsWith(baseUrl)) return url
