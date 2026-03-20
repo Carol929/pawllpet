@@ -1,10 +1,33 @@
+'use client'
+
 import { ProductGrid } from '@/components/ProductGrid'
-import { products } from '@/lib/catalog'
+import { useProducts } from '@/lib/use-products'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
-export default function ShopPage({ searchParams }: { searchParams?: { q?: string; pet?: string } }) {
-  const q = searchParams?.q?.toLowerCase() || ''
-  const pet = searchParams?.pet
-  const filtered = products.filter((p) => (!q || p.name.toLowerCase().includes(q)) && (!pet || p.petType === pet))
+function ShopContent() {
+  const searchParams = useSearchParams()
+  const q = searchParams.get('q') || ''
+  const pet = searchParams.get('pet') || ''
 
-  return <main className="container page-stack"><h1>Shop all</h1><ProductGrid items={filtered} /></main>
+  const params: Record<string, string> = {}
+  if (q) params.search = q
+  if (pet) params.petType = pet
+
+  const { products, loading } = useProducts(params)
+
+  return (
+    <main className="container page-stack">
+      <h1>Shop all</h1>
+      {loading ? <p>Loading...</p> : <ProductGrid items={products} />}
+    </main>
+  )
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={<main className="container page-stack"><h1>Shop all</h1><p>Loading...</p></main>}>
+      <ShopContent />
+    </Suspense>
+  )
 }

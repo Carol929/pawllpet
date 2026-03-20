@@ -2,14 +2,15 @@
 
 import Link from 'next/link'
 import { ProductGrid } from '@/components/ProductGrid'
-import { products, collections } from '@/lib/catalog'
+import { collections } from '@/lib/products'
 import { HeroCarousel } from '@/components/HeroCarousel'
 import { useLocale } from '@/lib/i18n'
+import { useProducts } from '@/lib/use-products'
 
 export default function HomePage() {
   const { t } = useLocale()
-  const newArrivals = products.filter((p) => p.isNew).slice(0, 4)
-  const best = products.filter((p) => p.isBestSeller).slice(0, 4)
+  const { products: newArrivals } = useProducts({ isNew: 'true', limit: '4' })
+  const { products: best } = useProducts({ isBestSeller: 'true', limit: '4' })
 
   return (
     <main className="container page-stack">

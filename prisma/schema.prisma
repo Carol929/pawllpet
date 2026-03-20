@@ -37,7 +37,81 @@ model User {
   // 邮箱验证Token
   emailVerificationToken EmailVerificationToken?
 
+  // 关联
+  products Product[] // 管理员创建的产品
+
   @@map("users")
+}
+
+// 产品分类表
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  products Product[]
+
+  @@map("categories")
+}
+
+// 产品表
+model Product {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  description    String   @db.Text
+  categoryId     String
+  petType        String   @default("Both") // "Dog", "Cat", "Both"
+  brand          String?
+  material       String?
+  price          Float    @default(0)
+  compareAtPrice Float?
+  stock          Int      @default(0)
+  rating         Float    @default(0)
+  status         String   @default("draft") // "draft", "live", "archived"
+  isNew          Boolean  @default(false)
+  isBestSeller   Boolean  @default(false)
+  isDrop         Boolean  @default(false)
+  isBundle       Boolean  @default(false)
+  createdById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  category  Category         @relation(fields: [categoryId], references: [id])
+  createdBy User?            @relation(fields: [createdById], references: [id])
+  images    ProductImage[]
+  variants  ProductVariant[]
+
+  @@map("products")
+}
+
+// 产品图片表
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  alt       String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+// 产品变体表 (如不同类型/尺寸)
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  name      String
+  sku       String?  @unique
+  price     Float
+  stock     Int      @default(0)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_variants")
 }
 
 // NextAuth.js - OAuth账号表

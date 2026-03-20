@@ -3,9 +3,21 @@ import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
+const categories = [
+  { name: 'Toys', slug: 'toys' },
+  { name: 'Treats', slug: 'treats' },
+  { name: 'Grooming', slug: 'grooming' },
+  { name: 'Accessories', slug: 'accessories' },
+  { name: 'Beds', slug: 'beds' },
+  { name: 'Apparel', slug: 'apparel' },
+  { name: 'Feeders & Bowls', slug: 'feeders-bowls' },
+  { name: 'Travel', slug: 'travel' },
+]
+
 async function main() {
   const password = await bcrypt.hash('admin123', 10)
 
+  // Seed admin user
   await prisma.user.upsert({
     where: { email: 'admin@pawllpet.com' },
     update: { role: 'admin', emailVerified: true },
@@ -20,22 +32,16 @@ async function main() {
     },
   })
 
-  for (let i = 1; i <= 8; i++) {
-    await prisma.user.upsert({
-      where: { email: `customer${i}@pawllpet.com` },
-      update: {},
-      create: {
-        fullName: `PawLL Customer ${i}`,
-        username: `customer${i}`,
-        email: `customer${i}@pawllpet.com`,
-        password,
-        emailVerified: true,
-        petType: i % 2 ? 'Dog' : 'Cat',
-      },
+  // Seed categories
+  for (const cat of categories) {
+    await prisma.category.upsert({
+      where: { slug: cat.slug },
+      update: { name: cat.name },
+      create: cat,
     })
   }
 
-  console.log('Seed complete: admin@pawllpet.com / admin123')
+  console.log('Seed complete: admin user + 8 categories')
 }
 
 main().finally(async () => prisma.$disconnect())

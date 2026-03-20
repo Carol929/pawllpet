@@ -1,0 +1,282 @@
+'use client'
+
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Upload, X, Plus } from 'lucide-react'
+import Link from 'next/link'
+
+interface Category { id: string; name: string; slug: string }
+interface Variant { name: string; price: number; stock: number; sku: string }
+
+function slugify(text: string) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+}
+
+export default function EditProduct({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const router = useRouter()
+  const [categories, setCategories] = useState<Category[]>([])
+  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState<{ msg: string; type: string } | null>(null)
+  const [imageUrls, setImageUrls] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [variants, setVariants] = useState<Variant[]>([])
+
+  const [form, setForm] = useState({
+    name: '', slug: '', description: '', categoryId: '', petType: 'Both',
+    brand: '', material: '', price: 0, compareAtPrice: 0, stock: 0,
+    status: 'draft', isNew: false, isBestSeller: false, isDrop: false, isBundle: false,
+  })
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/admin/categories').then(r => r.json()),
+      fetch(`/api/admin/products/${id}`).then(r => r.json()),
+    ]).then(([cats, product]) => {
+      setCategories(cats)
+      if (product.id) {
+        setForm({
+          name: product.name, slug: product.slug, description: product.description,
+          categoryId: product.categoryId, petType: product.petType,
+          brand: product.brand || '', material: product.material || '',
+          price: product.price, compareAtPrice: product.compareAtPrice || 0,
+          stock: product.stock, status: product.status,
+          isNew: product.isNew, isBestSeller: product.isBestSeller,
+          isDrop: product.isDrop, isBundle: product.isBundle,
+        })
+        setImageUrls(product.images?.map((img: { url: string }) => img.url) || [])
+        setVariants(product.variants?.map((v: Variant & { sku?: string }) => ({
+          name: v.name, price: v.price, stock: v.stock, sku: v.sku || '',
+        })) || [])
+      }
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [id])
+
+  const updateField = (field: string, value: string | number | boolean) => {
+    setForm(prev => {
+      const next = { ...prev, [field]: value }
+      if (field === 'name' && !prev.slug) next.slug = slugify(value as string)
+      return next
+    })
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files?.length) return
+    setUploading(true)
+
+    for (const file of Array.from(files)) {
+      const fd = new FormData()
+      fd.append('file', file)
+      try {
+        const res = await fetch('/api/admin/products/upload', { method: 'POST', body: fd })
+        const data = await res.json()
+        if (data.url) setImageUrls(prev => [...prev, data.url])
+        else setToast({ msg: data.error || 'Upload failed', type: 'error' })
+      } catch {
+        setToast({ msg: 'Upload failed', type: 'error' })
+      }
+    }
+    setUploading(false)
+    e.target.value = ''
+  }
+
+  const removeImage = (index: number) => {
+    setImageUrls(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const addVariant = () => {
+    setVariants(prev => [...prev, { name: '', price: 0, stock: 0, sku: '' }])
+  }
+
+  const updateVariant = (index: number, field: string, value: string | number) => {
+    setVariants(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v))
+  }
+
+  const removeVariant = (index: number) => {
+    setVariants(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+
+    try {
+      const res = await fetch(`/api/admin/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          price: Number(form.price),
+          compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : null,
+          stock: Number(form.stock),
+          imageUrls,
+          variants: variants.filter(v => v.name).map(v => ({
+            ...v,
+            price: Number(v.price),
+            stock: Number(v.stock),
+            sku: v.sku || null,
+          })),
+        }),
+      })
+
+      if (res.ok) {
+        setToast({ msg: 'Product updated!', type: 'success' })
+        setTimeout(() => router.push('/admin/products'), 1000)
+      } else {
+        const err = await res.json()
+        setToast({ msg: err.error || 'Failed to update', type: 'error' })
+      }
+    } catch {
+      setToast({ msg: 'Failed to update product', type: 'error' })
+    }
+    setSaving(false)
+    setTimeout(() => setToast(null), 4000)
+  }
+
+  if (loading) return <div className="admin-loading">Loading product...</div>
+
+  return (
+    <>
+      {toast && <div className={`admin-toast admin-toast-${toast.type}`}>{toast.msg}</div>}
+
+      <div className="admin-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Link href="/admin/products" className="admin-btn admin-btn-sm"><ArrowLeft size={16} /></Link>
+          <h1>Edit Product</h1>
+          <span className={`badge badge-${form.status}`}>{form.status}</span>
+        </div>
+        <button className="admin-btn admin-btn-primary" onClick={handleSubmit} disabled={saving}>
+          {saving ? 'Saving...' : 'Update Product'}
+        </button>
+      </div>
+
+      <form className="admin-form" onSubmit={handleSubmit}>
+        <div className="admin-form-section">
+          <h2>Basic Information</h2>
+          <div className="admin-form-grid">
+            <div className="admin-form-group">
+              <label>Product Name *</label>
+              <input required value={form.name} onChange={e => updateField('name', e.target.value)} />
+            </div>
+            <div className="admin-form-group">
+              <label>Slug</label>
+              <input value={form.slug} onChange={e => updateField('slug', e.target.value)} />
+            </div>
+            <div className="admin-form-group full">
+              <label>Description *</label>
+              <textarea required value={form.description} onChange={e => updateField('description', e.target.value)} />
+            </div>
+            <div className="admin-form-group">
+              <label>Category *</label>
+              <select required value={form.categoryId} onChange={e => updateField('categoryId', e.target.value)}>
+                <option value="">Select category</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="admin-form-group">
+              <label>Pet Type</label>
+              <select value={form.petType} onChange={e => updateField('petType', e.target.value)}>
+                <option value="Dog">Dog</option>
+                <option value="Cat">Cat</option>
+                <option value="Both">Both</option>
+              </select>
+            </div>
+            <div className="admin-form-group">
+              <label>Brand</label>
+              <input value={form.brand} onChange={e => updateField('brand', e.target.value)} />
+            </div>
+            <div className="admin-form-group">
+              <label>Material</label>
+              <input value={form.material} onChange={e => updateField('material', e.target.value)} />
+            </div>
+          </div>
+        </div>
+
+        <div className="admin-form-section">
+          <h2>Images</h2>
+          <div className="admin-images">
+            {imageUrls.map((url, i) => (
+              <div key={i} className="admin-image-item">
+                <img src={url} alt={`Product image ${i + 1}`} />
+                <button type="button" className="admin-image-remove" onClick={() => removeImage(i)}><X size={12} /></button>
+              </div>
+            ))}
+            <label className="admin-image-upload">
+              <Upload size={20} />
+              <span>{uploading ? 'Uploading...' : 'Upload'}</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={handleImageUpload} disabled={uploading} />
+            </label>
+          </div>
+        </div>
+
+        <div className="admin-form-section">
+          <h2>Pricing & Inventory</h2>
+          <div className="admin-form-grid">
+            <div className="admin-form-group">
+              <label>Price ($) *</label>
+              <input type="number" step="0.01" min="0" required value={form.price} onChange={e => updateField('price', e.target.value)} />
+            </div>
+            <div className="admin-form-group">
+              <label>Compare at Price ($)</label>
+              <input type="number" step="0.01" min="0" value={form.compareAtPrice} onChange={e => updateField('compareAtPrice', e.target.value)} />
+            </div>
+            <div className="admin-form-group">
+              <label>Stock</label>
+              <input type="number" min="0" value={form.stock} onChange={e => updateField('stock', e.target.value)} />
+            </div>
+            <div className="admin-form-group">
+              <label>Status</label>
+              <select value={form.status} onChange={e => updateField('status', e.target.value)}>
+                <option value="draft">Draft</option>
+                <option value="live">Live</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="admin-form-section">
+          <h2>Badges</h2>
+          <div className="admin-checkbox-group">
+            {['isNew', 'isBestSeller', 'isDrop', 'isBundle'].map(field => (
+              <label key={field} className="admin-checkbox">
+                <input type="checkbox" checked={form[field as keyof typeof form] as boolean} onChange={e => updateField(field, e.target.checked)} />
+                {field === 'isNew' ? 'New Arrival' : field === 'isBestSeller' ? 'Best Seller' : field === 'isDrop' ? 'Limited Drop' : 'Bundle'}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="admin-form-section">
+          <h2>Variants</h2>
+          <p style={{ fontSize: '.85rem', color: '#6b7280', margin: '0 0 1rem' }}>Add variants for different types, sizes, or flavors.</p>
+          {variants.map((v, i) => (
+            <div key={i} className="admin-variant-row">
+              <div className="admin-form-group">
+                <label>Name</label>
+                <input value={v.name} onChange={e => updateVariant(i, 'name', e.target.value)} placeholder="e.g. Large, Bone" />
+              </div>
+              <div className="admin-form-group">
+                <label>Price ($)</label>
+                <input type="number" step="0.01" min="0" value={v.price} onChange={e => updateVariant(i, 'price', e.target.value)} />
+              </div>
+              <div className="admin-form-group">
+                <label>Stock</label>
+                <input type="number" min="0" value={v.stock} onChange={e => updateVariant(i, 'stock', e.target.value)} />
+              </div>
+              <button type="button" className="admin-btn admin-btn-sm admin-btn-danger" style={{ marginBottom: 4 }} onClick={() => removeVariant(i)}>
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+          <button type="button" className="admin-btn" onClick={addVariant} style={{ marginTop: 8 }}>
+            <Plus size={16} /> Add Variant
+          </button>
+        </div>
+      </form>
+    </>
+  )
+}
