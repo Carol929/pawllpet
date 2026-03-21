@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { signIn } from 'next-auth/react'
 import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth-context'
 import PasswordRequirements, { passwordMeetsAllRules } from '@/components/PasswordRequirements'
@@ -159,7 +160,7 @@ export default function AuthPage() {
   }
 
   const handleGoogleLogin = () => {
-    window.location.href = '/api/auth/signin/google'
+    signIn('google', { callbackUrl: '/auth/google-callback' })
   }
 
   const switchTab = (tab: Tab) => {
