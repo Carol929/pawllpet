@@ -109,7 +109,7 @@ export async function getProducts(filters?: {
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  const product = await prisma.product.findUnique({
+  const product = await prisma.product.findFirst({
     where: { slug, status: 'live' },
     include: defaultInclude,
   })
