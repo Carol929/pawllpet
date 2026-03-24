@@ -51,7 +51,7 @@ export default function CartPage() {
 
   const subtotal = cartProducts.reduce((sum, p) => sum + p.price * p.quantity, 0)
   const totalCount = cartProducts.reduce((sum, p) => sum + p.quantity, 0)
-  const freeShipping = subtotal >= 65
+  const freeShipping = subtotal >= 50
   const shipping = freeShipping ? 0 : 5.99
 
   async function handleCheckout() {
@@ -164,7 +164,7 @@ export default function CartPage() {
           <button className="cart-checkout-btn" onClick={handleCheckout} disabled={checkingOut}>
             {checkingOut ? 'PROCESSING...' : showAddress ? 'PAY NOW' : 'CHECK OUT'}
           </button>
-          {!freeShipping && <div className="cart-free-shipping">Add <strong>${(65 - subtotal).toFixed(2)}</strong> more for free shipping!</div>}
+          {!freeShipping && <div className="cart-free-shipping">Add <strong>${(50 - subtotal).toFixed(2)}</strong> more for free shipping!</div>}
         </div>
       </div>
     </main>

@@ -12,7 +12,7 @@ export default function ShippingPolicyPage() {
         <div className="policy-content">
           <section><h2>配送方式</h2>
             <table className="policy-table"><thead><tr><th>方式</th><th>时效</th><th>费用</th></tr></thead><tbody>
-              <tr><td>标准配送</td><td>5-7个工作日</td><td>$5.99（满$65免运费）</td></tr>
+              <tr><td>标准配送</td><td>5-7个工作日</td><td>$5.99（满$50免运费）</td></tr>
               <tr><td>快递配送</td><td>2-3个工作日</td><td>$12.99</td></tr>
               <tr><td>次日达</td><td>1个工作日</td><td>$19.99</td></tr>
             </tbody></table>
@@ -32,7 +32,7 @@ export default function ShippingPolicyPage() {
       <div className="policy-content">
         <section><h2>Shipping Methods</h2>
           <table className="policy-table"><thead><tr><th>Method</th><th>Delivery Time</th><th>Cost</th></tr></thead><tbody>
-            <tr><td>Standard Shipping</td><td>5-7 business days</td><td>$5.99 (Free over $65)</td></tr>
+            <tr><td>Standard Shipping</td><td>5-7 business days</td><td>$5.99 (Free over $50)</td></tr>
             <tr><td>Express Shipping</td><td>2-3 business days</td><td>$12.99</td></tr>
             <tr><td>Next-Day Delivery</td><td>1 business day</td><td>$19.99</td></tr>
           </tbody></table>

@@ -31,7 +31,7 @@ const translations = {
     searchPlaceholder: { en: 'Search products', zh: '搜索商品' },
     logIn: { en: 'Log In', zh: '登录' },
     signUp: { en: 'Sign Up', zh: '注册' },
-    topBanner: { en: 'Free shipping over $65 • Earn Paw Points on every order', zh: '满$65免运费 · 每笔订单赚取爪印积分' },
+    topBanner: { en: 'Free shipping over $50 • Earn Paw Points on every order', zh: '满$50免运费 · 每笔订单赚取爪印积分' },
     cartLabel: { en: 'Shopping cart', zh: '购物车' },
     openMenu: { en: 'Open menu', zh: '打开菜单' },
     closeMenu: { en: 'Close menu', zh: '关闭菜单' },

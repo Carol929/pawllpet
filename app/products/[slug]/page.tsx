@@ -70,7 +70,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
   const displayPrice = selectedVariant !== null && item.variants?.[selectedVariant]
     ? item.variants[selectedVariant].price
     : item.price
-  const freeShipping = displayPrice >= 29
+  const freeShipping = displayPrice >= 50
 
   function handleAdd() {
     if (!user) {
@@ -163,7 +163,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
           {freeShipping && (
             <div className="pdp-badge pdp-badge--shipping">
               <Truck size={14} />
-              <span>Free shipping over $29.00</span>
+              <span>Free shipping over $50.00</span>
             </div>
           )}
 

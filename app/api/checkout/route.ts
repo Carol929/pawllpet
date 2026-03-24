@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No valid products' }, { status: 400 })
     }
 
-    const shipping = subtotal >= 65 ? 0 : 5.99
+    const shipping = subtotal >= 50 ? 0 : 5.99
     const total = subtotal + shipping
 
     // Create order in DB (pending until Stripe confirms)

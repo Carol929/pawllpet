@@ -5,20 +5,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const slides = [
   {
+    src: '/comingsoon.jpg',
+    alt: 'PawLL Pet - Coming Soon',
+  },
+  {
     src: '/mainpage.jpg',
     alt: 'PawLL Pet - Premium pet essentials',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=1200&h=500&fit=crop&q=80',
-    alt: 'Cat with beautiful eyes',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=1200&h=500&fit=crop&q=80',
-    alt: 'Two dogs running on the beach',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1526336024174-e58f5cdd8e13?w=1200&h=500&fit=crop&q=80',
-    alt: 'Cat looking up curiously',
   },
 ]
 
