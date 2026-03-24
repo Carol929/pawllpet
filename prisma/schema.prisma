@@ -38,7 +38,9 @@ model User {
   emailVerificationToken EmailVerificationToken?
 
   // 关联
-  products Product[] // 管理员创建的产品
+  products  Product[]  // 管理员创建的产品
+  addresses Address[]  // 收货地址
+  orders    Order[]    // 订单
 
   @@map("users")
 }
@@ -112,6 +114,58 @@ model ProductVariant {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_variants")
+}
+
+// 收货地址表
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String   @default("Home")
+  fullName  String
+  phone     String?
+  street    String
+  city      String
+  state     String
+  zip       String
+  country   String   @default("US")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("addresses")
+}
+
+// 订单表
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  status          String      @default("pending")
+  total           Float
+  subtotal        Float
+  shipping        Float       @default(0)
+  shippingAddress Json
+  stripeSessionId String?     @unique
+  trackingNumber  String?
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("orders")
+}
+
+// 订单商品表
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  name      String
+  image     String
+  price     Float
+  quantity  Int
+
+  @@map("order_items")
 }
 
 // NextAuth.js - OAuth账号表

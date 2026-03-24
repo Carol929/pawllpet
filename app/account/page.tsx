@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useLocale } from '@/lib/i18n'
-import { User, Package, MapPin, Star, Lock, LogOut, Camera } from 'lucide-react'
+import { User, Package, MapPin, Star, Lock, LogOut, Camera, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import PasswordRequirements, { passwordMeetsAllRules } from '@/components/PasswordRequirements'
 import './account.css'
 
@@ -350,23 +350,11 @@ export default function AccountPage() {
           )}
 
           {activeSection === 'orders' && (
-            <section className="account-section">
-              <h2>{t('account', 'orders')}</h2>
-              <div className="account-empty">
-                <Package size={48} strokeWidth={1} />
-                <p>{t('account', 'noOrders')}</p>
-              </div>
-            </section>
+            <OrdersSection />
           )}
 
           {activeSection === 'addresses' && (
-            <section className="account-section">
-              <h2>{t('account', 'addresses')}</h2>
-              <div className="account-empty">
-                <MapPin size={48} strokeWidth={1} />
-                <p>{t('account', 'noAddresses')}</p>
-              </div>
-            </section>
+            <AddressesSection />
           )}
 
           {activeSection === 'rewards' && (
@@ -434,5 +422,157 @@ export default function AccountPage() {
         </div>
       </div>
     </main>
+  )
+}
+
+/* ─── Orders Section ─── */
+interface OrderData { id: string; status: string; total: number; createdAt: string; trackingNumber?: string; items: { id: string; name: string; image: string; price: number; quantity: number }[] }
+
+function OrdersSection() {
+  const { locale } = useLocale()
+  const [orders, setOrders] = useState<OrderData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/orders').then(r => r.json()).then(d => { setOrders(d); setLoading(false) }).catch(() => setLoading(false))
+  }, [])
+
+  const statusLabel: Record<string, { en: string; zh: string }> = {
+    pending: { en: 'Pending', zh: '待付款' }, paid: { en: 'Paid', zh: '已付款' },
+    shipped: { en: 'Shipped', zh: '已发货' }, delivered: { en: 'Delivered', zh: '已送达' },
+    cancelled: { en: 'Cancelled', zh: '已取消' },
+  }
+
+  if (loading) return <section className="account-section"><p>Loading...</p></section>
+
+  if (!orders.length) return (
+    <section className="account-section">
+      <h2>{locale === 'zh' ? '订单历史' : 'Order History'}</h2>
+      <div className="account-empty"><Package size={48} strokeWidth={1} /><p>{locale === 'zh' ? '暂无订单' : 'No orders yet'}</p></div>
+    </section>
+  )
+
+  return (
+    <section className="account-section">
+      <h2>{locale === 'zh' ? '订单历史' : 'Order History'}</h2>
+      <div className="orders-list">
+        {orders.map(o => (
+          <div key={o.id} className="order-card">
+            <button className="order-card-header" onClick={() => setExpanded(expanded === o.id ? null : o.id)}>
+              <div>
+                <span className="order-id">#{o.id.slice(-8).toUpperCase()}</span>
+                <span className={`order-status order-status--${o.status}`}>{statusLabel[o.status]?.[locale] || o.status}</span>
+              </div>
+              <div>
+                <span className="order-date">{new Date(o.createdAt).toLocaleDateString()}</span>
+                <span className="order-total">${o.total.toFixed(2)}</span>
+                {expanded === o.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </div>
+            </button>
+            {expanded === o.id && (
+              <div className="order-card-body">
+                {o.items.map(item => (
+                  <div key={item.id} className="order-item">
+                    <img src={item.image} alt={item.name} className="order-item-img" />
+                    <span className="order-item-name">{item.name}</span>
+                    <span className="order-item-qty">x{item.quantity}</span>
+                    <span className="order-item-price">${(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                ))}
+                {o.trackingNumber && <p className="order-tracking">{locale === 'zh' ? '追踪号' : 'Tracking'}: {o.trackingNumber}</p>}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/* ─── Addresses Section ─── */
+interface Addr { id: string; label: string; fullName: string; phone?: string; street: string; city: string; state: string; zip: string; country: string; isDefault: boolean }
+
+function AddressesSection() {
+  const { locale } = useLocale()
+  const [addresses, setAddresses] = useState<Addr[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ label: 'Home', fullName: '', phone: '', street: '', city: '', state: '', zip: '', country: 'US', isDefault: false })
+  const [saving, setSaving] = useState(false)
+
+  function load() { fetch('/api/addresses').then(r => r.json()).then(d => { setAddresses(d); setLoading(false) }).catch(() => setLoading(false)) }
+  useEffect(load, [])
+
+  async function handleSave() {
+    if (!form.fullName || !form.street || !form.city || !form.state || !form.zip) return
+    setSaving(true)
+    await fetch('/api/addresses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+    setShowForm(false)
+    setForm({ label: 'Home', fullName: '', phone: '', street: '', city: '', state: '', zip: '', country: 'US', isDefault: false })
+    setSaving(false)
+    load()
+  }
+
+  async function handleDelete(id: string) {
+    await fetch(`/api/addresses/${id}`, { method: 'DELETE' })
+    load()
+  }
+
+  async function handleSetDefault(id: string) {
+    await fetch(`/api/addresses/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isDefault: true }) })
+    load()
+  }
+
+  if (loading) return <section className="account-section"><p>Loading...</p></section>
+
+  return (
+    <section className="account-section">
+      <div className="section-header-row">
+        <h2>{locale === 'zh' ? '收货地址' : 'Addresses'}</h2>
+        <button className="btn-secondary btn-sm" onClick={() => setShowForm(!showForm)}><Plus size={14} /> {locale === 'zh' ? '添加' : 'Add'}</button>
+      </div>
+
+      {showForm && (
+        <div className="addr-form">
+          <select value={form.label} onChange={e => setForm({ ...form, label: e.target.value })}>
+            <option value="Home">{locale === 'zh' ? '家' : 'Home'}</option>
+            <option value="Work">{locale === 'zh' ? '公司' : 'Work'}</option>
+            <option value="Other">{locale === 'zh' ? '其他' : 'Other'}</option>
+          </select>
+          <input placeholder={locale === 'zh' ? '收件人姓名' : 'Full Name'} value={form.fullName} onChange={e => setForm({ ...form, fullName: e.target.value })} />
+          <input placeholder={locale === 'zh' ? '电话' : 'Phone'} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+          <input placeholder={locale === 'zh' ? '街道地址' : 'Street'} value={form.street} onChange={e => setForm({ ...form, street: e.target.value })} />
+          <div className="addr-form-row">
+            <input placeholder={locale === 'zh' ? '城市' : 'City'} value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} />
+            <input placeholder={locale === 'zh' ? '州/省' : 'State'} value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} />
+            <input placeholder="ZIP" value={form.zip} onChange={e => setForm({ ...form, zip: e.target.value })} />
+          </div>
+          <label className="addr-default-label"><input type="checkbox" checked={form.isDefault} onChange={e => setForm({ ...form, isDefault: e.target.checked })} /> {locale === 'zh' ? '设为默认' : 'Set as default'}</label>
+          <button className="btn-primary btn-sm" onClick={handleSave} disabled={saving}>{saving ? '...' : locale === 'zh' ? '保存' : 'Save'}</button>
+        </div>
+      )}
+
+      {!addresses.length && !showForm ? (
+        <div className="account-empty"><MapPin size={48} strokeWidth={1} /><p>{locale === 'zh' ? '暂无收货地址' : 'No saved addresses'}</p></div>
+      ) : (
+        <div className="addr-list">
+          {addresses.map(a => (
+            <div key={a.id} className={`addr-card ${a.isDefault ? 'addr-card--default' : ''}`}>
+              <div className="addr-card-top">
+                <span className="addr-label">{a.label}</span>
+                {a.isDefault && <span className="addr-badge">{locale === 'zh' ? '默认' : 'Default'}</span>}
+              </div>
+              <p className="addr-name">{a.fullName}{a.phone ? ` · ${a.phone}` : ''}</p>
+              <p className="addr-line">{a.street}, {a.city}, {a.state} {a.zip}</p>
+              <div className="addr-actions">
+                {!a.isDefault && <button className="addr-action-btn" onClick={() => handleSetDefault(a.id)}>{locale === 'zh' ? '设为默认' : 'Set Default'}</button>}
+                <button className="addr-action-btn addr-action-btn--danger" onClick={() => handleDelete(a.id)}><Trash2 size={14} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }
