@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart-context'
@@ -8,8 +8,8 @@ import { useAuth } from '@/lib/auth-context'
 import { Check, ChevronLeft, ChevronRight, Share2, Truck } from 'lucide-react'
 import { Product } from '@/lib/product-types'
 
-export default function ProductDetail({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params)
+export default function ProductDetail({ params }: { params: { slug: string } }) {
+  const { slug } = params
   const { addItem } = useCart()
   const { user } = useAuth()
   const router = useRouter()
@@ -18,6 +18,7 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null)
+  const [quantity, setQuantity] = useState(1)
 
   useEffect(() => {
     fetch(`/api/products/${slug}`)
@@ -66,7 +67,7 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
       router.push('/auth?tab=login')
       return
     }
-    addItem(item!.id)
+    addItem(item!.id, quantity)
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
   }
@@ -173,6 +174,16 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
               </div>
             </div>
           )}
+
+          {/* Quantity */}
+          <div className="pdp-quantity">
+            <span className="pdp-section-label">Quantity</span>
+            <div className="pdp-qty-selector">
+              <button className="pdp-qty-btn" onClick={() => setQuantity(q => Math.max(1, q - 1))} disabled={quantity <= 1}>−</button>
+              <span className="pdp-qty-value">{quantity}</span>
+              <button className="pdp-qty-btn" onClick={() => setQuantity(q => q + 1)}>+</button>
+            </div>
+          </div>
 
           {/* Add to Cart */}
           <button

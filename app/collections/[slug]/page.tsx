@@ -1,12 +1,11 @@
 'use client'
 
-import { use } from 'react'
 import { collections } from '@/lib/static-data'
 import { ProductGrid } from '@/components/ProductGrid'
 import { useProducts } from '@/lib/use-products'
 
-export default function CollectionDetail({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params)
+export default function CollectionDetail({ params }: { params: { slug: string } }) {
+  const { slug } = params
   const { products, loading } = useProducts({ limit: '8' })
 
   const c = collections.find((c) => c.slug === slug)
