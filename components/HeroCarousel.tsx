@@ -5,8 +5,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const slides = [
   {
-    src: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=1200&h=500&fit=crop&q=80',
-    alt: 'Golden retriever smiling',
+    src: '/mainpage.jpg',
+    alt: 'PawLL Pet - Premium pet essentials',
   },
   {
     src: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=1200&h=500&fit=crop&q=80',

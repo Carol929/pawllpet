@@ -12,7 +12,7 @@ export default function Footer() {
       <div className="container footer-grid">
         <div>
           <div className="footer-brand">
-            <Image src="/logo.png" alt="PawLL Pet" width={68} height={68} />
+            <Image src="/logo.png" alt="PawLL Pet" width={90} height={90} />
           </div>
           <p>{t('footer', 'tagline')}</p>
         </div>
