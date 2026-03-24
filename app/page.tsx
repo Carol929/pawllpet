@@ -9,6 +9,7 @@ import { useProducts } from '@/lib/use-products'
 
 export default function HomePage() {
   const { t } = useLocale()
+  const { products: allProducts } = useProducts({ limit: '8' })
   const { products: newArrivals } = useProducts({ isNew: 'true', limit: '4' })
   const { products: best } = useProducts({ isBestSeller: 'true', limit: '4' })
 
@@ -29,15 +30,24 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="section-oval section-oval--arrivals">
-        <h2>{t('home', 'newArrivals')}</h2>
-        <ProductGrid items={newArrivals} />
+      <section className="section-oval">
+        <h2>{t('home', 'allProducts')}</h2>
+        <ProductGrid items={allProducts} />
       </section>
 
-      <section className="section-oval section-oval--best">
-        <h2>{t('home', 'bestSellers')}</h2>
-        <ProductGrid items={best} />
-      </section>
+      {newArrivals.length > 0 && (
+        <section className="section-oval section-oval--arrivals">
+          <h2>{t('home', 'newArrivals')}</h2>
+          <ProductGrid items={newArrivals} />
+        </section>
+      )}
+
+      {best.length > 0 && (
+        <section className="section-oval section-oval--best">
+          <h2>{t('home', 'bestSellers')}</h2>
+          <ProductGrid items={best} />
+        </section>
+      )}
     </main>
   )
 }

@@ -40,6 +40,7 @@ const translations = {
     featuredCollections: { en: 'Featured collections', zh: '精选系列' },
     newArrivals: { en: 'New arrivals', zh: '新品上架' },
     bestSellers: { en: 'Best sellers', zh: '热销商品' },
+    allProducts: { en: 'All Products', zh: '全部产品' },
     explore: { en: 'Explore', zh: '探索' },
     viewDetails: { en: 'View details', zh: '查看详情' },
   },
