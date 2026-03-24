@@ -5,13 +5,22 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
-import { Check, ChevronLeft, ChevronRight, Share2, Truck } from 'lucide-react'
+import { useLocale } from '@/lib/i18n'
+import { Check, ChevronLeft, ChevronRight, Share2, Truck, ShieldCheck, RotateCcw, Package } from 'lucide-react'
 import { Product } from '@/lib/product-types'
+
+function parseDescription(desc: string) {
+  // Split by • bullet points and filter empty
+  const parts = desc.split('•').map(s => s.trim()).filter(Boolean)
+  if (parts.length <= 1) return { intro: desc, bullets: [] }
+  return { intro: parts[0], bullets: parts.slice(1) }
+}
 
 export default function ProductDetail({ params }: { params: { slug: string } }) {
   const { slug } = params
   const { addItem } = useCart()
   const { user } = useAuth()
+  const { locale } = useLocale()
   const router = useRouter()
   const [added, setAdded] = useState(false)
   const [item, setItem] = useState<Product | null>(null)
@@ -19,6 +28,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
   const [selectedImage, setSelectedImage] = useState(0)
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null)
   const [quantity, setQuantity] = useState(1)
+  const [activeTab, setActiveTab] = useState<'description' | 'details' | 'shipping'>('description')
 
   useEffect(() => {
     fetch(`/api/products/${slug}`)
@@ -206,10 +216,80 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
         </div>
       </div>
 
-      {/* Description Section */}
-      <div className="pdp-description">
-        <h2 className="pdp-description-title">Product Details</h2>
-        <p className="pdp-description-text">{item.description}</p>
+      {/* Tabs Section */}
+      <div className="pdp-tabs-section">
+        <div className="pdp-tabs">
+          <button className={`pdp-tab ${activeTab === 'description' ? 'pdp-tab--active' : ''}`} onClick={() => setActiveTab('description')}>
+            {locale === 'zh' ? '商品描述' : 'Description'}
+          </button>
+          <button className={`pdp-tab ${activeTab === 'details' ? 'pdp-tab--active' : ''}`} onClick={() => setActiveTab('details')}>
+            {locale === 'zh' ? '商品详情' : 'Details'}
+          </button>
+          <button className={`pdp-tab ${activeTab === 'shipping' ? 'pdp-tab--active' : ''}`} onClick={() => setActiveTab('shipping')}>
+            {locale === 'zh' ? '配送 & 退货' : 'Shipping & Returns'}
+          </button>
+        </div>
+
+        <div className="pdp-tab-content">
+          {activeTab === 'description' && (() => {
+            const { intro, bullets } = parseDescription(item.description)
+            return (
+              <div className="pdp-desc-content">
+                <p className="pdp-desc-intro">{intro}</p>
+                {bullets.length > 0 && (
+                  <ul className="pdp-desc-bullets">
+                    {bullets.map((b, i) => <li key={i}>{b}</li>)}
+                  </ul>
+                )}
+              </div>
+            )
+          })()}
+
+          {activeTab === 'details' && (
+            <table className="pdp-details-table">
+              <tbody>
+                <tr><td>{locale === 'zh' ? '分类' : 'Category'}</td><td>{item.category.replace('-', ' ')}</td></tr>
+                <tr><td>{locale === 'zh' ? '适用宠物' : 'Pet Type'}</td><td>{item.petType}</td></tr>
+                {item.brand && <tr><td>{locale === 'zh' ? '品牌' : 'Brand'}</td><td>{item.brand}</td></tr>}
+                {item.material && <tr><td>{locale === 'zh' ? '材质' : 'Material'}</td><td>{item.material}</td></tr>}
+                {item.stock !== undefined && <tr><td>{locale === 'zh' ? '库存' : 'Stock'}</td><td>{item.stock > 0 ? `${item.stock} available` : 'Out of stock'}</td></tr>}
+              </tbody>
+            </table>
+          )}
+
+          {activeTab === 'shipping' && (
+            <div className="pdp-shipping-content">
+              <div className="pdp-shipping-item">
+                <Truck size={20} />
+                <div>
+                  <strong>{locale === 'zh' ? '免费配送' : 'Free Shipping'}</strong>
+                  <p>{locale === 'zh' ? '订单满 $65 免费配送' : 'Free shipping on orders over $65'}</p>
+                </div>
+              </div>
+              <div className="pdp-shipping-item">
+                <Package size={20} />
+                <div>
+                  <strong>{locale === 'zh' ? '预计送达' : 'Estimated Delivery'}</strong>
+                  <p>{locale === 'zh' ? '5-7 个工作日' : '5-7 business days'}</p>
+                </div>
+              </div>
+              <div className="pdp-shipping-item">
+                <RotateCcw size={20} />
+                <div>
+                  <strong>{locale === 'zh' ? '退换政策' : 'Returns Policy'}</strong>
+                  <p>{locale === 'zh' ? '30 天无理由退换' : '30-day hassle-free returns'}</p>
+                </div>
+              </div>
+              <div className="pdp-shipping-item">
+                <ShieldCheck size={20} />
+                <div>
+                  <strong>{locale === 'zh' ? '品质保证' : 'Quality Guarantee'}</strong>
+                  <p>{locale === 'zh' ? '所有产品均经过严格质检' : 'All products undergo strict quality checks'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </main>
   )

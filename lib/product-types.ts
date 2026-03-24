@@ -3,6 +3,7 @@ export type Product = {
   id: string
   slug: string
   name: string
+  subtitle?: string
   category: string
   petType: 'Dog' | 'Cat' | 'Both'
   price: number

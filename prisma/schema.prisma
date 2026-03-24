@@ -60,6 +60,7 @@ model Product {
   id             String   @id @default(cuid())
   slug           String   @unique
   name           String
+  subtitle       String?
   description    String   @db.Text
   categoryId     String
   petType        String   @default("Both") // "Dog", "Cat", "Both"

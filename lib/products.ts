@@ -6,6 +6,7 @@ function toProductDTO(dbProduct: {
   id: string
   slug: string
   name: string
+  subtitle: string | null
   description: string
   petType: string
   price: number
@@ -26,6 +27,7 @@ function toProductDTO(dbProduct: {
     id: dbProduct.id,
     slug: dbProduct.slug,
     name: dbProduct.name,
+    subtitle: dbProduct.subtitle || undefined,
     category: dbProduct.category.slug,
     petType: dbProduct.petType as 'Dog' | 'Cat' | 'Both',
     price: dbProduct.price,

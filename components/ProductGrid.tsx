@@ -42,10 +42,9 @@ function ProductCard({ product }: { product: Product }) {
         </button>
       </div>
       <h3>{product.name}</h3>
-      <p>{product.description}</p>
+      {product.subtitle && <p className="product-subtitle">{product.subtitle}</p>}
       <div className="product-meta">
         <span>${product.price.toFixed(2)}</span>
-        <span>★ {product.rating}</span>
       </div>
       <Link href={`/products/${product.slug}`} className="btn-secondary">{t('home', 'viewDetails')}</Link>
     </article>

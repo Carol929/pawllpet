@@ -11,6 +11,7 @@ export const variantSchema = z.object({
 
 export const productCreateSchema = z.object({
   name: z.string().min(1, 'Product name is required').max(255),
+  subtitle: z.string().optional().nullable(),
   slug: z.string().min(1).max(255),
   description: z.string().min(1, 'Description is required'),
   categoryId: z.string().min(1, 'Category is required'),

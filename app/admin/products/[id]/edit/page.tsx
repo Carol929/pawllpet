@@ -24,7 +24,7 @@ export default function EditProduct({ params }: { params: { id: string } }) {
   const [variants, setVariants] = useState<Variant[]>([])
 
   const [form, setForm] = useState({
-    name: '', slug: '', description: '', categoryId: '', petType: 'Both',
+    name: '', subtitle: '', slug: '', description: '', categoryId: '', petType: 'Both',
     brand: '', material: '', price: 0, compareAtPrice: 0, stock: 0,
     status: 'draft', isNew: false, isBestSeller: false, isDrop: false, isBundle: false,
   })
@@ -37,7 +37,7 @@ export default function EditProduct({ params }: { params: { id: string } }) {
       setCategories(Array.isArray(cats) ? cats : [])
       if (product && product.id) {
         setForm({
-          name: product.name, slug: product.slug, description: product.description,
+          name: product.name, subtitle: product.subtitle || '', slug: product.slug, description: product.description,
           categoryId: product.categoryId, petType: product.petType,
           brand: product.brand || '', material: product.material || '',
           price: product.price, compareAtPrice: product.compareAtPrice || 0,
@@ -169,7 +169,11 @@ export default function EditProduct({ params }: { params: { id: string } }) {
               <input value={form.slug} onChange={e => updateField('slug', e.target.value)} />
             </div>
             <div className="admin-form-group full">
-              <label>Description *</label>
+              <label>Short Description (shown on product cards)</label>
+              <input value={form.subtitle} onChange={e => updateField('subtitle', e.target.value)} placeholder="e.g. Cozy plush bed for cats and small dogs" />
+            </div>
+            <div className="admin-form-group full">
+              <label>Full Description *</label>
               <textarea required value={form.description} onChange={e => updateField('description', e.target.value)} />
             </div>
             <div className="admin-form-group">
