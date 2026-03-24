@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { ProductGrid } from '@/components/ProductGrid'
-import { collections } from '@/lib/products'
+import { collections } from '@/lib/static-data'
 import { HeroCarousel } from '@/components/HeroCarousel'
 import { useLocale } from '@/lib/i18n'
 import { useProducts } from '@/lib/use-products'

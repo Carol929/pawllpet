@@ -130,15 +130,5 @@ export async function getCategories() {
   return prisma.category.findMany({ orderBy: { name: 'asc' } })
 }
 
-// Keep static data that isn't in the database yet
-export const collections = [
-  { slug: 'spring-social-club', title: 'Spring Social Club', description: 'Fresh launch styles for walks and playdates.' },
-  { slug: 'cozy-evenings', title: 'Cozy Evenings', description: 'Soft textures and calming routines for nighttime.' },
-  { slug: 'weekend-travel-kit', title: 'Weekend Travel Kit', description: 'Portable essentials for pets on the move.' },
-]
-
-export const blogPosts = [
-  { slug: 'building-a-pet-routine', title: 'Build a Better Pet Routine in 15 Minutes', excerpt: 'Simple rituals to improve calm, health, and joy.' },
-  { slug: 'choosing-safe-materials', title: 'How We Vet Pet-Safe Materials', excerpt: 'Our sourcing checklist for modern pet homes.' },
-  { slug: 'cat-enrichment-playbook', title: 'Cat Enrichment Playbook', excerpt: 'A practical guide to daily feline stimulation.' },
-]
+// Static data (collections, blogPosts) moved to lib/static-data.ts
+// to avoid pulling Prisma into client bundles

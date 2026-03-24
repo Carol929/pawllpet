@@ -1,7 +1,7 @@
 'use client'
 
 import { use } from 'react'
-import { collections } from '@/lib/products'
+import { collections } from '@/lib/static-data'
 import { ProductGrid } from '@/components/ProductGrid'
 import { useProducts } from '@/lib/use-products'
 

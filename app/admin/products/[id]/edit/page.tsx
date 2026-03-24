@@ -31,11 +31,11 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/admin/categories').then(r => r.json()),
-      fetch(`/api/admin/products/${id}`).then(r => r.json()),
+      fetch('/api/admin/categories').then(r => { if (!r.ok) throw new Error('Failed to load categories'); return r.json() }),
+      fetch(`/api/admin/products/${id}`).then(r => { if (!r.ok) throw new Error('Failed to load product'); return r.json() }),
     ]).then(([cats, product]) => {
-      setCategories(cats)
-      if (product.id) {
+      setCategories(Array.isArray(cats) ? cats : [])
+      if (product && product.id) {
         setForm({
           name: product.name, slug: product.slug, description: product.description,
           categoryId: product.categoryId, petType: product.petType,
@@ -51,7 +51,10 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         })) || [])
       }
       setLoading(false)
-    }).catch(() => setLoading(false))
+    }).catch(() => {
+      setToast({ msg: 'Failed to load product data', type: 'error' })
+      setLoading(false)
+    })
   }, [id])
 
   const updateField = (field: string, value: string | number | boolean) => {
