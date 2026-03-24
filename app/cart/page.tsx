@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { ShoppingCart, Trash2 } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
-import { Product } from '@/lib/products'
+import { Product } from '@/lib/product-types'
 import './cart.css'
 
 export default function CartPage() {

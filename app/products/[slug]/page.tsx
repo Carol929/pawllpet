@@ -1,11 +1,12 @@
 'use client'
 
 import { use, useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
-import { Check } from 'lucide-react'
-import { Product } from '@/lib/products'
+import { Check, ChevronLeft, ChevronRight, Share2, Truck } from 'lucide-react'
+import { Product } from '@/lib/product-types'
 
 export default function ProductDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
@@ -28,13 +29,37 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
       .catch(() => setLoading(false))
   }, [slug])
 
-  if (loading) return <main className="container page-stack"><p>Loading...</p></main>
-  if (!item) return <main className="container page-stack"><h1>Product not found</h1></main>
+  if (loading) {
+    return (
+      <main className="container page-stack">
+        <div className="pdp-skeleton">
+          <div className="pdp-skeleton-image" />
+          <div className="pdp-skeleton-info">
+            <div className="pdp-skeleton-line pdp-skeleton-line--title" />
+            <div className="pdp-skeleton-line pdp-skeleton-line--price" />
+            <div className="pdp-skeleton-line pdp-skeleton-line--btn" />
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  if (!item) {
+    return (
+      <main className="container page-stack">
+        <div className="pdp-not-found">
+          <h1>Product not found</h1>
+          <Link href="/" className="btn-secondary">Back to Shop</Link>
+        </div>
+      </main>
+    )
+  }
 
   const images = item.images?.length ? item.images : [item.image]
   const displayPrice = selectedVariant !== null && item.variants?.[selectedVariant]
     ? item.variants[selectedVariant].price
     : item.price
+  const freeShipping = displayPrice >= 29
 
   function handleAdd() {
     if (!user) {
@@ -46,61 +71,101 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
     setTimeout(() => setAdded(false), 1500)
   }
 
+  function prevImage() {
+    setSelectedImage(i => (i === 0 ? images.length - 1 : i - 1))
+  }
+
+  function nextImage() {
+    setSelectedImage(i => (i === images.length - 1 ? 0 : i + 1))
+  }
+
+  function handleShare() {
+    if (navigator.share) {
+      navigator.share({ title: item!.name, url: window.location.href })
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+    }
+  }
+
   return (
     <main className="container page-stack">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'start' }}>
-        <div>
-          <img
-            src={images[selectedImage]}
-            alt={item.name}
-            style={{ width: '100%', height: 400, objectFit: 'cover', borderRadius: 16, background: '#f8f4ef' }}
-          />
+      {/* Breadcrumb */}
+      <nav className="pdp-breadcrumb">
+        <Link href="/">
+          <ChevronLeft size={16} />
+          <span>Explore More Products</span>
+        </Link>
+      </nav>
+
+      {/* Product Layout */}
+      <div className="pdp-layout">
+        {/* Image Gallery */}
+        <div className="pdp-gallery">
+          <div className="pdp-main-image-wrapper">
+            <img
+              src={images[selectedImage]}
+              alt={item.name}
+              className="pdp-main-image"
+            />
+            {images.length > 1 && (
+              <>
+                <button className="pdp-nav-btn pdp-nav-btn--prev" onClick={prevImage} aria-label="Previous image">
+                  <ChevronLeft size={20} />
+                </button>
+                <button className="pdp-nav-btn pdp-nav-btn--next" onClick={nextImage} aria-label="Next image">
+                  <ChevronRight size={20} />
+                </button>
+              </>
+            )}
+          </div>
           {images.length > 1 && (
-            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <div className="pdp-thumbnails">
               {images.map((img, i) => (
-                <img
+                <button
                   key={i}
-                  src={img}
-                  alt=""
+                  className={`pdp-thumb ${selectedImage === i ? 'pdp-thumb--active' : ''}`}
                   onClick={() => setSelectedImage(i)}
-                  style={{
-                    width: 64, height: 64, objectFit: 'cover', borderRadius: 8, cursor: 'pointer',
-                    border: selectedImage === i ? '2px solid #1f2e44' : '2px solid transparent',
-                  }}
-                />
+                >
+                  <img src={img} alt="" />
+                </button>
               ))}
             </div>
           )}
         </div>
-        <div>
-          <h1 style={{ fontSize: '1.6rem', marginBottom: '.5rem' }}>{item.name}</h1>
-          <p style={{ color: '#888', textTransform: 'capitalize', marginBottom: '1rem' }}>
-            {item.category.replace('-', ' ')} &bull; {item.petType}
-            {item.brand && <> &bull; {item.brand}</>}
-          </p>
-          <p style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '1.5rem' }}>
-            ${displayPrice.toFixed(2)}
-            {item.compareAtPrice && item.compareAtPrice > displayPrice && (
-              <span style={{ fontSize: '1rem', color: '#999', textDecoration: 'line-through', marginLeft: 8 }}>
-                ${item.compareAtPrice.toFixed(2)}
-              </span>
-            )}
-          </p>
 
+        {/* Product Info */}
+        <div className="pdp-info">
+          <div className="pdp-info-header">
+            <h1 className="pdp-title">{item.name}</h1>
+            <button className="pdp-share-btn" onClick={handleShare} aria-label="Share product">
+              <Share2 size={18} />
+            </button>
+          </div>
+
+          <div className="pdp-price-row">
+            <span className="pdp-price">${displayPrice.toFixed(2)}</span>
+            {item.compareAtPrice && item.compareAtPrice > displayPrice && (
+              <span className="pdp-compare-price">${item.compareAtPrice.toFixed(2)}</span>
+            )}
+          </div>
+
+          {freeShipping && (
+            <div className="pdp-badge pdp-badge--shipping">
+              <Truck size={14} />
+              <span>Free shipping over $29.00</span>
+            </div>
+          )}
+
+          {/* Variants */}
           {item.variants && item.variants.length > 0 && (
-            <div style={{ marginBottom: '1.5rem' }}>
-              <p style={{ fontWeight: 600, marginBottom: '.5rem' }}>Type</p>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="pdp-section">
+              <p className="pdp-section-label">Type</p>
+              <div className="pdp-variants">
                 {item.variants.map((v, i) => (
                   <button
                     key={v.id}
+                    className={`pdp-variant-btn ${selectedVariant === i ? 'pdp-variant-btn--active' : ''}`}
                     onClick={() => setSelectedVariant(i)}
-                    style={{
-                      padding: '.5rem 1rem', borderRadius: 8, cursor: 'pointer',
-                      border: selectedVariant === i ? '2px solid #1f2e44' : '1px solid #d1d5db',
-                      background: selectedVariant === i ? '#f0ebe4' : '#fff',
-                      fontWeight: selectedVariant === i ? 600 : 400,
-                    }}
                   >
                     {v.name} - ${v.price.toFixed(2)}
                   </button>
@@ -109,17 +174,31 @@ export default function ProductDetail({ params }: { params: Promise<{ slug: stri
             </div>
           )}
 
-          <p style={{ color: '#555', lineHeight: 1.6, marginBottom: '2rem' }}>{item.description}</p>
+          {/* Add to Cart */}
+          <button
+            className={`pdp-add-btn ${added ? 'pdp-add-btn--added' : ''}`}
+            onClick={handleAdd}
+            disabled={item.stock === 0}
+          >
+            {added ? <><Check size={18} /> Added to Cart</> : item.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+          </button>
 
-          {item.material && <p style={{ color: '#888', fontSize: '.9rem', marginBottom: '.5rem' }}>Material: {item.material}</p>}
-          {item.stock !== undefined && <p style={{ color: item.stock > 0 ? '#16a34a' : '#dc2626', fontSize: '.9rem', marginBottom: '1.5rem' }}>{item.stock > 0 ? `In stock (${item.stock})` : 'Out of stock'}</p>}
-
-          <div className="hero-buttons">
-            <button className="btn-primary" onClick={handleAdd} style={{ minWidth: 180, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '.4rem' }}>
-              {added ? <><Check size={16} /> Added!</> : 'Add to cart'}
-            </button>
+          {/* Stock & Material */}
+          <div className="pdp-meta">
+            {item.stock !== undefined && item.stock > 0 && (
+              <span className="pdp-stock pdp-stock--in">In stock ({item.stock})</span>
+            )}
+            {item.brand && <span className="pdp-meta-item">Brand: {item.brand}</span>}
+            {item.material && <span className="pdp-meta-item">Material: {item.material}</span>}
+            <span className="pdp-meta-item">{item.category.replace('-', ' ')} &bull; {item.petType}</span>
           </div>
         </div>
+      </div>
+
+      {/* Description Section */}
+      <div className="pdp-description">
+        <h2 className="pdp-description-title">Product Details</h2>
+        <p className="pdp-description-text">{item.description}</p>
       </div>
     </main>
   )
