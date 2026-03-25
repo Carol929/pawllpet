@@ -101,19 +101,23 @@ export async function getProducts(filters?: {
 
   const pageSize = filters?.limit || filters?.pageSize || undefined
   const skip = filters?.page && pageSize ? (filters.page - 1) * pageSize : undefined
+  const needsCount = filters?.page || filters?.pageSize // Only count when paginating
 
-  const [products, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: defaultInclude,
-      orderBy,
-      take: pageSize,
-      skip,
-    }),
-    prisma.product.count({ where }),
-  ])
+  const findPromise = prisma.product.findMany({
+    where,
+    include: defaultInclude,
+    orderBy,
+    take: pageSize,
+    skip,
+  })
 
-  return { products: products.map(toProductDTO), total }
+  if (needsCount) {
+    const [products, total] = await Promise.all([findPromise, prisma.product.count({ where })])
+    return { products: products.map(toProductDTO), total }
+  }
+
+  const products = await findPromise
+  return { products: products.map(toProductDTO), total: products.length }
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
