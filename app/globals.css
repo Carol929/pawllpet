@@ -353,9 +353,12 @@ a { color: inherit; text-decoration: none; }
   display: inline-flex;
   align-items: center;
   gap: .25rem;
-  padding: .4rem .7rem;
+  padding: .5rem .85rem;
   border-radius: 10px;
   transition: background .15s, color .2s;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
 }
 .nav-dropdown-trigger:hover {
   background: #f5f0ea;
@@ -369,8 +372,9 @@ a { color: inherit; text-decoration: none; }
 }
 .nav-dropdown-panel {
   position: absolute;
-  top: calc(100% + 4px);
+  top: 100%;
   left: 50%;
+  padding-top: 8px; /* bridge gap so mouse doesn't lose hover */
   transform: translateX(-50%);
   background: #fff;
   border: 1px solid #ececec;

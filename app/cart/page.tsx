@@ -7,12 +7,7 @@ import { ShoppingCart, Trash2 } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { Product } from '@/lib/product-types'
-import { calculateTax } from '@/lib/tax-rates'
 import './cart.css'
-
-interface AddressData {
-  id?: string; fullName: string; phone?: string; street: string; city: string; state: string; zip: string; country: string
-}
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem } = useCart()
@@ -20,12 +15,6 @@ export default function CartPage() {
   const router = useRouter()
   const [productMap, setProductMap] = useState<Record<string, Product>>({})
   const [loading, setLoading] = useState(true)
-  const [checkingOut, setCheckingOut] = useState(false)
-  const [showAddress, setShowAddress] = useState(false)
-  const [addresses, setAddresses] = useState<AddressData[]>([])
-  const [selectedAddr, setSelectedAddr] = useState<number>(0)
-  const [newAddr, setNewAddr] = useState<AddressData>({ fullName: '', street: '', city: '', state: '', zip: '', country: 'US' })
-  const [useNewAddr, setUseNewAddr] = useState(false)
 
   useEffect(() => {
     if (items.length === 0) { setLoading(false); return }
@@ -41,12 +30,6 @@ export default function CartPage() {
       .catch(() => setLoading(false))
   }, [items.length])
 
-  useEffect(() => {
-    if (showAddress && user) {
-      fetch('/api/addresses').then(r => r.json()).then(setAddresses).catch(() => {})
-    }
-  }, [showAddress, user])
-
   const cartProducts = items
     .map(item => { const p = productMap[item.productId]; return p ? { ...p, quantity: item.quantity } : null })
     .filter(Boolean) as (Product & { quantity: number })[]
@@ -56,37 +39,9 @@ export default function CartPage() {
   const freeShipping = subtotal >= 50
   const shipping = freeShipping ? 0 : 5.99
 
-  // Sales tax calculation based on shipping state
-  const currentAddr = showAddress ? (useNewAddr ? newAddr : addresses[selectedAddr]) : null
-  const { rate: taxRate, amount: tax, stateAbbr: taxState } = calculateTax(subtotal, currentAddr?.state || '')
-
-  async function handleCheckout() {
+  function handleCheckout() {
     if (!user) { router.push('/auth?tab=login'); return }
-    if (!showAddress) { setShowAddress(true); return }
-
-    const addr = useNewAddr ? newAddr : addresses[selectedAddr]
-    if (!addr?.fullName || !addr?.street || !addr?.city || !addr?.state || !addr?.zip) {
-      alert('Please fill in all address fields'); return
-    }
-
-    setCheckingOut(true)
-    try {
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, shippingAddress: addr }),
-      })
-      const data = await res.json()
-      if (data.url) {
-        window.location.href = data.url
-      } else {
-        alert(data.error || 'Checkout failed')
-        setCheckingOut(false)
-      }
-    } catch {
-      alert('Checkout failed')
-      setCheckingOut(false)
-    }
+    router.push('/checkout')
   }
 
   if (loading) return <main className="container page-stack"><h1 className="cart-title">Shopping Bag</h1><p>Loading...</p></main>
@@ -131,46 +86,13 @@ export default function CartPage() {
           <div className="cart-summary-title">Order Summary</div>
           <div className="cart-summary-row"><span>Subtotal</span><span>${subtotal.toFixed(2)} USD</span></div>
           <div className="cart-summary-row"><span>Shipping</span><span>{freeShipping ? 'FREE' : `$${shipping.toFixed(2)}`}</span></div>
-          <div className="cart-summary-row"><span>Tax{taxRate > 0 ? ` (${taxState} ${(taxRate * 100).toFixed(1)}%)` : ''}</span><span>{showAddress ? `$${tax.toFixed(2)}` : 'Calculated at checkout'}</span></div>
+          <div className="cart-summary-row"><span>Tax</span><span>Calculated at checkout</span></div>
           <hr className="cart-summary-divider" />
           <div className="cart-summary-total">
             <span className="cart-summary-total-label">Total({totalCount})</span>
-            <span><span className="cart-summary-total-price">${(subtotal + shipping + tax).toFixed(2)}</span><span className="cart-summary-currency">USD</span></span>
+            <span><span className="cart-summary-total-price">${(subtotal + shipping).toFixed(2)}</span><span className="cart-summary-currency">USD</span></span>
           </div>
-
-          {showAddress && (
-            <div className="cart-address-section">
-              <h3>Shipping Address</h3>
-              {addresses.length > 0 && !useNewAddr && (
-                <div className="cart-addr-list">
-                  {addresses.map((a, i) => (
-                    <label key={i} className={`cart-addr-option ${selectedAddr === i ? 'cart-addr-option--active' : ''}`}>
-                      <input type="radio" name="addr" checked={selectedAddr === i} onChange={() => setSelectedAddr(i)} />
-                      <span>{a.fullName}, {a.street}, {a.city} {a.state} {a.zip}</span>
-                    </label>
-                  ))}
-                  <button className="cart-addr-new-btn" onClick={() => setUseNewAddr(true)}>+ New Address</button>
-                </div>
-              )}
-              {(useNewAddr || addresses.length === 0) && (
-                <div className="cart-addr-form">
-                  <input placeholder="Full Name" value={newAddr.fullName} onChange={e => setNewAddr({ ...newAddr, fullName: e.target.value })} required />
-                  <input placeholder="Phone (optional)" value={newAddr.phone || ''} onChange={e => setNewAddr({ ...newAddr, phone: e.target.value })} />
-                  <input placeholder="Street Address" value={newAddr.street} onChange={e => setNewAddr({ ...newAddr, street: e.target.value })} required />
-                  <div className="cart-addr-row">
-                    <input placeholder="City" value={newAddr.city} onChange={e => setNewAddr({ ...newAddr, city: e.target.value })} required />
-                    <input placeholder="State" value={newAddr.state} onChange={e => setNewAddr({ ...newAddr, state: e.target.value })} required />
-                    <input placeholder="ZIP" value={newAddr.zip} onChange={e => setNewAddr({ ...newAddr, zip: e.target.value })} required />
-                  </div>
-                  {addresses.length > 0 && <button className="cart-addr-new-btn" onClick={() => setUseNewAddr(false)}>Use saved address</button>}
-                </div>
-              )}
-            </div>
-          )}
-
-          <button className="cart-checkout-btn" onClick={handleCheckout} disabled={checkingOut}>
-            {checkingOut ? 'PROCESSING...' : showAddress ? 'PAY NOW' : 'CHECK OUT'}
-          </button>
+          <button className="cart-checkout-btn" onClick={handleCheckout}>CHECK OUT</button>
           {!freeShipping && <div className="cart-free-shipping">Add <strong>${(50 - subtotal).toFixed(2)}</strong> more for free shipping!</div>}
         </div>
       </div>

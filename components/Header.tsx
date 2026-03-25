@@ -68,6 +68,7 @@ export default function Header() {
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const dropdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -131,8 +132,8 @@ export default function Header() {
             <div
               key={item.labelKey}
               className="nav-dropdown-wrapper"
-              onMouseEnter={() => setOpenDropdown(item.labelKey)}
-              onMouseLeave={() => setOpenDropdown(null)}
+              onMouseEnter={() => { if (dropdownTimer.current) clearTimeout(dropdownTimer.current); setOpenDropdown(item.labelKey) }}
+              onMouseLeave={() => { dropdownTimer.current = setTimeout(() => setOpenDropdown(null), 350) }}
             >
               <Link
                 href={item.href}
