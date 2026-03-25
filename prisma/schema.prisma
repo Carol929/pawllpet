@@ -88,6 +88,11 @@ model Product {
   wishlists Wishlist[]
   reviews   Review[]
 
+  @@index([status])
+  @@index([status, createdAt])
+  @@index([categoryId])
+  @@index([isNew])
+  @@index([isBestSeller])
   @@map("products")
 }
 
@@ -157,6 +162,8 @@ model Order {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
+  @@index([userId])
+  @@index([status])
   @@map("orders")
 }
 
@@ -241,6 +248,7 @@ model Wishlist {
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
+  @@index([userId])
   @@map("wishlists")
 }
 
@@ -257,5 +265,6 @@ model Review {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([productId, userId])
+  @@index([productId])
   @@map("reviews")
 }

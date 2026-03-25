@@ -40,7 +40,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (items.length === 0) return
     Promise.all([
-      fetch('/api/products').then(r => r.json()),
+      fetch(`/api/products?ids=${items.map(i => i.productId).join(',')}`).then(r => r.json()),
       fetch('/api/addresses').then(r => r.json()).catch(() => []),
     ]).then(([prodData, addrs]) => {
       const products = prodData.products || prodData || []

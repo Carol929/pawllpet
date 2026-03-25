@@ -47,10 +47,18 @@ function toProductDTO(dbProduct: {
   }
 }
 
-const defaultInclude = {
+// Full include — for product detail pages
+const fullInclude = {
   category: true,
   images: { orderBy: { sortOrder: 'asc' as const } },
   variants: { orderBy: { sortOrder: 'asc' as const } },
+}
+
+// Light include — for product lists (only first image, skip variants)
+const listInclude = {
+  category: { select: { name: true, slug: true } },
+  images: { take: 1, orderBy: { sortOrder: 'asc' as const } },
+  variants: { take: 0 },
 }
 
 export async function getProducts(filters?: {
@@ -67,9 +75,14 @@ export async function getProducts(filters?: {
   maxPrice?: number
   page?: number
   pageSize?: number
+  ids?: string[] // Fetch specific products by ID
+  full?: boolean // Use full include (for detail pages)
 }): Promise<{ products: Product[]; total: number }> {
   const where: Record<string, unknown> = { status: 'live' }
 
+  if (filters?.ids?.length) {
+    where.id = { in: filters.ids }
+  }
   if (filters?.search) {
     where.name = { contains: filters.search, mode: 'insensitive' }
   }
@@ -103,9 +116,10 @@ export async function getProducts(filters?: {
   const skip = filters?.page && pageSize ? (filters.page - 1) * pageSize : undefined
   const needsCount = filters?.page || filters?.pageSize // Only count when paginating
 
+  const include = filters?.full ? fullInclude : listInclude
   const findPromise = prisma.product.findMany({
     where,
-    include: defaultInclude,
+    include,
     orderBy,
     take: pageSize,
     skip,
@@ -123,7 +137,7 @@ export async function getProducts(filters?: {
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   const product = await prisma.product.findFirst({
     where: { slug, status: 'live' },
-    include: defaultInclude,
+    include: fullInclude,
   })
 
   return product ? toProductDTO(product) : null
@@ -132,7 +146,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 export async function getProductById(id: string): Promise<Product | null> {
   const product = await prisma.product.findUnique({
     where: { id },
-    include: defaultInclude,
+    include: fullInclude,
   })
 
   return product ? toProductDTO(product) : null

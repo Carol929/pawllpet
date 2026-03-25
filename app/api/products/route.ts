@@ -18,7 +18,9 @@ export async function GET(request: NextRequest) {
     const maxPrice = searchParams.get('maxPrice')
     const page = searchParams.get('page')
     const pageSize = searchParams.get('pageSize')
+    const ids = searchParams.get('ids')
 
+    if (ids) filters.ids = ids.split(',').filter(Boolean)
     if (search) filters.search = search
     if (category) filters.category = category
     if (petType) filters.petType = petType
@@ -34,7 +36,10 @@ export async function GET(request: NextRequest) {
     if (pageSize) filters.pageSize = parseInt(pageSize)
 
     const result = await getProducts(filters as Parameters<typeof getProducts>[0])
-    return NextResponse.json(result)
+
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120' },
+    })
   } catch (error) {
     console.error('Failed to fetch products:', error)
     return NextResponse.json({ products: [], total: 0 }, { status: 500 })

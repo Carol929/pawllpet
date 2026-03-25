@@ -18,7 +18,8 @@ export default function CartPage() {
 
   useEffect(() => {
     if (items.length === 0) { setLoading(false); return }
-    fetch('/api/products')
+    const ids = items.map(i => i.productId).join(',')
+    fetch(`/api/products?ids=${ids}`)
       .then(r => r.json())
       .then((data) => {
         const products: Product[] = data.products || data || []
@@ -28,7 +29,7 @@ export default function CartPage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [items.length])
+  }, [items])
 
   const cartProducts = items
     .map(item => { const p = productMap[item.productId]; return p ? { ...p, quantity: item.quantity } : null })

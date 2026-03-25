@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -11,7 +11,7 @@ import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { useWishlist } from '@/lib/wishlist-context'
 
-function ProductCard({ product }: { product: Product }) {
+const ProductCard = memo(function ProductCard({ product }: { product: Product }) {
   const { t } = useLocale()
   const { addItem } = useCart()
   const { user } = useAuth()
@@ -34,7 +34,7 @@ function ProductCard({ product }: { product: Product }) {
   return (
     <article className="product-card" key={product.id}>
       <div className="product-image-wrapper">
-        <Image src={product.image} alt={product.name} width={320} height={320} className="product-image" />
+        <Image src={product.image} alt={product.name} width={320} height={320} sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, 25vw" className="product-image" />
         {user && (
           <button
             className={`product-wishlist-btn ${isWished(product.id) ? 'product-wishlist-btn--active' : ''}`}
@@ -61,7 +61,7 @@ function ProductCard({ product }: { product: Product }) {
       <Link href={`/products/${product.slug}`} className="btn-secondary">{t('home', 'viewDetails')}</Link>
     </article>
   )
-}
+})
 
 export function ProductGrid({ items }: { items: Product[] }) {
   return (

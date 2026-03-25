@@ -49,9 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  useEffect(() => {
-    refresh()
-  }, [refresh])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { refresh() }, [])
 
   const login = useCallback((u: AuthUser) => {
     setUser(u)

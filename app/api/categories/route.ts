@@ -7,7 +7,9 @@ import { getCategories } from '@/lib/products'
 export async function GET() {
   try {
     const categories = await getCategories()
-    return NextResponse.json(categories)
+    return NextResponse.json(categories, {
+      headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
+    })
   } catch {
     return NextResponse.json([], { status: 500 })
   }
