@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
+import { useAuth } from '@/lib/auth-context'
 
 export type CartItem = { productId: string; quantity: number }
 
@@ -36,17 +37,25 @@ function saveCart(items: CartItem[]) {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading } = useAuth()
   const [items, setItems] = useState<CartItem[]>([])
   const [loaded, setLoaded] = useState(false)
 
+  // Load cart from localStorage only when user is logged in
   useEffect(() => {
-    setItems(loadCart())
+    if (authLoading) return // Wait for auth to resolve
+    if (user) {
+      setItems(loadCart())
+    } else {
+      setItems([]) // Not logged in = empty cart
+    }
     setLoaded(true)
-  }, [])
+  }, [user, authLoading])
 
+  // Save cart to localStorage when items change (only if logged in)
   useEffect(() => {
-    if (loaded) saveCart(items)
-  }, [items, loaded])
+    if (loaded && user) saveCart(items)
+  }, [items, loaded, user])
 
   const addItem = useCallback((productId: string, qty = 1) => {
     setItems((prev) => {
@@ -70,7 +79,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const clearCart = useCallback(() => setItems([]), [])
+  const clearCart = useCallback(() => {
+    setItems([])
+    try { localStorage.removeItem(STORAGE_KEY) } catch {}
+  }, [])
 
   const totalItems = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items])
 
