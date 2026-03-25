@@ -75,7 +75,7 @@ function AuthPageInner() {
       if (!res.ok) throw new Error(data.error || 'Login failed')
 
       setAuthUser(data.user)
-      router.push('/account')
+      router.push('/')
       router.refresh()
     } catch (err: any) {
       setError(err.message)
@@ -160,7 +160,7 @@ function AuthPageInner() {
       if (!res.ok) throw new Error(data.error || 'Verification failed')
 
       setAuthUser(data.user)
-      router.push('/account')
+      router.push('/')
       router.refresh()
     } catch (err: any) {
       setError(err.message)

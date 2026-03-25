@@ -1,17 +1,29 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ProductGrid } from '@/components/ProductGrid'
 import { collections } from '@/lib/static-data'
 import { HeroCarousel } from '@/components/HeroCarousel'
 import { useLocale } from '@/lib/i18n'
-import { useProducts } from '@/lib/use-products'
+import { Product } from '@/lib/product-types'
 
 export default function HomePage() {
   const { t } = useLocale()
-  const { products: allProducts } = useProducts({ limit: '8' })
-  const { products: newArrivals } = useProducts({ isNew: 'true', limit: '4' })
-  const { products: best } = useProducts({ isBestSeller: 'true', limit: '4' })
+  const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [newArrivals, setNewArrivals] = useState<Product[]>([])
+  const [best, setBest] = useState<Product[]>([])
+
+  useEffect(() => {
+    fetch('/api/homepage')
+      .then(r => r.json())
+      .then(data => {
+        setAllProducts(data.allProducts || [])
+        setNewArrivals(data.newArrivals || [])
+        setBest(data.bestSellers || [])
+      })
+      .catch(() => {})
+  }, [])
 
   return (
     <main className="container page-stack">

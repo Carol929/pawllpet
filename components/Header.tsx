@@ -61,7 +61,7 @@ export default function Header() {
   const router = useRouter()
   const { locale, setLocale, t } = useLocale()
   const { user, loading: authLoading, logout } = useAuth()
-  const { totalItems } = useCart()
+  const { totalItems, clearCart } = useCart()
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState<{ slug: string; name: string; image: string; price: number }[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -109,6 +109,7 @@ export default function Header() {
 
   function handleLogout() {
     logout()
+    clearCart()
     setUserMenuOpen(false)
     setMobileMenuOpen(false)
     router.push('/')
