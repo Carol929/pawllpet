@@ -149,6 +149,7 @@ model Order {
   total           Float
   subtotal        Float
   shipping        Float       @default(0)
+  tax             Float       @default(0)
   shippingAddress Json
   stripeSessionId String?     @unique
   trackingNumber  String?

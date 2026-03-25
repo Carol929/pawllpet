@@ -55,6 +55,12 @@ export default function CartPage() {
   const freeShipping = subtotal >= 50
   const shipping = freeShipping ? 0 : 5.99
 
+  // Virginia sales tax (6%)
+  const currentAddr = showAddress ? (useNewAddr ? newAddr : addresses[selectedAddr]) : null
+  const addrState = (currentAddr?.state || '').trim().toUpperCase()
+  const isVA = addrState === 'VA' || addrState === 'VIRGINIA'
+  const tax = isVA ? Math.round(subtotal * 0.06 * 100) / 100 : 0
+
   async function handleCheckout() {
     if (!user) { router.push('/auth?tab=login'); return }
     if (!showAddress) { setShowAddress(true); return }
@@ -126,10 +132,11 @@ export default function CartPage() {
           <div className="cart-summary-title">Order Summary</div>
           <div className="cart-summary-row"><span>Subtotal</span><span>${subtotal.toFixed(2)} USD</span></div>
           <div className="cart-summary-row"><span>Shipping</span><span>{freeShipping ? 'FREE' : `$${shipping.toFixed(2)}`}</span></div>
+          <div className="cart-summary-row"><span>Tax{isVA ? ' (VA 6%)' : ''}</span><span>{showAddress ? `$${tax.toFixed(2)}` : 'Calculated at checkout'}</span></div>
           <hr className="cart-summary-divider" />
           <div className="cart-summary-total">
             <span className="cart-summary-total-label">Total({totalCount})</span>
-            <span><span className="cart-summary-total-price">${(subtotal + shipping).toFixed(2)}</span><span className="cart-summary-currency">USD</span></span>
+            <span><span className="cart-summary-total-price">${(subtotal + shipping + tax).toFixed(2)}</span><span className="cart-summary-currency">USD</span></span>
           </div>
 
           {showAddress && (

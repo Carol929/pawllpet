@@ -63,7 +63,13 @@ export async function POST(request: NextRequest) {
     }
 
     const shipping = subtotal >= 50 ? 0 : 5.99
-    const total = subtotal + shipping
+
+    // Virginia sales tax (6%) — only for VA shipping addresses
+    const VA_TAX_RATE = 0.06
+    const state = (shippingAddress.state || '').trim().toUpperCase()
+    const isVirginia = state === 'VA' || state === 'VIRGINIA'
+    const tax = isVirginia ? Math.round(subtotal * VA_TAX_RATE * 100) / 100 : 0
+    const total = subtotal + shipping + tax
 
     // Create order in DB (pending until Stripe confirms)
     const order = await prisma.order.create({
@@ -72,11 +78,24 @@ export async function POST(request: NextRequest) {
         status: 'pending',
         subtotal,
         shipping,
+        tax,
         total,
         shippingAddress,
         items: { create: orderItems },
       },
     })
+
+    // Add tax as a line item if applicable
+    if (tax > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: { name: 'Sales Tax (VA 6%)' },
+          unit_amount: Math.round(tax * 100),
+        },
+        quantity: 1,
+      })
+    }
 
     // Create Stripe Checkout Session
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
