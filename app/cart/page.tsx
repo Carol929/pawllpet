@@ -7,6 +7,7 @@ import { ShoppingCart, Trash2 } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { Product } from '@/lib/product-types'
+import { calculateTax } from '@/lib/tax-rates'
 import './cart.css'
 
 interface AddressData {
@@ -55,11 +56,9 @@ export default function CartPage() {
   const freeShipping = subtotal >= 50
   const shipping = freeShipping ? 0 : 5.99
 
-  // Virginia sales tax (6%)
+  // Sales tax calculation based on shipping state
   const currentAddr = showAddress ? (useNewAddr ? newAddr : addresses[selectedAddr]) : null
-  const addrState = (currentAddr?.state || '').trim().toUpperCase()
-  const isVA = addrState === 'VA' || addrState === 'VIRGINIA'
-  const tax = isVA ? Math.round(subtotal * 0.06 * 100) / 100 : 0
+  const { rate: taxRate, amount: tax, stateAbbr: taxState } = calculateTax(subtotal, currentAddr?.state || '')
 
   async function handleCheckout() {
     if (!user) { router.push('/auth?tab=login'); return }
@@ -132,7 +131,7 @@ export default function CartPage() {
           <div className="cart-summary-title">Order Summary</div>
           <div className="cart-summary-row"><span>Subtotal</span><span>${subtotal.toFixed(2)} USD</span></div>
           <div className="cart-summary-row"><span>Shipping</span><span>{freeShipping ? 'FREE' : `$${shipping.toFixed(2)}`}</span></div>
-          <div className="cart-summary-row"><span>Tax{isVA ? ' (VA 6%)' : ''}</span><span>{showAddress ? `$${tax.toFixed(2)}` : 'Calculated at checkout'}</span></div>
+          <div className="cart-summary-row"><span>Tax{taxRate > 0 ? ` (${taxState} ${(taxRate * 100).toFixed(1)}%)` : ''}</span><span>{showAddress ? `$${tax.toFixed(2)}` : 'Calculated at checkout'}</span></div>
           <hr className="cart-summary-divider" />
           <div className="cart-summary-total">
             <span className="cart-summary-total-label">Total({totalCount})</span>
