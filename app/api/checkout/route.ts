@@ -132,11 +132,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url })
   } catch (error: unknown) {
-    console.error('Checkout error:', error)
     const msg = error instanceof Error ? error.message : 'Unknown error'
+    const stack = error instanceof Error ? error.stack : ''
+    console.error('Checkout error:', msg, stack)
     if (msg.includes('STRIPE_SECRET_KEY')) {
       return NextResponse.json({ error: 'Payment system not configured. Please contact support.' }, { status: 500 })
     }
-    return NextResponse.json({ error: 'Checkout failed. Please try again.' }, { status: 500 })
+    if (msg.includes('Unknown argument') || msg.includes('Invalid')) {
+      return NextResponse.json({ error: 'Database schema needs update. Please contact support.' }, { status: 500 })
+    }
+    return NextResponse.json({ error: `Checkout failed: ${msg}` }, { status: 500 })
   }
 }
