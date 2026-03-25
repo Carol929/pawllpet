@@ -30,7 +30,8 @@ export default function CartPage() {
     if (items.length === 0) { setLoading(false); return }
     fetch('/api/products')
       .then(r => r.json())
-      .then((products: Product[]) => {
+      .then((data) => {
+        const products: Product[] = data.products || data || []
         const map: Record<string, Product> = {}
         products.forEach(p => { map[p.id] = p })
         setProductMap(map)
