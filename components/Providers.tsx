@@ -4,6 +4,7 @@ import { SessionProvider } from 'next-auth/react'
 import { LocaleProvider } from '@/lib/i18n'
 import { AuthProvider } from '@/lib/auth-context'
 import { CartProvider } from '@/lib/cart-context'
+import { WishlistProvider } from '@/lib/wishlist-context'
 import { ScrollToTop } from '@/components/ScrollToTop'
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -12,8 +13,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <LocaleProvider>
         <AuthProvider>
           <CartProvider>
-            <ScrollToTop />
-            {children}
+            <WishlistProvider>
+              <ScrollToTop />
+              {children}
+            </WishlistProvider>
           </CartProvider>
         </AuthProvider>
       </LocaleProvider>

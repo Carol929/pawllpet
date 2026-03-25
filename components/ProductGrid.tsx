@@ -4,16 +4,18 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart, Check } from 'lucide-react'
+import { ShoppingCart, Check, Heart } from 'lucide-react'
 import { Product } from '@/lib/product-types'
 import { useLocale } from '@/lib/i18n'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
+import { useWishlist } from '@/lib/wishlist-context'
 
 function ProductCard({ product }: { product: Product }) {
   const { t } = useLocale()
   const { addItem } = useCart()
   const { user } = useAuth()
+  const { toggle, isWished } = useWishlist()
   const router = useRouter()
   const [added, setAdded] = useState(false)
 
@@ -33,6 +35,15 @@ function ProductCard({ product }: { product: Product }) {
     <article className="product-card" key={product.id}>
       <div className="product-image-wrapper">
         <Image src={product.image} alt={product.name} width={320} height={320} className="product-image" />
+        {user && (
+          <button
+            className={`product-wishlist-btn ${isWished(product.id) ? 'product-wishlist-btn--active' : ''}`}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(product.id) }}
+            aria-label="Add to wishlist"
+          >
+            <Heart size={16} fill={isWished(product.id) ? '#e74c3c' : 'none'} />
+          </button>
+        )}
         <button
           className={`product-quick-add ${added ? 'product-quick-add--added' : ''}`}
           onClick={handleQuickAdd}
@@ -45,6 +56,7 @@ function ProductCard({ product }: { product: Product }) {
       {product.subtitle && <p className="product-subtitle">{product.subtitle}</p>}
       <div className="product-meta">
         <span>${product.price.toFixed(2)}</span>
+        {product.rating > 0 && <span className="product-rating">★ {product.rating.toFixed(1)}</span>}
       </div>
       <Link href={`/products/${product.slug}`} className="btn-secondary">{t('home', 'viewDetails')}</Link>
     </article>

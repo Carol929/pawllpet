@@ -41,6 +41,8 @@ model User {
   products  Product[]  // 管理员创建的产品
   addresses Address[]  // 收货地址
   orders    Order[]    // 订单
+  wishlists Wishlist[] // 收藏
+  reviews   Review[]   // 评价
 
   @@map("users")
 }
@@ -83,6 +85,8 @@ model Product {
   createdBy User?            @relation(fields: [createdById], references: [id])
   images    ProductImage[]
   variants  ProductVariant[]
+  wishlists Wishlist[]
+  reviews   Review[]
 
   @@map("products")
 }
@@ -224,4 +228,33 @@ model EmailVerificationToken {
   createdAt DateTime @default(now()) // 创建时间
 
   @@map("email_verification_tokens")
+}
+
+// 收藏表
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlists")
+}
+
+// 评价表
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  userId    String
+  rating    Int
+  title     String?
+  body      String?  @db.Text
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@map("reviews")
 }

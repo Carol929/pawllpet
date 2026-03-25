@@ -6,8 +6,11 @@ import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { useLocale } from '@/lib/i18n'
-import { Check, ChevronLeft, ChevronRight, Share2, Truck, ShieldCheck, RotateCcw, Package } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Share2, Truck, ShieldCheck, RotateCcw, Package, Star, Heart } from 'lucide-react'
 import { Product } from '@/lib/product-types'
+import { useProducts } from '@/lib/use-products'
+import { ProductGrid } from '@/components/ProductGrid'
+import { useWishlist } from '@/lib/wishlist-context'
 
 function parseDescription(desc: string) {
   // Split by • bullet points and filter empty
@@ -28,7 +31,19 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
   const [selectedImage, setSelectedImage] = useState(0)
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null)
   const [quantity, setQuantity] = useState(1)
-  const [activeTab, setActiveTab] = useState<'description' | 'details' | 'shipping'>('description')
+  const [activeTab, setActiveTab] = useState<'description' | 'details' | 'shipping' | 'reviews'>('description')
+  const { toggle, isWished } = useWishlist()
+
+  // Reviews
+  interface ReviewData { id: string; rating: number; title?: string; body?: string; createdAt: string; user: { name: string; avatar?: string } }
+  const [reviews, setReviews] = useState<ReviewData[]>([])
+  const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', body: '' })
+  const [submittingReview, setSubmittingReview] = useState(false)
+
+  // Related products
+  const relatedParams = item ? { category: item.category, limit: '5' } : undefined
+  const { products: relatedAll } = useProducts(relatedParams)
+  const related = relatedAll.filter(p => p.id !== item?.id).slice(0, 4)
 
   useEffect(() => {
     fetch(`/api/products/${slug}`)
@@ -38,6 +53,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
         setLoading(false)
       })
       .catch(() => setLoading(false))
+    fetch(`/api/products/${slug}/reviews`).then(r => r.json()).then(setReviews).catch(() => {})
   }, [slug])
 
   if (loading) {
@@ -148,9 +164,16 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
         <div className="pdp-info">
           <div className="pdp-info-header">
             <h1 className="pdp-title">{item.name}</h1>
-            <button className="pdp-share-btn" onClick={handleShare} aria-label="Share product">
-              <Share2 size={18} />
-            </button>
+            <div className="pdp-header-actions">
+              {user && (
+                <button className={`pdp-wishlist-btn ${isWished(item.id) ? 'pdp-wishlist-btn--active' : ''}`} onClick={() => toggle(item.id)}>
+                  <Heart size={18} fill={isWished(item.id) ? '#e74c3c' : 'none'} />
+                </button>
+              )}
+              <button className="pdp-share-btn" onClick={handleShare} aria-label="Share product">
+                <Share2 size={18} />
+              </button>
+            </div>
           </div>
 
           <div className="pdp-price-row">
@@ -228,6 +251,9 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
           <button className={`pdp-tab ${activeTab === 'shipping' ? 'pdp-tab--active' : ''}`} onClick={() => setActiveTab('shipping')}>
             {locale === 'zh' ? '配送 & 退货' : 'Shipping & Returns'}
           </button>
+          <button className={`pdp-tab ${activeTab === 'reviews' ? 'pdp-tab--active' : ''}`} onClick={() => setActiveTab('reviews')}>
+            {locale === 'zh' ? '评价' : 'Reviews'} ({reviews.length})
+          </button>
         </div>
 
         <div className="pdp-tab-content">
@@ -263,7 +289,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
                 <Truck size={20} />
                 <div>
                   <strong>{locale === 'zh' ? '免费配送' : 'Free Shipping'}</strong>
-                  <p>{locale === 'zh' ? '订单满 $65 免费配送' : 'Free shipping on orders over $65'}</p>
+                  <p>{locale === 'zh' ? '订单满 $50 免费配送' : 'Free shipping on orders over $50'}</p>
                 </div>
               </div>
               <div className="pdp-shipping-item">
@@ -289,8 +315,81 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
               </div>
             </div>
           )}
+
+          {activeTab === 'reviews' && (
+            <div className="pdp-reviews">
+              {/* Review Summary */}
+              <div className="pdp-review-summary">
+                <div className="pdp-review-avg">
+                  <Star size={20} fill="#D4B28C" color="#D4B28C" />
+                  <span>{item.rating > 0 ? item.rating.toFixed(1) : '—'}</span>
+                </div>
+                <span className="pdp-review-count">{reviews.length} {locale === 'zh' ? '条评价' : reviews.length === 1 ? 'review' : 'reviews'}</span>
+              </div>
+
+              {/* Write Review Form */}
+              {user && (
+                <div className="pdp-review-form">
+                  <h4>{locale === 'zh' ? '写评价' : 'Write a Review'}</h4>
+                  <div className="pdp-review-stars">
+                    {[1,2,3,4,5].map(n => (
+                      <button key={n} className="pdp-star-btn" onClick={() => setReviewForm(f => ({ ...f, rating: n }))}>
+                        <Star size={20} fill={n <= reviewForm.rating ? '#D4B28C' : 'none'} color="#D4B28C" />
+                      </button>
+                    ))}
+                  </div>
+                  <input placeholder={locale === 'zh' ? '标题（可选）' : 'Title (optional)'} value={reviewForm.title} onChange={e => setReviewForm(f => ({ ...f, title: e.target.value }))} className="pdp-review-input" />
+                  <textarea placeholder={locale === 'zh' ? '分享你的体验...' : 'Share your experience...'} value={reviewForm.body} onChange={e => setReviewForm(f => ({ ...f, body: e.target.value }))} className="pdp-review-textarea" rows={3} />
+                  <button className="btn-primary btn-sm" disabled={submittingReview} onClick={async () => {
+                    setSubmittingReview(true)
+                    try {
+                      await fetch(`/api/products/${slug}/reviews`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(reviewForm),
+                      })
+                      const updated = await fetch(`/api/products/${slug}/reviews`).then(r => r.json())
+                      setReviews(updated)
+                      setReviewForm({ rating: 5, title: '', body: '' })
+                    } catch {}
+                    setSubmittingReview(false)
+                  }}>
+                    {submittingReview ? '...' : locale === 'zh' ? '提交评价' : 'Submit Review'}
+                  </button>
+                </div>
+              )}
+
+              {/* Review List */}
+              {reviews.length > 0 ? (
+                <div className="pdp-review-list">
+                  {reviews.map(r => (
+                    <div key={r.id} className="pdp-review-item">
+                      <div className="pdp-review-item-header">
+                        <div className="pdp-review-item-stars">
+                          {[1,2,3,4,5].map(n => <Star key={n} size={14} fill={n <= r.rating ? '#D4B28C' : 'none'} color="#D4B28C" />)}
+                        </div>
+                        <span className="pdp-review-item-date">{new Date(r.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      {r.title && <strong className="pdp-review-item-title">{r.title}</strong>}
+                      {r.body && <p className="pdp-review-item-body">{r.body}</p>}
+                      <span className="pdp-review-item-author">{r.user.name}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="pdp-review-empty">{locale === 'zh' ? '暂无评价，成为第一个评价的人！' : 'No reviews yet. Be the first to review!'}</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Related Products */}
+      {related.length > 0 && (
+        <section className="pdp-related">
+          <h2>{locale === 'zh' ? '猜你喜欢' : 'You May Also Like'}</h2>
+          <ProductGrid items={related} />
+        </section>
+      )}
     </main>
   )
 }

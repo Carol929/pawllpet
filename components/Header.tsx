@@ -63,6 +63,9 @@ export default function Header() {
   const { user, loading: authLoading, logout } = useAuth()
   const { totalItems } = useCart()
   const [query, setQuery] = useState('')
+  const [suggestions, setSuggestions] = useState<{ slug: string; name: string; image: string; price: number }[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null)
@@ -83,7 +86,25 @@ export default function Header() {
     if (query.trim()) {
       router.push(`/search?q=${encodeURIComponent(query.trim())}`)
       setQuery('')
+      setSuggestions([])
+      setShowSuggestions(false)
     }
+  }
+
+  function handleSearchInput(val: string) {
+    setQuery(val)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    if (val.trim().length < 2) { setSuggestions([]); setShowSuggestions(false); return }
+    searchTimeout.current = setTimeout(() => {
+      fetch(`/api/products?search=${encodeURIComponent(val.trim())}&limit=5`)
+        .then(r => r.json())
+        .then(data => {
+          const items = (data.products || data || []).slice(0, 5)
+          setSuggestions(items)
+          setShowSuggestions(items.length > 0)
+        })
+        .catch(() => {})
+    }, 300)
   }
 
   function handleLogout() {
@@ -140,9 +161,22 @@ export default function Header() {
             <input
               type="search" className="header-search-input"
               placeholder={t('header', 'searchPlaceholder')}
-              value={query} onChange={(e) => setQuery(e.target.value)}
+              value={query} onChange={(e) => handleSearchInput(e.target.value)}
+              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               aria-label={t('header', 'searchPlaceholder')}
             />
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="search-autocomplete">
+                {suggestions.map(s => (
+                  <Link key={s.slug} href={`/products/${s.slug}`} className="search-suggestion" onClick={() => { setShowSuggestions(false); setQuery('') }}>
+                    <img src={s.image} alt="" className="search-suggestion-img" />
+                    <span className="search-suggestion-name">{s.name}</span>
+                    <span className="search-suggestion-price">${s.price.toFixed(2)}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </form>
 
           {/* Auth: logged in vs not */}

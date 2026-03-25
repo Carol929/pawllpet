@@ -62,7 +62,12 @@ export async function getProducts(filters?: {
   isDrop?: boolean
   isBundle?: boolean
   limit?: number
-}): Promise<Product[]> {
+  sortBy?: string
+  minPrice?: number
+  maxPrice?: number
+  page?: number
+  pageSize?: number
+}): Promise<{ products: Product[]; total: number }> {
   const where: Record<string, unknown> = { status: 'live' }
 
   if (filters?.search) {
@@ -78,15 +83,37 @@ export async function getProducts(filters?: {
   if (filters?.isBestSeller) where.isBestSeller = true
   if (filters?.isDrop) where.isDrop = true
   if (filters?.isBundle) where.isBundle = true
+  if (filters?.minPrice !== undefined || filters?.maxPrice !== undefined) {
+    where.price = {
+      ...(filters.minPrice !== undefined ? { gte: filters.minPrice } : {}),
+      ...(filters.maxPrice !== undefined ? { lte: filters.maxPrice } : {}),
+    }
+  }
 
-  const products = await prisma.product.findMany({
-    where,
-    include: defaultInclude,
-    orderBy: { createdAt: 'desc' },
-    take: filters?.limit,
-  })
+  let orderBy: Record<string, string> = { createdAt: 'desc' }
+  switch (filters?.sortBy) {
+    case 'price_asc': orderBy = { price: 'asc' }; break
+    case 'price_desc': orderBy = { price: 'desc' }; break
+    case 'newest': orderBy = { createdAt: 'desc' }; break
+    case 'name': orderBy = { name: 'asc' }; break
+    case 'rating': orderBy = { rating: 'desc' }; break
+  }
 
-  return products.map(toProductDTO)
+  const pageSize = filters?.limit || filters?.pageSize || undefined
+  const skip = filters?.page && pageSize ? (filters.page - 1) * pageSize : undefined
+
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: defaultInclude,
+      orderBy,
+      take: pageSize,
+      skip,
+    }),
+    prisma.product.count({ where }),
+  ])
+
+  return { products: products.map(toProductDTO), total }
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
