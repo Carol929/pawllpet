@@ -43,6 +43,7 @@ model User {
   orders    Order[]    // 订单
   wishlists Wishlist[] // 收藏
   reviews   Review[]   // 评价
+  pets      Pet[]      // 宠物档案
 
   @@map("users")
 }
@@ -236,6 +237,24 @@ model EmailVerificationToken {
   createdAt DateTime @default(now()) // 创建时间
 
   @@map("email_verification_tokens")
+}
+
+// 宠物档案表
+model Pet {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  type      String   // "Dog" | "Cat"
+  breed     String?
+  age       String?  // "Puppy/Kitten", "Young", "Adult", "Senior"
+  weight    String?  // "Small", "Medium", "Large"
+  allergies String?
+  photoUrl  String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("pets")
 }
 
 // 收藏表

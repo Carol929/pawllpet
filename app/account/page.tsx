@@ -4,14 +4,14 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useLocale } from '@/lib/i18n'
-import { User, Package, MapPin, Star, Lock, LogOut, Camera, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { User, Package, MapPin, Star, Lock, LogOut, Camera, Plus, Trash2, ChevronDown, ChevronUp, PawPrint, Edit2 } from 'lucide-react'
 import PasswordRequirements, { passwordMeetsAllRules } from '@/components/PasswordRequirements'
 import './account.css'
 
 export default function AccountPage() {
   const router = useRouter()
   const { user, loading, logout, refresh } = useAuth()
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const [activeSection, setActiveSection] = useState('profile')
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -152,7 +152,7 @@ export default function AccountPage() {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) { setError('Please select an image file'); return }
-    if (file.size > 375_000) { setError('Image too large (max 375KB)'); return }
+    if (file.size > 2_000_000) { setError('Image too large (max 2MB)'); return }
 
     setUploadingAvatar(true)
     setError(null)
@@ -182,6 +182,7 @@ export default function AccountPage() {
 
   const sections = [
     { key: 'profile', icon: User, label: t('account', 'profile') },
+    { key: 'pets', icon: PawPrint, label: locale === 'zh' ? '我的宠物' : 'My Pets' },
     { key: 'orders', icon: Package, label: t('account', 'orders') },
     { key: 'addresses', icon: MapPin, label: t('account', 'addresses') },
     { key: 'rewards', icon: Star, label: t('account', 'rewards') },
@@ -347,6 +348,10 @@ export default function AccountPage() {
                 </form>
               )}
             </section>
+          )}
+
+          {activeSection === 'pets' && (
+            <PetsSection />
           )}
 
           {activeSection === 'orders' && (
@@ -568,6 +573,124 @@ function AddressesSection() {
               <div className="addr-actions">
                 {!a.isDefault && <button className="addr-action-btn" onClick={() => handleSetDefault(a.id)}>{locale === 'zh' ? '设为默认' : 'Set Default'}</button>}
                 <button className="addr-action-btn addr-action-btn--danger" onClick={() => handleDelete(a.id)}><Trash2 size={14} /></button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+/* ─── Pets Section ─── */
+interface PetData { id: string; name: string; type: string; breed?: string; age?: string; weight?: string; allergies?: string }
+
+function PetsSection() {
+  const { locale } = useLocale()
+  const [pets, setPets] = useState<PetData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [form, setForm] = useState({ name: '', type: 'Dog', breed: '', age: '', weight: '', allergies: '' })
+  const [saving, setSaving] = useState(false)
+
+  function load() { fetch('/api/pets').then(r => r.json()).then(d => { setPets(d); setLoading(false) }).catch(() => setLoading(false)) }
+  useEffect(load, [])
+
+  function resetForm() { setForm({ name: '', type: 'Dog', breed: '', age: '', weight: '', allergies: '' }); setEditId(null); setShowForm(false) }
+
+  function startEdit(p: PetData) {
+    setForm({ name: p.name, type: p.type, breed: p.breed || '', age: p.age || '', weight: p.weight || '', allergies: p.allergies || '' })
+    setEditId(p.id); setShowForm(true)
+  }
+
+  async function handleSave() {
+    if (!form.name.trim()) return
+    setSaving(true)
+    const url = editId ? `/api/pets/${editId}` : '/api/pets'
+    const method = editId ? 'PATCH' : 'POST'
+    await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+    setSaving(false); resetForm(); load()
+  }
+
+  async function handleDelete(id: string) {
+    await fetch(`/api/pets/${id}`, { method: 'DELETE' })
+    load()
+  }
+
+  const ageOptions = [
+    { value: 'Puppy/Kitten', en: 'Puppy/Kitten', zh: '幼年' },
+    { value: 'Young', en: 'Young (1-3 yrs)', zh: '青年 (1-3岁)' },
+    { value: 'Adult', en: 'Adult (3-7 yrs)', zh: '成年 (3-7岁)' },
+    { value: 'Senior', en: 'Senior (7+ yrs)', zh: '老年 (7+岁)' },
+  ]
+  const weightOptions = [
+    { value: 'Small', en: 'Small (<10kg)', zh: '小型 (<10kg)' },
+    { value: 'Medium', en: 'Medium (10-25kg)', zh: '中型 (10-25kg)' },
+    { value: 'Large', en: 'Large (>25kg)', zh: '大型 (>25kg)' },
+  ]
+
+  if (loading) return <section className="account-section"><p>Loading...</p></section>
+
+  return (
+    <section className="account-section">
+      <div className="section-header-row">
+        <h2>{locale === 'zh' ? '我的宠物' : 'My Pets'}</h2>
+        <button className="btn-secondary btn-sm" onClick={() => { resetForm(); setShowForm(!showForm) }}>
+          <Plus size={14} /> {locale === 'zh' ? '添加宠物' : 'Add Pet'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="pet-form">
+          <h4>{editId ? (locale === 'zh' ? '编辑宠物' : 'Edit Pet') : (locale === 'zh' ? '添加宠物' : 'Add New Pet')}</h4>
+          <div className="pet-form-grid">
+            <input placeholder={locale === 'zh' ? '宠物名字 *' : 'Pet Name *'} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+              <option value="Dog">{locale === 'zh' ? '🐕 狗' : '🐕 Dog'}</option>
+              <option value="Cat">{locale === 'zh' ? '🐈 猫' : '🐈 Cat'}</option>
+            </select>
+            <input placeholder={locale === 'zh' ? '品种（可选）' : 'Breed (optional)'} value={form.breed} onChange={e => setForm({ ...form, breed: e.target.value })} />
+            <select value={form.age} onChange={e => setForm({ ...form, age: e.target.value })}>
+              <option value="">{locale === 'zh' ? '年龄段' : 'Age Range'}</option>
+              {ageOptions.map(o => <option key={o.value} value={o.value}>{locale === 'zh' ? o.zh : o.en}</option>)}
+            </select>
+            <select value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })}>
+              <option value="">{locale === 'zh' ? '体重范围' : 'Weight Range'}</option>
+              {weightOptions.map(o => <option key={o.value} value={o.value}>{locale === 'zh' ? o.zh : o.en}</option>)}
+            </select>
+            <input placeholder={locale === 'zh' ? '过敏信息（可选）' : 'Allergies (optional)'} value={form.allergies} onChange={e => setForm({ ...form, allergies: e.target.value })} />
+          </div>
+          <div className="pet-form-actions">
+            <button className="btn-primary btn-sm" onClick={handleSave} disabled={saving}>{saving ? '...' : locale === 'zh' ? '保存' : 'Save'}</button>
+            <button className="btn-secondary btn-sm" onClick={resetForm}>{locale === 'zh' ? '取消' : 'Cancel'}</button>
+          </div>
+        </div>
+      )}
+
+      {!pets.length && !showForm ? (
+        <div className="account-empty">
+          <PawPrint size={48} strokeWidth={1} />
+          <p>{locale === 'zh' ? '还没有添加宠物呢！添加你的毛孩子来获得个性化推荐' : 'No pets yet! Add your fur babies to get personalized recommendations'}</p>
+        </div>
+      ) : (
+        <div className="pet-list">
+          {pets.map(p => (
+            <div key={p.id} className="pet-card">
+              <div className="pet-card-icon">{p.type === 'Dog' ? '🐕' : '🐈'}</div>
+              <div className="pet-card-info">
+                <h3 className="pet-card-name">{p.name}</h3>
+                <p className="pet-card-details">
+                  {p.type === 'Dog' ? (locale === 'zh' ? '狗' : 'Dog') : (locale === 'zh' ? '猫' : 'Cat')}
+                  {p.breed && ` · ${p.breed}`}
+                  {p.age && ` · ${p.age}`}
+                  {p.weight && ` · ${p.weight}`}
+                </p>
+                {p.allergies && <p className="pet-card-allergies">⚠️ {p.allergies}</p>}
+              </div>
+              <div className="pet-card-actions">
+                <button className="addr-action-btn" onClick={() => startEdit(p)}><Edit2 size={14} /></button>
+                <button className="addr-action-btn addr-action-btn--danger" onClick={() => handleDelete(p.id)}><Trash2 size={14} /></button>
               </div>
             </div>
           ))}

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { useLocale } from '@/lib/i18n'
-import { Check, ChevronLeft, ChevronRight, Share2, Truck, ShieldCheck, RotateCcw, Package, Star, Heart } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Share2, Truck, ShieldCheck, RotateCcw, Package, Star, Heart, PawPrint } from 'lucide-react'
 import { Product } from '@/lib/product-types'
 import { useProducts } from '@/lib/use-products'
 import { ProductGrid } from '@/components/ProductGrid'
@@ -39,6 +39,19 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
   const [reviews, setReviews] = useState<ReviewData[]>([])
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', body: '' })
   const [submittingReview, setSubmittingReview] = useState(false)
+
+  // Pet match
+  const [petNames, setPetNames] = useState<string[]>([])
+  const [petMatch, setPetMatch] = useState(false)
+  useEffect(() => {
+    if (!user) return
+    fetch('/api/pets').then(r => r.json()).then((pets: { name: string; type: string }[]) => {
+      if (pets.length > 0 && item) {
+        const matching = pets.filter(p => item.petType === 'Both' || p.type === item.petType)
+        if (matching.length > 0) { setPetMatch(true); setPetNames(matching.map(p => p.name)) }
+      }
+    }).catch(() => {})
+  }, [user, item])
 
   // Related products
   const relatedParams = item ? { category: item.category, limit: '5' } : undefined
@@ -175,6 +188,12 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
               </button>
             </div>
           </div>
+
+          {petMatch && (
+            <div className="pdp-pet-match">
+              <PawPrint size={14} /> {locale === 'zh' ? `适合 ${petNames.join(' & ')}！` : `Great for ${petNames.join(' & ')}!`}
+            </div>
+          )}
 
           <div className="pdp-price-row">
             <span className="pdp-price">${displayPrice.toFixed(2)}</span>
