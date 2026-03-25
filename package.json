@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",
+    "@stripe/react-stripe-js": "^5.6.1",
     "@stripe/stripe-js": "^8.11.0",
     "@supabase/supabase-js": "^2.99.3",
     "bcryptjs": "^2.4.3",

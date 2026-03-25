@@ -3,14 +3,20 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Lock } from 'lucide-react'
+import { ArrowLeft, Lock, ShieldCheck, Truck, RotateCcw } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { Product } from '@/lib/product-types'
 import { calculateTax } from '@/lib/tax-rates'
+import { StateSelect, formatPhone } from '@/components/StateSelect'
 import './checkout.css'
 
-interface Addr { id?: string; fullName: string; phone?: string; street: string; street2?: string; city: string; state: string; zip: string; country: string }
+interface Addr {
+  fullName: string; phone: string; street: string; street2: string
+  city: string; state: string; zip: string; country: string
+}
+
+const emptyAddr: Addr = { fullName: '', phone: '', street: '', street2: '', city: '', state: '', zip: '', country: 'US' }
 
 export default function CheckoutPage() {
   const { items } = useCart()
@@ -22,17 +28,15 @@ export default function CheckoutPage() {
   const [savedAddrs, setSavedAddrs] = useState<Addr[]>([])
   const [selectedSaved, setSelectedSaved] = useState<number>(0)
   const [useNew, setUseNew] = useState(false)
-  const [form, setForm] = useState<Addr>({ fullName: '', phone: '', street: '', street2: '', city: '', state: '', zip: '', country: 'US' })
+  const [form, setForm] = useState<Addr>({ ...emptyAddr })
   const [paying, setPaying] = useState(false)
   const [error, setError] = useState('')
 
-  // Redirect if not logged in or cart empty
   useEffect(() => {
     if (!authLoading && !user) { router.push('/auth?tab=login'); return }
     if (!authLoading && items.length === 0) { router.push('/cart'); return }
   }, [authLoading, user, items, router])
 
-  // Load products and saved addresses
   useEffect(() => {
     if (items.length === 0) return
     Promise.all([
@@ -62,7 +66,7 @@ export default function CheckoutPage() {
   const { rate: taxRate, amount: tax, stateAbbr: taxState } = calculateTax(subtotal, currentAddr?.state || '')
   const total = subtotal + shipping + tax
 
-  function trimSet(field: keyof Addr, val: string) {
+  function setField(field: keyof Addr, val: string) {
     setForm(f => ({ ...f, [field]: val.trimStart() }))
   }
 
@@ -72,8 +76,8 @@ export default function CheckoutPage() {
 
     const trimmed = {
       fullName: addr.fullName.trim(),
-      phone: (addr.phone || '').trim(),
-      street: `${addr.street.trim()}${addr.street2 ? ', ' + addr.street2.trim() : ''}`,
+      phone: addr.phone?.trim() || '',
+      street: `${addr.street.trim()}${addr.street2?.trim() ? ', ' + addr.street2.trim() : ''}`,
       city: addr.city.trim(),
       state: addr.state.trim(),
       zip: addr.zip.trim(),
@@ -81,8 +85,7 @@ export default function CheckoutPage() {
     }
 
     if (!trimmed.fullName || !trimmed.street || !trimmed.city || !trimmed.state || !trimmed.zip) {
-      setError('Please fill in all required address fields')
-      return
+      setError('Please fill in all required fields (marked with *)'); return
     }
 
     setError('')
@@ -97,11 +100,11 @@ export default function CheckoutPage() {
       if (data.url) {
         window.location.href = data.url
       } else {
-        setError(data.error || 'Checkout failed')
+        setError(data.error || 'Unable to start checkout. Please try again.')
         setPaying(false)
       }
     } catch {
-      setError('Checkout failed. Please try again.')
+      setError('Connection error. Please check your internet and try again.')
       setPaying(false)
     }
   }
@@ -112,13 +115,13 @@ export default function CheckoutPage() {
 
   return (
     <main className="container checkout-page">
-      <Link href="/cart" className="btn-secondary btn-sm" style={{ marginBottom: '1rem', display: 'inline-flex', alignItems: 'center', gap: '.3rem' }}>
+      <Link href="/cart" className="checkout-back">
         <ArrowLeft size={14} /> Back to Cart
       </Link>
       <h1>Checkout</h1>
 
       <div className="checkout-layout">
-        {/* Left: Shipping Address */}
+        {/* Left: Address */}
         <div className="checkout-form">
           <h2>Shipping Address</h2>
 
@@ -130,7 +133,7 @@ export default function CheckoutPage() {
                   <span>{a.fullName}, {a.street}, {a.city} {a.state} {a.zip}</span>
                 </label>
               ))}
-              <button className="checkout-new-addr-btn" onClick={() => setUseNew(true)}>
+              <button type="button" className="checkout-new-addr-btn" onClick={() => setUseNew(true)}>
                 {useNew ? '✓ New address' : '+ Enter a new address'}
               </button>
             </div>
@@ -138,22 +141,35 @@ export default function CheckoutPage() {
 
           {useNew && (
             <div className="checkout-form-fields">
-              <input placeholder="Full Name *" autoComplete="name" value={form.fullName} onChange={e => trimSet('fullName', e.target.value)} />
-              <input placeholder="Phone (optional)" autoComplete="tel" value={form.phone || ''} onChange={e => trimSet('phone', e.target.value)} />
-              <input placeholder="Street Address *" autoComplete="address-line1" value={form.street} onChange={e => trimSet('street', e.target.value)} />
-              <input placeholder="Apt, Suite, Unit (optional)" autoComplete="address-line2" value={form.street2 || ''} onChange={e => trimSet('street2', e.target.value)} />
+              <input placeholder="Full Name *" autoComplete="name" value={form.fullName} onChange={e => setField('fullName', e.target.value)} />
+              <input
+                placeholder="Phone (xxx-xxx-xxxx)"
+                autoComplete="tel"
+                value={form.phone}
+                onChange={e => setForm(f => ({ ...f, phone: formatPhone(e.target.value) }))}
+                maxLength={12}
+              />
+              <input placeholder="Street Address *" autoComplete="address-line1" value={form.street} onChange={e => setField('street', e.target.value)} />
+              <input placeholder="Apt, Suite, Unit (optional)" autoComplete="address-line2" value={form.street2} onChange={e => setField('street2', e.target.value)} />
               <div className="checkout-form-row">
-                <input placeholder="City *" autoComplete="address-level2" value={form.city} onChange={e => trimSet('city', e.target.value)} />
-                <input placeholder="State *" autoComplete="address-level1" value={form.state} onChange={e => trimSet('state', e.target.value)} />
-                <input placeholder="ZIP *" autoComplete="postal-code" value={form.zip} onChange={e => trimSet('zip', e.target.value)} />
+                <input placeholder="City *" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} />
+                <StateSelect value={form.state} onChange={val => setForm(f => ({ ...f, state: val }))} />
+                <input placeholder="ZIP *" autoComplete="postal-code" value={form.zip} onChange={e => setField('zip', e.target.value)} style={{ maxWidth: 100 }} />
               </div>
             </div>
           )}
 
-          {error && <p style={{ color: '#dc2626', fontSize: '.9rem', marginTop: '.5rem' }}>{error}</p>}
+          {error && <p className="checkout-error">{error}</p>}
+
+          {/* Trust signals */}
+          <div className="checkout-trust">
+            <div className="checkout-trust-item"><ShieldCheck size={16} /> Secure checkout</div>
+            <div className="checkout-trust-item"><Truck size={16} /> {freeShipping ? 'Free shipping' : '5-7 business days'}</div>
+            <div className="checkout-trust-item"><RotateCcw size={16} /> 30-day returns</div>
+          </div>
         </div>
 
-        {/* Right: Order Summary */}
+        {/* Right: Summary */}
         <div className="checkout-summary">
           <h2>Order Summary</h2>
           <div className="checkout-items">
@@ -178,7 +194,7 @@ export default function CheckoutPage() {
 
           <button className="checkout-pay-btn" onClick={handlePay} disabled={paying}>
             <Lock size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-            {paying ? 'PROCESSING...' : `PAY $${total.toFixed(2)}`}
+            {paying ? 'REDIRECTING TO PAYMENT...' : `PAY $${total.toFixed(2)}`}
           </button>
 
           {!freeShipping && (

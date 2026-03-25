@@ -131,8 +131,12 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ url: session.url })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Checkout error:', error)
-    return NextResponse.json({ error: 'Checkout failed' }, { status: 500 })
+    const msg = error instanceof Error ? error.message : 'Unknown error'
+    if (msg.includes('STRIPE_SECRET_KEY')) {
+      return NextResponse.json({ error: 'Payment system not configured. Please contact support.' }, { status: 500 })
+    }
+    return NextResponse.json({ error: 'Checkout failed. Please try again.' }, { status: 500 })
   }
 }
