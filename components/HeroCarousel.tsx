@@ -14,28 +14,62 @@ const slides = [
   },
 ]
 
+// Infinite loop: clone last slide before first, and first slide after last
+// Layout: [clone-last] [slide0] [slide1] [clone-first]
+// Index:      0           1        2          3
+const loopSlides = [
+  slides[slides.length - 1], // clone of last
+  ...slides,
+  slides[0], // clone of first
+]
+
 export function HeroCarousel() {
-  const [current, setCurrent] = useState(0)
+  const [pos, setPos] = useState(1) // Start at real first slide (index 1)
+  const [transitioning, setTransitioning] = useState(true)
   const [paused, setPaused] = useState(false)
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  const realIndex = ((pos - 1) % slides.length + slides.length) % slides.length
+
   const goTo = useCallback((index: number) => {
-    setCurrent((index + slides.length) % slides.length)
+    setTransitioning(true)
+    setPos(index)
   }, [])
 
-  const next = useCallback(() => goTo(current + 1), [current, goTo])
-  const prev = useCallback(() => goTo(current - 1), [current, goTo])
+  const next = useCallback(() => goTo(pos + 1), [pos, goTo])
+  const prev = useCallback(() => goTo(pos - 1), [pos, goTo])
 
+  // Handle snap-back when reaching clone slides
+  function handleTransitionEnd() {
+    if (pos <= 0) {
+      // Reached clone of last → jump to real last (no animation)
+      setTransitioning(false)
+      setPos(slides.length)
+    } else if (pos >= slides.length + 1) {
+      // Reached clone of first → jump to real first (no animation)
+      setTransitioning(false)
+      setPos(1)
+    }
+  }
+
+  // Re-enable transition after snap-back
+  useEffect(() => {
+    if (!transitioning) {
+      const id = requestAnimationFrame(() => setTransitioning(true))
+      return () => cancelAnimationFrame(id)
+    }
+  }, [transitioning])
+
+  // Autoplay
   useEffect(() => {
     if (paused) return
     autoplayRef.current = setInterval(() => {
-      setCurrent((c) => (c + 1) % slides.length)
+      setTransitioning(true)
+      setPos(p => p + 1)
     }, 5000)
-    return () => {
-      if (autoplayRef.current) clearInterval(autoplayRef.current)
-    }
+    return () => { if (autoplayRef.current) clearInterval(autoplayRef.current) }
   }, [paused])
 
   function handleTouchStart(e: React.TouchEvent) {
@@ -47,8 +81,7 @@ export function HeroCarousel() {
     const dx = e.changedTouches[0].clientX - touchStartX.current
     const dy = e.changedTouches[0].clientY - touchStartY.current
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
-      if (dx < 0) next()
-      else prev()
+      if (dx < 0) next(); else prev()
     }
   }
 
@@ -62,28 +95,24 @@ export function HeroCarousel() {
     >
       <div
         className="hero-carousel-track"
-        style={{ transform: `translateX(-${current * 100}%)` }}
+        style={{
+          transform: `translateX(-${pos * 100}%)`,
+          transition: transitioning ? 'transform 0.5s ease' : 'none',
+        }}
+        onTransitionEnd={handleTransitionEnd}
       >
-        {slides.map((slide, i) => (
+        {loopSlides.map((slide, i) => (
           <div key={i} className="hero-carousel-slide">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={slide.src} alt={slide.alt} loading={i === 0 ? 'eager' : 'lazy'} />
+            <img src={slide.src} alt={slide.alt} loading={i <= 2 ? 'eager' : 'lazy'} />
           </div>
         ))}
       </div>
 
-      <button
-        className="hero-carousel-arrow hero-carousel-arrow--left"
-        onClick={prev}
-        aria-label="Previous slide"
-      >
+      <button className="hero-carousel-arrow hero-carousel-arrow--left" onClick={prev} aria-label="Previous slide">
         <ChevronLeft size={22} />
       </button>
-      <button
-        className="hero-carousel-arrow hero-carousel-arrow--right"
-        onClick={next}
-        aria-label="Next slide"
-      >
+      <button className="hero-carousel-arrow hero-carousel-arrow--right" onClick={next} aria-label="Next slide">
         <ChevronRight size={22} />
       </button>
 
@@ -91,8 +120,8 @@ export function HeroCarousel() {
         {slides.map((_, i) => (
           <button
             key={i}
-            className={`hero-carousel-dot ${i === current ? 'hero-carousel-dot--active' : ''}`}
-            onClick={() => goTo(i)}
+            className={`hero-carousel-dot ${i === realIndex ? 'hero-carousel-dot--active' : ''}`}
+            onClick={() => goTo(i + 1)}
             aria-label={`Go to slide ${i + 1}`}
           />
         ))}
