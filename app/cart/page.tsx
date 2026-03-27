@@ -35,13 +35,17 @@ export default function CartPage() {
     .map(item => { const p = productMap[item.productId]; return p ? { ...p, quantity: item.quantity } : null })
     .filter(Boolean) as (Product & { quantity: number })[]
 
+  const hasGift = cartProducts.some(p => p.slug === 'quiz-gift')
+  const paidSubtotal = cartProducts.filter(p => p.slug !== 'quiz-gift').reduce((sum, p) => sum + p.price * p.quantity, 0)
   const subtotal = cartProducts.reduce((sum, p) => sum + p.price * p.quantity, 0)
   const totalCount = cartProducts.reduce((sum, p) => sum + p.quantity, 0)
   const freeShipping = subtotal >= 50
   const shipping = freeShipping ? 0 : 5.99
+  const giftBlocked = hasGift && paidSubtotal < 10
 
   function handleCheckout() {
     if (!user) { router.push('/auth?tab=login'); return }
+    if (giftBlocked) { return }
     router.push('/checkout')
   }
 
@@ -93,7 +97,10 @@ export default function CartPage() {
             <span className="cart-summary-total-label">Total({totalCount})</span>
             <span><span className="cart-summary-total-price">${(subtotal + shipping).toFixed(2)}</span><span className="cart-summary-currency">USD</span></span>
           </div>
-          <button className="cart-checkout-btn" onClick={handleCheckout}>CHECK OUT</button>
+          {giftBlocked && (
+            <div className="cart-gift-warning">🎁 Spend ${(10 - paidSubtotal).toFixed(2)} more to redeem your free gift!</div>
+          )}
+          <button className="cart-checkout-btn" onClick={handleCheckout} disabled={giftBlocked}>CHECK OUT</button>
           {!freeShipping && <div className="cart-free-shipping">Add <strong>${(50 - subtotal).toFixed(2)}</strong> more for free shipping!</div>}
         </div>
       </div>

@@ -5,7 +5,8 @@ import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth-context'
 import { useProducts } from '@/lib/use-products'
 import { ProductGrid } from '@/components/ProductGrid'
-import { PawPrint, ChevronRight, Check, RotateCcw } from 'lucide-react'
+import { useCart } from '@/lib/cart-context'
+import { PawPrint, ChevronRight, Check, RotateCcw, Gift } from 'lucide-react'
 
 const steps = [
   {
@@ -56,11 +57,14 @@ const steps = [
 export default function PetQuizPage() {
   const { locale } = useLocale()
   const { user } = useAuth()
+  const { addItem } = useCart()
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [done, setDone] = useState(false)
   const [saved, setSaved] = useState(false)
   const [petName, setPetName] = useState('')
+  const [giftAdded, setGiftAdded] = useState(false)
+  const [giftName, setGiftName] = useState('')
 
   const params: Record<string, string> = { limit: '8' }
   if (answers.type) params.petType = answers.type
@@ -74,6 +78,21 @@ export default function PetQuizPage() {
       setStep(step + 1)
     } else {
       setDone(true)
+      // Add free gift if not already claimed
+      if (!localStorage.getItem('quiz-gift-claimed')) {
+        fetch('/api/products?search=quiz-gift&limit=1')
+          .then(r => r.json())
+          .then(data => {
+            const gift = (data.products || [])[0]
+            if (gift) {
+              addItem(gift.id)
+              setGiftAdded(true)
+              setGiftName(gift.name)
+              localStorage.setItem('quiz-gift-claimed', 'true')
+            }
+          })
+          .catch(() => {})
+      }
     }
   }
 
@@ -120,6 +139,16 @@ export default function PetQuizPage() {
         </div>
       ) : (
         <div className="quiz-results">
+          {giftAdded && (
+            <div className="quiz-gift-popup">
+              <Gift size={24} />
+              <div>
+                <strong>{locale === 'zh' ? '🎁 恭喜！你获得了一个免费赠品！' : '🎁 Congrats! You got a free gift!'}</strong>
+                <p>{giftName} {locale === 'zh' ? '已加入你的购物车（消费满 $10 即可使用）' : 'has been added to your cart (spend $10+ to redeem)'}</p>
+              </div>
+            </div>
+          )}
+
           <div className="quiz-results-header">
             <Check size={24} className="quiz-check-icon" />
             <h2>{locale === 'zh' ? '为你推荐的产品' : 'Recommended Products for You'}</h2>

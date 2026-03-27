@@ -85,6 +85,7 @@ export default function Footer() {
           <Link href="/shop-by-need">{en ? 'Shop by Need' : '按需求购物'}</Link>
           <Link href="/mystery-boxes">{en ? 'Mystery Boxes' : '盲盒'}</Link>
           <Link href="/best-sellers">{en ? 'Best Sellers' : '热销商品'}</Link>
+          <Link href="/pet-quiz">{en ? 'Pet Quiz 🎁' : '宠物问卷 🎁'}</Link>
         </div>
       </div>
 

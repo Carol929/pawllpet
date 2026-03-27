@@ -80,6 +80,16 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Pet Quiz CTA */}
+      <section className="quiz-cta">
+        <PawPrint size={32} />
+        <div>
+          <h2>{locale === 'zh' ? '不知道买什么？试试宠物问卷！' : "Not sure what to get? Take the Pet Quiz!"}</h2>
+          <p>{locale === 'zh' ? '回答几个问题，获得个性化推荐 + 免费赠品' : 'Answer a few questions for personalized picks + a free gift'}</p>
+        </div>
+        <Link href="/pet-quiz" className="btn-primary">{locale === 'zh' ? '开始问卷' : 'Take the Quiz'} →</Link>
+      </section>
+
       <section className="section-oval">
         <h2>{t('home', 'allProducts')}</h2>
         <ProductGrid items={allProducts} />

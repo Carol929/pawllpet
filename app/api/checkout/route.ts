@@ -63,6 +63,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No valid products' }, { status: 400 })
     }
 
+    // Check $10 threshold for free gifts ($0 products)
+    const hasGift = products.some(p => p.price === 0)
+    const paidTotal = orderItems.filter(i => i.price > 0).reduce((s, i) => s + i.price * i.quantity, 0)
+    if (hasGift && paidTotal < 10) {
+      return NextResponse.json({ error: 'Spend $10 or more to redeem your free gift' }, { status: 400 })
+    }
+
     const shipping = subtotal >= 50 ? 0 : 5.99
 
     // Calculate sales tax based on shipping state (only for nexus states)
