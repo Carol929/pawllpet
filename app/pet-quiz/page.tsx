@@ -45,9 +45,9 @@ const steps = [
     zh: '你在找什么类型的产品？',
     options: [
       { value: 'toys', en: '🧸 Toys', zh: '🧸 玩具' },
-      { value: 'beds', en: '🛏️ Beds & Blankets', zh: '🛏️ 床和毯子' },
-      { value: 'grooming', en: '🧴 Grooming', zh: '🧴 美容护理' },
-      { value: 'treats', en: '🦴 Treats & Food', zh: '🦴 零食' },
+      { value: 'beds', en: '🛏️ Beds & Blankets', zh: '🛏️ 窝和毯子' },
+      { value: 'leashes', en: '🦮 Leashes & Harnesses', zh: '🦮 牵引绳和胸背带' },
+      { value: 'bowls', en: '🍽️ Bowls & Feeders', zh: '🍽️ 食盆和喂食器' },
       { value: 'accessories', en: '🎀 Accessories', zh: '🎀 配饰' },
       { value: 'all', en: '✨ Show me everything!', zh: '✨ 展示所有！' },
     ],
