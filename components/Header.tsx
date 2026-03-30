@@ -9,42 +9,42 @@ import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth-context'
 import { useCart } from '@/lib/cart-context'
 
-type SubItem = { labelKey: string; href: string; color: string }
-type NavItem = { labelKey: string; href: string; subs: SubItem[] }
+type SubItem = { labelKey: string; href: string; color: string; icon: string }
+type NavItem = { labelKey: string; href: string; icon: string; subs: SubItem[] }
 
 const navItems: NavItem[] = [
   {
-    labelKey: 'newArrivals', href: '/new-arrivals',
+    labelKey: 'newArrivals', href: '/new-arrivals', icon: '✨',
     subs: [
-      { labelKey: 'allNew', href: '/new-arrivals', color: '' },
-      { labelKey: 'forDogs', href: '/new-arrivals?pet=dog', color: '' },
-      { labelKey: 'forCats', href: '/new-arrivals?pet=cat', color: '' },
+      { labelKey: 'allNew', href: '/new-arrivals', color: '', icon: '🆕' },
+      { labelKey: 'forDogs', href: '/new-arrivals?pet=dog', color: '', icon: '🐕' },
+      { labelKey: 'forCats', href: '/new-arrivals?pet=cat', color: '', icon: '🐈' },
     ],
   },
   {
-    labelKey: 'cats', href: '/shop?pet=cat',
+    labelKey: 'cats', href: '/shop?pet=cat', icon: '🐱',
     subs: [
-      { labelKey: 'toys', href: '/shop?pet=cat&category=toys', color: '' },
-      { labelKey: 'accessories', href: '/shop?pet=cat&category=accessories', color: '' },
-      { labelKey: 'beds', href: '/shop?pet=cat&category=beds', color: '' },
-      { labelKey: 'feeders', href: '/shop?pet=cat&category=feeders-bowls', color: '' },
+      { labelKey: 'toys', href: '/shop?pet=cat&category=toys', color: '', icon: '🧸' },
+      { labelKey: 'accessories', href: '/shop?pet=cat&category=accessories', color: '', icon: '🎀' },
+      { labelKey: 'beds', href: '/shop?pet=cat&category=beds', color: '', icon: '🛏️' },
+      { labelKey: 'feeders', href: '/shop?pet=cat&category=feeders-bowls', color: '', icon: '🍽️' },
     ],
   },
   {
-    labelKey: 'dogs', href: '/shop?pet=dog',
+    labelKey: 'dogs', href: '/shop?pet=dog', icon: '🐶',
     subs: [
-      { labelKey: 'toys', href: '/shop?pet=dog&category=toys', color: '' },
-      { labelKey: 'accessories', href: '/shop?pet=dog&category=accessories', color: '' },
-      { labelKey: 'beds', href: '/shop?pet=dog&category=beds', color: '' },
-      { labelKey: 'feeders', href: '/shop?pet=dog&category=feeders-bowls', color: '' },
+      { labelKey: 'toys', href: '/shop?pet=dog&category=toys', color: '', icon: '🦴' },
+      { labelKey: 'accessories', href: '/shop?pet=dog&category=accessories', color: '', icon: '🦮' },
+      { labelKey: 'beds', href: '/shop?pet=dog&category=beds', color: '', icon: '🛏️' },
+      { labelKey: 'feeders', href: '/shop?pet=dog&category=feeders-bowls', color: '', icon: '🍽️' },
     ],
   },
   {
-    labelKey: 'mysteryBoxes', href: '/mystery-boxes',
+    labelKey: 'mysteryBoxes', href: '/mystery-boxes', icon: '🎁',
     subs: [
-      { labelKey: 'dogBox', href: '/mystery-boxes?type=dog', color: '' },
-      { labelKey: 'catBox', href: '/mystery-boxes?type=cat', color: '' },
-      { labelKey: 'surpriseBox', href: '/mystery-boxes?type=surprise', color: '' },
+      { labelKey: 'dogBox', href: '/mystery-boxes?type=dog', color: '', icon: '📦' },
+      { labelKey: 'catBox', href: '/mystery-boxes?type=cat', color: '', icon: '📦' },
+      { labelKey: 'surpriseBox', href: '/mystery-boxes?type=surprise', color: '', icon: '🎉' },
     ],
   },
 ]
@@ -134,14 +134,14 @@ export default function Header() {
                 aria-haspopup="true"
                 aria-expanded={openDropdown === item.labelKey}
               >
-                {t('nav', item.labelKey as any)}
+                {item.icon} {t('nav', item.labelKey as any)}
                 <ChevronDown size={14} className={`nav-chevron ${openDropdown === item.labelKey ? 'nav-chevron--open' : ''}`} />
               </Link>
               {openDropdown === item.labelKey && (
                 <div className="nav-dropdown-panel" role="menu">
                   {item.subs.map((sub) => (
                     <Link key={sub.href} href={sub.href} className="nav-dropdown-pill" style={{ background: sub.color }} role="menuitem">
-                      {t('nav', sub.labelKey as any)}
+                      {sub.icon} {t('nav', sub.labelKey as any)}
                     </Link>
                   ))}
                 </div>
@@ -260,14 +260,14 @@ export default function Header() {
                   onClick={() => setExpandedMobile(expandedMobile === item.labelKey ? null : item.labelKey)}
                   aria-expanded={expandedMobile === item.labelKey}
                 >
-                  {t('nav', item.labelKey as any)}
+                  {item.icon} {t('nav', item.labelKey as any)}
                   <ChevronDown size={16} className={`nav-chevron ${expandedMobile === item.labelKey ? 'nav-chevron--open' : ''}`} />
                 </button>
                 {expandedMobile === item.labelKey && (
                   <div className="mobile-dropdown-list">
                     {item.subs.map((sub) => (
                       <Link key={sub.href} href={sub.href} className="nav-dropdown-pill" style={{ background: sub.color }} onClick={() => setMobileMenuOpen(false)}>
-                        {t('nav', sub.labelKey as any)}
+                        {sub.icon} {t('nav', sub.labelKey as any)}
                       </Link>
                     ))}
                   </div>
