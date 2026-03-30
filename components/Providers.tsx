@@ -7,6 +7,7 @@ import { CartProvider } from '@/lib/cart-context'
 import { WishlistProvider } from '@/lib/wishlist-context'
 import { ScrollToTop } from '@/components/ScrollToTop'
 import { NewsletterPopup } from '@/components/NewsletterPopup'
+import { CookieConsent } from '@/components/CookieConsent'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -17,6 +18,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <WishlistProvider>
               <ScrollToTop />
               <NewsletterPopup />
+              <CookieConsent />
               {children}
             </WishlistProvider>
           </CartProvider>

@@ -68,6 +68,12 @@ export default function Footer() {
           <Link href="/track-order">{en ? 'Track Your Order' : '订单追踪'}</Link>
           <Link href="/returns-policy">{en ? 'Returns' : '退货政策'}</Link>
           <Link href="/exchange-policy">{en ? 'Exchange' : '换货政策'}</Link>
+          <button className="footer-link-btn" onClick={() => { localStorage.removeItem('pawll-cookie-consent'); window.location.reload() }}>
+            {en ? 'Cookie Preferences' : 'Cookie 设置'}
+          </button>
+          <button className="footer-link-btn" onClick={() => { localStorage.setItem('pawll-cookie-consent', JSON.stringify({ essential: true, analytics: false, marketing: false })); alert(en ? 'Your preferences have been saved. We will not sell or share your personal information.' : '您的偏好已保存。我们不会出售或分享您的个人信息。') }}>
+            {en ? 'Do Not Sell My Info' : '请勿出售我的信息'}
+          </button>
         </div>
 
         {/* About Us */}

@@ -1170,6 +1170,35 @@ a { color: inherit; text-decoration: none; }
 /* ---------- Pet Match Badge (PDP) ---------- */
 .pdp-pet-match { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .75rem; background: #e8f5e9; color: #2e7d32; border-radius: 999px; font-size: .85rem; font-weight: 600; margin-bottom: .5rem; }
 
+/* ---------- Cookie Consent ---------- */
+.cc-banner { position: fixed; bottom: 0; left: 0; right: 0; background: #1f2e44; color: #e5e7eb; z-index: 999; box-shadow: 0 -4px 20px rgba(0,0,0,.15); animation: slideUp .3s ease; }
+@keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
+.cc-content { max-width: 960px; margin: 0 auto; padding: 1.25rem 1.5rem; }
+.cc-header { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+.cc-header h3 { margin: 0; font-size: 1rem; color: #fff; }
+.cc-header svg { color: #D4B28C; }
+.cc-text { font-size: .85rem; line-height: 1.5; color: #b0b8c4; margin: 0 0 .75rem; }
+.cc-link { color: #D4B28C; text-decoration: underline; }
+.cc-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .5rem; }
+.cc-btn { padding: .5rem 1rem; border-radius: 8px; font-size: .85rem; font-weight: 600; cursor: pointer; border: none; display: flex; align-items: center; gap: .3rem; }
+.cc-btn--primary { background: #D4B28C; color: #1f2e44; }
+.cc-btn--primary:hover { background: #c9a477; }
+.cc-btn--secondary { background: rgba(255,255,255,.12); color: #fff; }
+.cc-btn--secondary:hover { background: rgba(255,255,255,.2); }
+.cc-btn--outline { background: none; border: 1px solid rgba(255,255,255,.25); color: #ccc; }
+.cc-btn--outline:hover { border-color: #D4B28C; color: #D4B28C; }
+.cc-prefs { margin-bottom: .75rem; display: flex; flex-direction: column; gap: .5rem; }
+.cc-pref-item { display: flex; justify-content: space-between; align-items: center; padding: .6rem .75rem; background: rgba(255,255,255,.06); border-radius: 10px; }
+.cc-pref-item strong { font-size: .85rem; color: #fff; display: flex; align-items: center; gap: .3rem; }
+.cc-pref-item span { display: block; font-size: .75rem; color: #888; margin-top: .15rem; }
+.cc-pref-item input[type="checkbox"] { accent-color: #D4B28C; width: 18px; height: 18px; }
+.cc-dns { background: none; border: none; color: #888; font-size: .75rem; cursor: pointer; text-decoration: underline; padding: 0; }
+.cc-dns:hover { color: #D4B28C; }
+.cc-close { position: absolute; top: 12px; right: 16px; background: none; border: none; color: #888; cursor: pointer; }
+.cc-close:hover { color: #fff; }
+.footer-link-btn { display: block; background: none; border: none; color: inherit; font-size: .85rem; cursor: pointer; padding: .2rem 0; opacity: .9; text-align: left; }
+.footer-link-btn:hover { opacity: 1; color: #D4B28C; }
+
 /* ---------- Newsletter Popup ---------- */
 .nl-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000; display: flex; align-items: center; justify-content: center; animation: fadeIn .2s ease; }
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
