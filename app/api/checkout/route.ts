@@ -19,6 +19,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing items or shipping address' }, { status: 400 })
     }
 
+    // Validate shipping address
+    if (!shippingAddress.fullName || !shippingAddress.street || !shippingAddress.city || !shippingAddress.state || !shippingAddress.zip) {
+      return NextResponse.json({ error: 'Incomplete shipping address' }, { status: 400 })
+    }
+
+    // Validate quantities
+    for (const item of items) {
+      if (!item.productId || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 99) {
+        return NextResponse.json({ error: 'Invalid item quantity (must be 1-99)' }, { status: 400 })
+      }
+    }
+
     // Fetch product prices from DB (prevent price tampering)
     const productIds = items.map((i: { productId: string }) => i.productId)
     const products = await prisma.product.findMany({
@@ -34,6 +46,11 @@ export async function POST(request: NextRequest) {
     for (const item of items) {
       const product = productMap.get(item.productId)
       if (!product) continue
+
+      // Stock validation — prevent overselling
+      if (product.price > 0 && product.stock < item.quantity) {
+        return NextResponse.json({ error: `${product.name} only has ${product.stock} in stock` }, { status: 400 })
+      }
 
       const price = product.price
       subtotal += price * item.quantity

@@ -23,8 +23,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   if (authResult instanceof NextResponse) return authResult
 
   const data = await request.json()
+  const validStatuses = ['pending', 'paid', 'shipped', 'delivered', 'cancelled']
   const allowed: Record<string, unknown> = {}
-  if (data.status) allowed.status = data.status
+  if (data.status) {
+    if (!validStatuses.includes(data.status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+    allowed.status = data.status
+  }
   if (data.trackingNumber !== undefined) allowed.trackingNumber = data.trackingNumber
 
   const order = await prisma.order.update({

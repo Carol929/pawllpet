@@ -27,19 +27,25 @@ export async function POST(request: NextRequest) {
     const orderId = session.metadata?.orderId
 
     if (orderId) {
-      // Update order status to paid
+      // Idempotency: only process if order is still pending
+      const existing = await prisma.order.findUnique({ where: { id: orderId }, select: { status: true } })
+      if (!existing || existing.status !== 'pending') {
+        // Already processed or doesn't exist — skip
+        return NextResponse.json({ received: true })
+      }
+
+      // Update order status to paid + deduct stock atomically
       const order = await prisma.order.update({
         where: { id: orderId },
         data: { status: 'paid' },
         include: { items: true },
       })
 
-      // Deduct stock
       for (const item of order.items) {
         await prisma.product.update({
           where: { id: item.productId },
           data: { stock: { decrement: item.quantity } },
-        }).catch(() => {}) // ignore if product was deleted
+        }).catch(() => {})
       }
     }
   }
