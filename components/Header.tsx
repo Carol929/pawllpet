@@ -64,6 +64,7 @@ export default function Header() {
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [langMenuOpen, setLangMenuOpen] = useState(false)
+  const langMenuTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const userMenuTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const openUserMenu = useCallback(() => {
@@ -218,14 +219,14 @@ export default function Header() {
             </div>
           )}
 
-          <div className="lang-dropdown-wrapper" onMouseEnter={() => setLangMenuOpen(true)} onMouseLeave={() => setLangMenuOpen(false)}>
+          <div className="lang-dropdown-wrapper" onMouseEnter={() => { if (langMenuTimer.current) clearTimeout(langMenuTimer.current); setLangMenuOpen(true) }} onMouseLeave={() => { langMenuTimer.current = setTimeout(() => setLangMenuOpen(false), 300) }}>
             <button className="lang-toggle" aria-label="Language">
               <Globe size={15} />
               Language
             </button>
             {langMenuOpen && (
               <div className="lang-dropdown">
-                {([['en', 'English'], ['zh', '中文'], ['es', 'Español'], ['fr', 'Français'], ['ja', '日本語'], ['ko', '한국어']] as const).map(([code, name]) => (
+                {([['en', 'English'], ['es', 'Español'], ['fr', 'Français'], ['zh', '中文'], ['ja', '日本語'], ['ko', '한국어']] as const).map(([code, name]) => (
                   <button key={code} className={`lang-option ${locale === code ? 'lang-option--active' : ''}`} onClick={() => { setLocale(code as any); setLangMenuOpen(false) }}>
                     {name}
                   </button>
