@@ -71,6 +71,7 @@ model Product {
   material       String?
   price          Float    @default(0)
   compareAtPrice Float?
+  weight         Float?   // Weight in lbs, used for shipping calculation
   stock          Int      @default(0)
   rating         Float    @default(0)
   status         String   @default("draft") // "draft", "live", "archived"

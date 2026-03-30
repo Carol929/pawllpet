@@ -19,6 +19,7 @@ function toProductDTO(dbProduct: {
   compareAtPrice: number | null
   brand: string | null
   material: string | null
+  weight: number | null
   category: { name: string; slug: string }
   images: { url: string }[]
   variants: { id: string; name: string; price: number; stock: number }[]
@@ -44,6 +45,7 @@ function toProductDTO(dbProduct: {
     compareAtPrice: dbProduct.compareAtPrice,
     brand: dbProduct.brand,
     material: dbProduct.material,
+    weight: dbProduct.weight,
   }
 }
 

@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { calculateTax } from '@/lib/tax-rates'
+import { calculateShipping, calculateTotalWeight } from '@/lib/shipping-rates'
 import { prisma } from '@/lib/db'
 import { requireUser } from '@/lib/user-auth'
 
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
   const { userId } = authResult
 
   try {
-    const { items, shippingAddress } = await request.json()
+    const { items, shippingAddress, shippingMethod = 'standard' } = await request.json()
 
     if (!items?.length || !shippingAddress) {
       return NextResponse.json({ error: 'Missing items or shipping address' }, { status: 400 })
@@ -87,7 +88,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Spend $10 or more to redeem your free gift' }, { status: 400 })
     }
 
-    const shipping = subtotal >= 50 ? 0 : 5.99
+    const totalWeight = calculateTotalWeight(orderItems.map(i => ({ quantity: i.quantity, weight: (productMap.get(i.productId) as any)?.weight || 1 })))
+    const method = shippingMethod === 'express' ? 'express' : 'standard' as const
+    const { cost: shipping } = calculateShipping(totalWeight, method, subtotal)
 
     // Calculate sales tax based on shipping state (only for nexus states)
     const { rate: taxRate, amount: tax, stateAbbr } = calculateTax(subtotal, shippingAddress.state || '')

@@ -23,7 +23,7 @@ export default function NewProduct() {
 
   const [form, setForm] = useState({
     name: '', subtitle: '', slug: '', description: '', categoryId: '', petType: 'Both',
-    brand: '', material: '', price: 0, compareAtPrice: 0, stock: 0,
+    brand: '', material: '', price: 0, compareAtPrice: 0, stock: 0, weight: 1,
     status: 'draft', isNew: false, isBestSeller: false, isDrop: false, isBundle: false,
   })
 
@@ -207,6 +207,10 @@ export default function NewProduct() {
             <div className="admin-form-group">
               <label>Stock</label>
               <input type="number" min="0" value={form.stock} onChange={e => updateField('stock', e.target.value)} />
+            </div>
+            <div className="admin-form-group">
+              <label>Weight (lb)</label>
+              <input type="number" min="0" step="0.1" value={form.weight} onChange={e => updateField('weight', e.target.value)} />
             </div>
             <div className="admin-form-group">
               <label>Status</label>

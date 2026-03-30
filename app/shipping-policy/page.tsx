@@ -31,11 +31,12 @@ export default function ShippingPolicyPage() {
       <h1 className="page-title">Shipping Policy</h1>
       <div className="policy-content">
         <section><h2>Shipping Methods</h2>
+          <p>All orders ship from Arlington, VA via UPS.</p>
           <table className="policy-table"><thead><tr><th>Method</th><th>Delivery Time</th><th>Cost</th></tr></thead><tbody>
-            <tr><td>Standard Shipping</td><td>5-7 business days</td><td>$5.99 (Free over $50)</td></tr>
-            <tr><td>Express Shipping</td><td>2-3 business days</td><td>$12.99</td></tr>
-            <tr><td>Next-Day Delivery</td><td>1 business day</td><td>$19.99</td></tr>
+            <tr><td>Standard (UPS Ground)</td><td>5-7 business days</td><td>From $7.99 (Free on orders $50+)</td></tr>
+            <tr><td>Express (UPS 2nd Day Air)</td><td>2-3 business days</td><td>From $15.99</td></tr>
           </tbody></table>
+          <p>Shipping cost is calculated based on package weight. Exact cost shown at checkout after entering your address.</p>
         </section>
         <section><h2>Processing Time</h2><p>Orders are typically processed and shipped within 1-2 business days. During peak seasons, processing may take slightly longer.</p></section>
         <section><h2>Order Tracking</h2><p>Once shipped, you will receive an email with your tracking number. You can also track orders in your account dashboard.</p></section>

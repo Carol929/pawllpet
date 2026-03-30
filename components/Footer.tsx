@@ -74,6 +74,7 @@ export default function Footer() {
           <button className="footer-link-btn" onClick={() => { localStorage.setItem('pawll-cookie-consent', JSON.stringify({ essential: true, analytics: false, marketing: false })); alert(en ? 'Your preferences have been saved. We will not sell or share your personal information.' : '您的偏好已保存。我们不会出售或分享您的个人信息。') }}>
             {en ? 'Do Not Sell My Info' : '请勿出售我的信息'}
           </button>
+          <Link href="/product-safety">{en ? 'Product Safety' : '产品安全'}</Link>
           <Link href="/cookie-policy">{en ? 'Cookie Policy' : 'Cookie 政策'}</Link>
           <Link href="/accessibility">{en ? 'Accessibility' : '无障碍声明'}</Link>
         </div>

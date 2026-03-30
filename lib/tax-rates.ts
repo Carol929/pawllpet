@@ -62,13 +62,16 @@ export const STATE_TAX_RATES: Record<string, number> = {
 }
 
 /**
- * States where PawLL LLC has Sales Tax nexus (registered to collect tax).
- * Currently: Virginia only (Certificate #10-412373941F-001, effective Mar 2026)
- *
- * To add a new state: register for Sales Tax in that state, then add the
- * state abbreviation here. Example: NEXUS_STATES.add('CA')
+ * States where sales tax is collected.
+ * All states with sales tax are included for full compliance.
+ * 5 states have no sales tax: AK, DE, MT, NH, OR (rate = 0 in table)
  */
-export const NEXUS_STATES = new Set(['VA'])
+export const NEXUS_STATES = new Set([
+  'AL','AZ','AR','CA','CO','CT','DC','FL','GA','HI','ID','IL','IN','IA',
+  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','NE','NV','NJ','NM',
+  'NY','NC','ND','OH','OK','PA','RI','SC','SD','TN','TX','UT','VT','VA',
+  'WA','WV','WI','WY',
+])
 
 /**
  * Full state name → abbreviation mapping

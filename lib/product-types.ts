@@ -20,4 +20,5 @@ export type Product = {
   compareAtPrice?: number | null
   brand?: string | null
   material?: string | null
+  weight?: number | null
 }
