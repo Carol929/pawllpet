@@ -467,7 +467,7 @@ function OrdersSection() {
             <button className="order-card-header" onClick={() => setExpanded(expanded === o.id ? null : o.id)}>
               <div>
                 <span className="order-id">#{o.id.slice(-8).toUpperCase()}</span>
-                <span className={`order-status order-status--${o.status}`}>{statusLabel[o.status]?.[locale] || o.status}</span>
+                <span className={`order-status order-status--${o.status}`}>{(statusLabel[o.status] as Record<string, string>)?.[locale] || statusLabel[o.status]?.en || o.status}</span>
               </div>
               <div>
                 <span className="order-date">{new Date(o.createdAt).toLocaleDateString()}</span>

@@ -6,6 +6,7 @@ import { AuthProvider } from '@/lib/auth-context'
 import { CartProvider } from '@/lib/cart-context'
 import { WishlistProvider } from '@/lib/wishlist-context'
 import { ScrollToTop } from '@/components/ScrollToTop'
+import { NewsletterPopup } from '@/components/NewsletterPopup'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -15,6 +16,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <CartProvider>
             <WishlistProvider>
               <ScrollToTop />
+              <NewsletterPopup />
               {children}
             </WishlistProvider>
           </CartProvider>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale } from '@/lib/i18n'
+import { useLocale, txt } from '@/lib/i18n'
 import { ChevronDown } from 'lucide-react'
 
 interface FaqItem { q: { en: string; zh: string }; a: { en: string; zh: string } }
@@ -68,17 +68,17 @@ export default function FaqPage() {
       <div className="faq-sections">
         {faqData.map((section, si) => (
           <div key={si} className="faq-section">
-            <h2 className="faq-section-title">{section.title[locale]}</h2>
+            <h2 className="faq-section-title">{txt(section.title, locale)}</h2>
             {section.items.map((item, qi) => {
               const id = `${si}-${qi}`
               const isOpen = openItems.has(id)
               return (
                 <div key={id} className={`faq-item ${isOpen ? 'faq-item--open' : ''}`}>
                   <button className="faq-question" onClick={() => toggle(id)}>
-                    <span>{item.q[locale]}</span>
+                    <span>{txt(item.q, locale)}</span>
                     <ChevronDown size={18} className={`faq-chevron ${isOpen ? 'faq-chevron--open' : ''}`} />
                   </button>
-                  {isOpen && <div className="faq-answer">{item.a[locale]}</div>}
+                  {isOpen && <div className="faq-answer">{txt(item.a, locale)}</div>}
                 </div>
               )
             })}

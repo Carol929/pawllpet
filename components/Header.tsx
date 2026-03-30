@@ -16,43 +16,35 @@ const navItems: NavItem[] = [
   {
     labelKey: 'newArrivals', href: '/new-arrivals',
     subs: [
-      { labelKey: 'allNew', href: '/new-arrivals', color: '#f5ebe0' },
-      { labelKey: 'forDogs', href: '/new-arrivals?pet=dog', color: '#fce8d5' },
-      { labelKey: 'forCats', href: '/new-arrivals?pet=cat', color: '#fde4e4' },
+      { labelKey: 'allNew', href: '/new-arrivals', color: '' },
+      { labelKey: 'forDogs', href: '/new-arrivals?pet=dog', color: '' },
+      { labelKey: 'forCats', href: '/new-arrivals?pet=cat', color: '' },
     ],
   },
   {
     labelKey: 'cats', href: '/shop?pet=cat',
     subs: [
-      { labelKey: 'toys', href: '/shop?pet=cat&category=toys', color: '#fce8f0' },
-      { labelKey: 'treats', href: '/shop?pet=cat&category=treats', color: '#f9e0ea' },
-      { labelKey: 'grooming', href: '/shop?pet=cat&category=grooming', color: '#f5d8e4' },
-      { labelKey: 'accessories', href: '/shop?pet=cat&category=accessories', color: '#fce8f0' },
-      { labelKey: 'beds', href: '/shop?pet=cat&category=beds', color: '#f9e0ea' },
-      { labelKey: 'apparel', href: '/shop?pet=cat&category=apparel', color: '#f5d8e4' },
-      { labelKey: 'feeders', href: '/shop?pet=cat&category=feeders-bowls', color: '#fce8f0' },
-      { labelKey: 'travel', href: '/shop?pet=cat&category=travel', color: '#f9e0ea' },
+      { labelKey: 'toys', href: '/shop?pet=cat&category=toys', color: '' },
+      { labelKey: 'accessories', href: '/shop?pet=cat&category=accessories', color: '' },
+      { labelKey: 'beds', href: '/shop?pet=cat&category=beds', color: '' },
+      { labelKey: 'feeders', href: '/shop?pet=cat&category=feeders-bowls', color: '' },
     ],
   },
   {
     labelKey: 'dogs', href: '/shop?pet=dog',
     subs: [
-      { labelKey: 'toys', href: '/shop?pet=dog&category=toys', color: '#e3f0ee' },
-      { labelKey: 'treats', href: '/shop?pet=dog&category=treats', color: '#dce8f0' },
-      { labelKey: 'grooming', href: '/shop?pet=dog&category=grooming', color: '#d5e4ed' },
-      { labelKey: 'accessories', href: '/shop?pet=dog&category=accessories', color: '#e3f0ee' },
-      { labelKey: 'beds', href: '/shop?pet=dog&category=beds', color: '#dce8f0' },
-      { labelKey: 'apparel', href: '/shop?pet=dog&category=apparel', color: '#d5e4ed' },
-      { labelKey: 'feeders', href: '/shop?pet=dog&category=feeders-bowls', color: '#e3f0ee' },
-      { labelKey: 'travel', href: '/shop?pet=dog&category=travel', color: '#dce8f0' },
+      { labelKey: 'toys', href: '/shop?pet=dog&category=toys', color: '' },
+      { labelKey: 'accessories', href: '/shop?pet=dog&category=accessories', color: '' },
+      { labelKey: 'beds', href: '/shop?pet=dog&category=beds', color: '' },
+      { labelKey: 'feeders', href: '/shop?pet=dog&category=feeders-bowls', color: '' },
     ],
   },
   {
     labelKey: 'mysteryBoxes', href: '/mystery-boxes',
     subs: [
-      { labelKey: 'dogBox', href: '/mystery-boxes?type=dog', color: '#e3f0ee' },
-      { labelKey: 'catBox', href: '/mystery-boxes?type=cat', color: '#fce8f0' },
-      { labelKey: 'surpriseBox', href: '/mystery-boxes?type=surprise', color: '#fef3e2' },
+      { labelKey: 'dogBox', href: '/mystery-boxes?type=dog', color: '' },
+      { labelKey: 'catBox', href: '/mystery-boxes?type=cat', color: '' },
+      { labelKey: 'surpriseBox', href: '/mystery-boxes?type=surprise', color: '' },
     ],
   },
 ]
@@ -71,6 +63,7 @@ export default function Header() {
   const dropdownTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [langMenuOpen, setLangMenuOpen] = useState(false)
   const userMenuTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const openUserMenu = useCallback(() => {
@@ -225,10 +218,21 @@ export default function Header() {
             </div>
           )}
 
-          <button className="lang-toggle" onClick={() => setLocale(locale === 'en' ? 'zh' : 'en')} aria-label={locale === 'en' ? 'Switch to Chinese' : 'Switch to English'}>
-            <Globe size={15} />
-            {locale === 'en' ? '中文' : 'EN'}
-          </button>
+          <div className="lang-dropdown-wrapper" onMouseEnter={() => setLangMenuOpen(true)} onMouseLeave={() => setLangMenuOpen(false)}>
+            <button className="lang-toggle" aria-label="Language">
+              <Globe size={15} />
+              Language
+            </button>
+            {langMenuOpen && (
+              <div className="lang-dropdown">
+                {([['en', 'English'], ['zh', '中文'], ['es', 'Español'], ['fr', 'Français'], ['ja', '日本語'], ['ko', '한국어']] as const).map(([code, name]) => (
+                  <button key={code} className={`lang-option ${locale === code ? 'lang-option--active' : ''}`} onClick={() => { setLocale(code as any); setLangMenuOpen(false) }}>
+                    {name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <Link href="/cart" className="header-cart-btn" aria-label={t('header', 'cartLabel')}>
             <ShoppingCart size={22} strokeWidth={1.8} />
@@ -299,10 +303,14 @@ export default function Header() {
           )}
 
           <div className="mobile-lang">
-            <button className="lang-toggle" onClick={() => setLocale(locale === 'en' ? 'zh' : 'en')}>
-              <Globe size={15} />
-              {locale === 'en' ? '切换中文' : 'Switch to EN'}
-            </button>
+            <select className="mobile-lang-select" value={locale} onChange={e => setLocale(e.target.value as any)}>
+              <option value="en">English</option>
+              <option value="zh">中文</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+              <option value="ja">日本語</option>
+              <option value="ko">한국어</option>
+            </select>
           </div>
         </div>
       )}

@@ -65,7 +65,7 @@ export default function TrackOrderPage() {
                 return (
                   <div key={step} className={`track-step ${active ? 'track-step--active' : ''}`}>
                     <div className="track-step-icon"><Icon size={20} /></div>
-                    <span>{statusLabel[step]?.[locale] || step}</span>
+                    <span>{(statusLabel[step] as Record<string, string>)?.[locale] || statusLabel[step]?.en || step}</span>
                     {i < statusSteps.length - 1 && <div className={`track-step-line ${i < currentStep ? 'track-step-line--active' : ''}`} />}
                   </div>
                 )
