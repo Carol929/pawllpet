@@ -274,8 +274,8 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          {subtotal < 50 && (
-            <div className="checkout-free-shipping">Add <strong>${(50 - subtotal).toFixed(2)}</strong> more for free standard shipping!</div>
+          {subtotal < 80 && (
+            <div className="checkout-free-shipping">Add <strong>${(80 - subtotal).toFixed(2)}</strong> more for free standard shipping!</div>
           )}
         </div>
       </div>

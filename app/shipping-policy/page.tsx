@@ -33,7 +33,7 @@ export default function ShippingPolicyPage() {
         <section><h2>Shipping Methods</h2>
           <p>All orders ship from Arlington, VA via UPS.</p>
           <table className="policy-table"><thead><tr><th>Method</th><th>Delivery Time</th><th>Cost</th></tr></thead><tbody>
-            <tr><td>Standard (UPS Ground)</td><td>5-7 business days</td><td>From $7.99 (Free on orders $50+)</td></tr>
+            <tr><td>Standard (UPS Ground)</td><td>5-7 business days</td><td>From $7.99 (Free on orders $80+)</td></tr>
             <tr><td>Express (UPS 2nd Day Air)</td><td>2-3 business days</td><td>From $15.99</td></tr>
           </tbody></table>
           <p>Shipping cost is calculated based on package weight. Exact cost shown at checkout after entering your address.</p>

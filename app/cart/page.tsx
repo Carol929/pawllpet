@@ -39,7 +39,7 @@ export default function CartPage() {
   const paidSubtotal = cartProducts.filter(p => p.slug !== 'quiz-gift').reduce((sum, p) => sum + p.price * p.quantity, 0)
   const subtotal = cartProducts.reduce((sum, p) => sum + p.price * p.quantity, 0)
   const totalCount = cartProducts.reduce((sum, p) => sum + p.quantity, 0)
-  const freeShipping = subtotal >= 50
+  const freeShipping = subtotal >= 80
   const shipping = freeShipping ? 0 : 5.99
   const giftBlocked = hasGift && paidSubtotal < 10
 
@@ -101,7 +101,7 @@ export default function CartPage() {
             <div className="cart-gift-warning">🎁 Spend ${(10 - paidSubtotal).toFixed(2)} more to redeem your free gift!</div>
           )}
           <button className="cart-checkout-btn" onClick={handleCheckout} disabled={giftBlocked}>CHECK OUT</button>
-          {!freeShipping && <div className="cart-free-shipping">Add <strong>${(50 - subtotal).toFixed(2)}</strong> more for free shipping!</div>}
+          {!freeShipping && <div className="cart-free-shipping">Add <strong>${(80 - subtotal).toFixed(2)}</strong> more for free shipping!</div>}
         </div>
       </div>
     </main>

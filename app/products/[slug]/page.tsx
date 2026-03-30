@@ -99,7 +99,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
   const displayPrice = selectedVariant !== null && item.variants?.[selectedVariant]
     ? item.variants[selectedVariant].price
     : item.price
-  const freeShipping = displayPrice >= 50
+  const freeShipping = displayPrice >= 80
 
   function handleAdd() {
     if (!user) {
@@ -205,7 +205,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
           {freeShipping && (
             <div className="pdp-badge pdp-badge--shipping">
               <Truck size={14} />
-              <span>Free shipping over $50.00</span>
+              <span>Free shipping over $80.00</span>
             </div>
           )}
 
@@ -308,7 +308,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
                 <Truck size={20} />
                 <div>
                   <strong>{locale === 'zh' ? '免费配送' : 'Free Shipping'}</strong>
-                  <p>{locale === 'zh' ? '订单满 $50 免费配送' : 'Free shipping on orders over $50'}</p>
+                  <p>{locale === 'zh' ? '订单满 $80 免费配送' : 'Free shipping on orders over $80'}</p>
                 </div>
               </div>
               <div className="pdp-shipping-item">

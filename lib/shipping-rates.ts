@@ -20,7 +20,7 @@ const RATE_TABLE: ShippingRate[] = [
   { maxWeight: Infinity, standard: 27.99, express: 49.99 },
 ]
 
-const FREE_STANDARD_THRESHOLD = 50 // Free standard shipping at $50+
+const FREE_STANDARD_THRESHOLD = 80 // Free standard shipping at $80+
 const DEFAULT_PRODUCT_WEIGHT = 1   // lb, if product weight not set
 
 /**

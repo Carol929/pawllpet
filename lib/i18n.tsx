@@ -31,7 +31,7 @@ const translations = {
     searchPlaceholder: { en: 'Search products', zh: '搜索商品', es: 'Buscar productos', fr: 'Rechercher des produits', ja: '商品を検索', ko: '상품 검색' },
     logIn: { en: 'Log In', zh: '登录', es: 'Iniciar sesión', fr: 'Se connecter', ja: 'ログイン', ko: '로그인' },
     signUp: { en: 'Sign Up', zh: '注册', es: 'Registrarse', fr: "S'inscrire", ja: '新規登録', ko: '회원가입' },
-    topBanner: { en: 'Free shipping over $50 • Earn Paw Points on every order', zh: '满$50免运费 · 每笔订单赚取爪印积分', es: 'Envío gratis en pedidos de más de $50 • Gana Paw Points', fr: 'Livraison gratuite dès 50 $ • Gagnez des Paw Points', ja: '$50以上で送料無料 • Paw Points獲得', ko: '$50 이상 무료 배송 • Paw Points 적립' },
+    topBanner: { en: 'Free shipping over $80 • Earn Paw Points on every order', zh: '满$80免运费 · 每笔订单赚取爪印积分', es: 'Envío gratis en pedidos de más de $80 • Gana Paw Points', fr: 'Livraison gratuite dès 80 $ • Gagnez des Paw Points', ja: '$80以上で送料無料 • Paw Points獲得', ko: '$80 이상 무료 배송 • Paw Points 적립' },
     cartLabel: { en: 'Shopping cart', zh: '购物车', es: 'Carrito', fr: 'Panier', ja: 'カート', ko: '장바구니' },
     openMenu: { en: 'Open menu', zh: '打开菜单', es: 'Abrir menú', fr: 'Ouvrir le menu', ja: 'メニューを開く', ko: '메뉴 열기' },
     closeMenu: { en: 'Close menu', zh: '关闭菜单', es: 'Cerrar menú', fr: 'Fermer le menu', ja: 'メニューを閉じる', ko: '메뉴 닫기' },
