@@ -89,6 +89,12 @@ export default function PetQuizPage() {
               setGiftAdded(true)
               setGiftName(gift.name)
               localStorage.setItem('quiz-gift-claimed', 'true')
+              // Send gift email (silent, don't block UI)
+              fetch('/api/quiz-gift-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ giftName: gift.name }),
+              }).catch(() => {})
             }
           })
           .catch(() => {})

@@ -43,3 +43,84 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
     html: `<p>Hi ${name}, reset your password:</p><p><a href="${resetUrl}">${resetUrl}</a></p>`,
   })
 }
+
+export async function sendQuizGiftEmail(email: string, name: string, giftName: string): Promise<void> {
+  const client = getResend()
+  if (!client) {
+    console.warn('RESEND_API_KEY is missing; skipping quiz gift email.')
+    return
+  }
+
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+
+  await client.emails.send({
+    from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
+    to: email,
+    subject: 'Your Free Gift is Waiting! 🎁',
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fffdf8;">
+        <!-- Header -->
+        <div style="background: #1f2e44; padding: 24px 32px; text-align: center;">
+          <h1 style="color: #D4B28C; margin: 0; font-size: 24px; letter-spacing: 1px;">PawLL Pet</h1>
+          <p style="color: #e5e7eb; margin: 6px 0 0; font-size: 13px;">Premium Pet Essentials</p>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 32px;">
+          <h2 style="color: #1f2e44; margin: 0 0 8px; font-size: 22px;">Hi ${name}! 🎉</h2>
+          <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
+            Thanks for completing our Pet Quiz! We've added a special free gift to your cart:
+          </p>
+
+          <!-- Gift Card -->
+          <div style="background: linear-gradient(135deg, #fef3e2, #fde8c8); border: 2px solid #D4B28C; border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 24px;">
+            <p style="font-size: 32px; margin: 0;">🎁</p>
+            <h3 style="color: #1f2e44; margin: 8px 0 4px; font-size: 18px;">${giftName}</h3>
+            <p style="color: #92600a; font-size: 14px; margin: 0;">FREE with any purchase of $10 or more</p>
+          </div>
+
+          <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
+            Your gift is already in your cart! Just add $10+ of products you love, and it's yours — completely free.
+          </p>
+
+          <!-- CTA Button -->
+          <div style="text-align: center; margin-bottom: 32px;">
+            <a href="${shopUrl}/shop" style="display: inline-block; background: #1f2e44; color: #fff; padding: 14px 36px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 16px;">
+              Shop Now & Claim Your Gift
+            </a>
+          </div>
+
+          <!-- Recommendations -->
+          <div style="border-top: 1px solid #ececec; padding-top: 20px; margin-bottom: 20px;">
+            <h3 style="color: #1f2e44; font-size: 16px; margin: 0 0 8px;">Based on your quiz results, we recommend:</h3>
+            <ul style="color: #555; font-size: 14px; line-height: 2; padding-left: 20px; margin: 0;">
+              <li>Cozy beds & blankets for rest time</li>
+              <li>Fun toys to keep your pet active</li>
+              <li>Quality bowls & feeders for mealtime</li>
+              <li>Stylish leashes & harnesses for walks</li>
+            </ul>
+          </div>
+
+          <!-- Social -->
+          <div style="text-align: center; padding: 16px 0; border-top: 1px solid #ececec;">
+            <p style="color: #888; font-size: 13px; margin: 0 0 8px;">Follow us for more pet content!</p>
+            <a href="https://instagram.com/pawllpet" style="color: #D4B28C; text-decoration: none; margin: 0 8px; font-size: 14px;">Instagram</a>
+            <a href="https://tiktok.com/@pawllpet" style="color: #D4B28C; text-decoration: none; margin: 0 8px; font-size: 14px;">TikTok</a>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="background: #1f2e44; padding: 16px 32px; text-align: center;">
+          <p style="color: #888; font-size: 12px; margin: 0;">
+            PawLL Pet | Premium pet essentials with collectible drop energy
+          </p>
+          <p style="color: #666; font-size: 11px; margin: 6px 0 0;">
+            <a href="${shopUrl}/privacy-policy" style="color: #888; text-decoration: none;">Privacy</a> &nbsp;|&nbsp;
+            <a href="${shopUrl}/terms-conditions" style="color: #888; text-decoration: none;">Terms</a> &nbsp;|&nbsp;
+            <a href="${shopUrl}" style="color: #888; text-decoration: none;">pawllpet.com</a>
+          </p>
+        </div>
+      </div>
+    `,
+  })
+}
