@@ -6,6 +6,7 @@ export const variantSchema = z.object({
   sku: z.string().optional().nullable(),
   price: z.number().min(0, 'Price must be >= 0'),
   stock: z.number().int().min(0, 'Stock must be >= 0'),
+  imageIndex: z.number().int().min(0).optional().nullable(),
   sortOrder: z.number().int().default(0),
 })
 
@@ -20,6 +21,7 @@ export const productCreateSchema = z.object({
   material: z.string().optional().nullable(),
   price: z.number().min(0).default(0),
   compareAtPrice: z.number().min(0).optional().nullable(),
+  weight: z.number().min(0).optional().nullable(),
   stock: z.number().int().min(0).default(0),
   status: z.enum(['draft', 'live', 'archived']).default('draft'),
   isNew: z.boolean().default(false),

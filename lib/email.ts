@@ -44,6 +44,87 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
   })
 }
 
+export async function sendNewsletterWelcomeEmail(email: string, discountCode: string): Promise<void> {
+  const client = getResend()
+  if (!client) {
+    console.warn('RESEND_API_KEY is missing; skipping newsletter welcome email.')
+    return
+  }
+
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+
+  await client.emails.send({
+    from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
+    to: email,
+    subject: '🎉 Grand Opening! Here\'s Your 25% Off Code',
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fffdf8;">
+        <!-- Header -->
+        <div style="background: #1f2e44; padding: 24px 32px; text-align: center;">
+          <h1 style="color: #D4B28C; margin: 0; font-size: 24px; letter-spacing: 1px;">PawLL Pet</h1>
+          <p style="color: #e5e7eb; margin: 6px 0 0; font-size: 13px;">Premium Pet Essentials</p>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 32px;">
+          <h2 style="color: #1f2e44; margin: 0 0 8px; font-size: 22px;">🎉 Grand Opening Special!</h2>
+          <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
+            Thanks for joining our newsletter! To celebrate our grand opening, here's your exclusive 25% discount code:
+          </p>
+
+          <!-- Discount Code Card -->
+          <div style="background: linear-gradient(135deg, #fef3e2, #fde8c8); border: 2px solid #D4B28C; border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
+            <p style="color: #92600a; font-size: 14px; margin: 0 0 8px;">YOUR DISCOUNT CODE</p>
+            <p style="font-size: 28px; font-weight: 700; color: #1f2e44; letter-spacing: 3px; margin: 0 0 8px;">${discountCode}</p>
+            <p style="color: #92600a; font-size: 13px; margin: 0;">25% off your order &bull; Expires 5/31/2026</p>
+          </div>
+
+          <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
+            Simply enter this code at checkout to save 25% on your order. This grand opening offer expires on May 31, 2026 — don't miss out!
+          </p>
+
+          <!-- CTA Button -->
+          <div style="text-align: center; margin-bottom: 32px;">
+            <a href="${shopUrl}/shop" style="display: inline-block; background: #1f2e44; color: #fff; padding: 14px 36px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 16px;">
+              Shop Now & Save 25%
+            </a>
+          </div>
+
+          <!-- What to Expect -->
+          <div style="border-top: 1px solid #ececec; padding-top: 20px; margin-bottom: 20px;">
+            <h3 style="color: #1f2e44; font-size: 16px; margin: 0 0 8px;">As a subscriber, you'll get:</h3>
+            <ul style="color: #555; font-size: 14px; line-height: 2; padding-left: 20px; margin: 0;">
+              <li>Early access to new product drops</li>
+              <li>Exclusive deals and promotions</li>
+              <li>Pet care tips and tricks</li>
+              <li>First look at mystery boxes</li>
+            </ul>
+          </div>
+
+          <!-- Social -->
+          <div style="text-align: center; padding: 16px 0; border-top: 1px solid #ececec;">
+            <p style="color: #888; font-size: 13px; margin: 0 0 8px;">Follow us for more pet content!</p>
+            <a href="https://instagram.com/pawllpet" style="color: #D4B28C; text-decoration: none; margin: 0 8px; font-size: 14px;">Instagram</a>
+            <a href="https://tiktok.com/@pawllpet" style="color: #D4B28C; text-decoration: none; margin: 0 8px; font-size: 14px;">TikTok</a>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="background: #1f2e44; padding: 16px 32px; text-align: center;">
+          <p style="color: #888; font-size: 12px; margin: 0;">
+            PawLL Pet | Premium pet essentials with collectible drop energy
+          </p>
+          <p style="color: #666; font-size: 11px; margin: 6px 0 0;">
+            <a href="${shopUrl}/privacy-policy" style="color: #888; text-decoration: none;">Privacy</a> &nbsp;|&nbsp;
+            <a href="${shopUrl}/terms-conditions" style="color: #888; text-decoration: none;">Terms</a> &nbsp;|&nbsp;
+            <a href="${shopUrl}" style="color: #888; text-decoration: none;">pawllpet.com</a>
+          </p>
+        </div>
+      </div>
+    `,
+  })
+}
+
 export async function sendQuizGiftEmail(email: string, name: string, giftName: string): Promise<void> {
   const client = getResend()
   if (!client) {

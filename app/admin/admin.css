@@ -81,7 +81,8 @@ table.admin-table { width: 100%; border-collapse: collapse; }
 .admin-image-upload:hover { border-color: #1f2e44; color: #1f2e44; }
 
 /* Variants */
-.admin-variant-row { display: grid; grid-template-columns: 1fr 120px 100px auto; gap: .8rem; align-items: end; padding: .8rem 0; border-bottom: 1px solid #f3f4f6; }
+.admin-variants-scroll { max-height: 400px; overflow-y: auto; padding-right: .5rem; }
+.admin-variant-row { display: grid; grid-template-columns: 1fr 120px 100px 80px auto; gap: .8rem; align-items: end; padding: .8rem 0; border-bottom: 1px solid #f3f4f6; }
 .admin-variant-row:last-child { border-bottom: none; }
 
 /* Pagination */

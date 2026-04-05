@@ -9,6 +9,8 @@ export function NewsletterPopup() {
   const [show, setShow] = useState(false)
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (localStorage.getItem(STORAGE_KEY)) return
@@ -21,12 +23,26 @@ export function NewsletterPopup() {
     localStorage.setItem(STORAGE_KEY, 'true')
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!email.trim()) return
-    setSubmitted(true)
-    localStorage.setItem(STORAGE_KEY, 'true')
-    setTimeout(() => setShow(false), 2500)
+    if (!email.trim() || sending) return
+    setError('')
+    setSending(true)
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      })
+      if (!res.ok) throw new Error()
+      setSubmitted(true)
+      localStorage.setItem(STORAGE_KEY, 'true')
+      setTimeout(() => setShow(false), 3000)
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setSending(false)
+    }
   }
 
   if (!show) return null
@@ -43,10 +59,11 @@ export function NewsletterPopup() {
         <div className="nl-decor nl-decor--4"><PawPrint size={16} /></div>
 
         <div className="nl-content">
-          <div className="nl-badge">WELCOME GIFT</div>
-          <h2 className="nl-title">Get 15% OFF</h2>
-          <p className="nl-subtitle">your first order</p>
-          <p className="nl-desc">Join the PawLL family! Subscribe to our newsletter for exclusive deals, new drops, and pet care tips.</p>
+          <div className="nl-badge">GRAND OPENING</div>
+          <h2 className="nl-title">Get 25% OFF</h2>
+          <p className="nl-subtitle">Grand Opening Special</p>
+          <p className="nl-desc">Celebrate our grand opening! Subscribe for your exclusive 25% discount, plus new drops and pet care tips.</p>
+          <p className="nl-expire">Offer expires 5/31/2026</p>
 
           {!submitted ? (
             <form className="nl-form" onSubmit={handleSubmit}>
@@ -57,8 +74,12 @@ export function NewsletterPopup() {
                 onChange={e => setEmail(e.target.value)}
                 required
                 className="nl-input"
+                disabled={sending}
               />
-              <button type="submit" className="nl-btn">GET 15% OFF</button>
+              <button type="submit" className="nl-btn" disabled={sending}>
+                {sending ? 'SENDING...' : 'GET 25% OFF'}
+              </button>
+              {error && <p className="nl-error">{error}</p>}
             </form>
           ) : (
             <div className="nl-success">

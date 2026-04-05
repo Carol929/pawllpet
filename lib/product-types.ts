@@ -15,7 +15,7 @@ export type Product = {
   image: string
   description: string
   images?: string[]
-  variants?: { id: string; name: string; price: number; stock: number }[]
+  variants?: { id: string; name: string; price: number; stock: number; imageIndex?: number | null }[]
   stock?: number
   compareAtPrice?: number | null
   brand?: string | null

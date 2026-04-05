@@ -22,8 +22,15 @@ function toProductDTO(dbProduct: {
   weight: number | null
   category: { name: string; slug: string }
   images: { url: string }[]
-  variants: { id: string; name: string; price: number; stock: number }[]
+  variants: { id?: string; name?: string; price: number; stock?: number; imageIndex?: number | null }[]
 }): Product {
+  // Use minimum variant price when base price is 0
+  const displayPrice = dbProduct.price > 0
+    ? dbProduct.price
+    : dbProduct.variants.length > 0
+      ? Math.min(...dbProduct.variants.map(v => v.price))
+      : dbProduct.price
+
   return {
     id: dbProduct.id,
     slug: dbProduct.slug,
@@ -31,7 +38,7 @@ function toProductDTO(dbProduct: {
     subtitle: dbProduct.subtitle || undefined,
     category: dbProduct.category.slug,
     petType: dbProduct.petType as 'Dog' | 'Cat' | 'Both',
-    price: dbProduct.price,
+    price: displayPrice,
     rating: dbProduct.rating,
     isNew: dbProduct.isNew,
     isBestSeller: dbProduct.isBestSeller,
@@ -40,7 +47,7 @@ function toProductDTO(dbProduct: {
     image: dbProduct.images[0]?.url || '/product-placeholder.svg',
     description: dbProduct.description,
     images: dbProduct.images.map(img => img.url),
-    variants: dbProduct.variants,
+    variants: dbProduct.variants.filter(v => v.id && v.name) as Product['variants'],
     stock: dbProduct.stock,
     compareAtPrice: dbProduct.compareAtPrice,
     brand: dbProduct.brand,
@@ -56,11 +63,11 @@ const fullInclude = {
   variants: { orderBy: { sortOrder: 'asc' as const } },
 }
 
-// Light include — for product lists (only first image, skip variants)
+// Light include — for product lists (first image + variant prices)
 const listInclude = {
   category: { select: { name: true, slug: true } },
   images: { take: 1, orderBy: { sortOrder: 'asc' as const } },
-  variants: { take: 0 },
+  variants: { select: { price: true }, orderBy: { price: 'asc' as const } },
 }
 
 export async function getProducts(filters?: {
@@ -92,7 +99,8 @@ export async function getProducts(filters?: {
     where.category = { slug: filters.category }
   }
   if (filters?.petType) {
-    where.petType = filters.petType
+    const pt = filters.petType.charAt(0).toUpperCase() + filters.petType.slice(1).toLowerCase()
+    where.OR = [{ petType: pt }, { petType: 'Both' }]
   }
   if (filters?.isNew) where.isNew = true
   if (filters?.isBestSeller) where.isBestSeller = true

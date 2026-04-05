@@ -6,7 +6,7 @@ import { ArrowLeft, Upload, X, Plus } from 'lucide-react'
 import Link from 'next/link'
 
 interface Category { id: string; name: string; slug: string }
-interface Variant { name: string; price: number; stock: number; sku: string }
+interface Variant { name: string; price: number; stock: number; sku: string; imageIndex: number | null }
 
 function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -65,10 +65,10 @@ export default function NewProduct() {
   }
 
   const addVariant = () => {
-    setVariants(prev => [...prev, { name: '', price: 0, stock: 0, sku: '' }])
+    setVariants(prev => [...prev, { name: '', price: 0, stock: 0, sku: '', imageIndex: null }])
   }
 
-  const updateVariant = (index: number, field: string, value: string | number) => {
+  const updateVariant = (index: number, field: string, value: string | number | null) => {
     setVariants(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v))
   }
 
@@ -240,25 +240,31 @@ export default function NewProduct() {
         <div className="admin-form-section">
           <h2>Variants</h2>
           <p style={{ fontSize: '.85rem', color: '#6b7280', margin: '0 0 1rem' }}>Add variants for different types, sizes, or flavors.</p>
-          {variants.map((v, i) => (
-            <div key={i} className="admin-variant-row">
-              <div className="admin-form-group">
-                <label>Name</label>
-                <input value={v.name} onChange={e => updateVariant(i, 'name', e.target.value)} placeholder="e.g. Large, Bone" />
+          <div className="admin-variants-scroll">
+            {variants.map((v, i) => (
+              <div key={i} className="admin-variant-row">
+                <div className="admin-form-group">
+                  <label>Name</label>
+                  <input value={v.name} onChange={e => updateVariant(i, 'name', e.target.value)} placeholder="e.g. Large, Bone" />
+                </div>
+                <div className="admin-form-group">
+                  <label>Price ($)</label>
+                  <input type="number" step="0.01" min="0" value={v.price} onChange={e => updateVariant(i, 'price', e.target.value)} />
+                </div>
+                <div className="admin-form-group">
+                  <label>Stock</label>
+                  <input type="number" min="0" value={v.stock} onChange={e => updateVariant(i, 'stock', e.target.value)} />
+                </div>
+                <div className="admin-form-group">
+                  <label>Image #</label>
+                  <input type="number" min="1" value={v.imageIndex !== null ? v.imageIndex + 1 : ''} onChange={e => updateVariant(i, 'imageIndex', e.target.value ? Number(e.target.value) - 1 : null)} placeholder="-" />
+                </div>
+                <button type="button" className="admin-btn admin-btn-sm admin-btn-danger" style={{ marginBottom: 4 }} onClick={() => removeVariant(i)}>
+                  <X size={14} />
+                </button>
               </div>
-              <div className="admin-form-group">
-                <label>Price ($)</label>
-                <input type="number" step="0.01" min="0" value={v.price} onChange={e => updateVariant(i, 'price', e.target.value)} />
-              </div>
-              <div className="admin-form-group">
-                <label>Stock</label>
-                <input type="number" min="0" value={v.stock} onChange={e => updateVariant(i, 'stock', e.target.value)} />
-              </div>
-              <button type="button" className="admin-btn admin-btn-sm admin-btn-danger" style={{ marginBottom: 4 }} onClick={() => removeVariant(i)}>
-                <X size={14} />
-              </button>
-            </div>
-          ))}
+            ))}
+          </div>
           <button type="button" className="admin-btn" onClick={addVariant} style={{ marginTop: 8 }}>
             <Plus size={16} /> Add Variant
           </button>

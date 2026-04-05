@@ -15,6 +15,8 @@ const translations = {
     forDogs: { en: 'For Dogs', zh: '狗狗专区', es: 'Para perros', fr: 'Pour chiens', ja: '犬用', ko: '강아지용' },
     forCats: { en: 'For Cats', zh: '猫猫专区', es: 'Para gatos', fr: 'Pour chats', ja: '猫用', ko: '고양이용' },
     allNew: { en: 'All New', zh: '全部新品', es: 'Todo lo nuevo', fr: 'Toutes les nouveautés', ja: 'すべての新着', ko: '모든 신상품' },
+    allCatProducts: { en: 'All Cat Products', zh: '全部猫咪产品', es: 'Todos para gatos', fr: 'Tous les produits chats', ja: 'すべての猫用品', ko: '모든 고양이 제품' },
+    allDogProducts: { en: 'All Dog Products', zh: '全部狗狗产品', es: 'Todos para perros', fr: 'Tous les produits chiens', ja: 'すべての犬用品', ko: '모든 강아지 제품' },
     toys: { en: 'Toys', zh: '玩具', es: 'Juguetes', fr: 'Jouets', ja: 'おもちゃ', ko: '장난감' },
     treats: { en: 'Treats', zh: '零食', es: 'Premios', fr: 'Friandises', ja: 'おやつ', ko: '간식' },
     grooming: { en: 'Grooming', zh: '美容护理', es: 'Aseo', fr: 'Toilettage', ja: 'グルーミング', ko: '그루밍' },

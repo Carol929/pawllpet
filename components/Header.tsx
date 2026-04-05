@@ -24,6 +24,7 @@ const navItems: NavItem[] = [
   {
     labelKey: 'cats', href: '/shop?pet=cat', icon: '🐱',
     subs: [
+      { labelKey: 'allCatProducts', href: '/shop?pet=cat', color: '', icon: '🐱' },
       { labelKey: 'toys', href: '/shop?pet=cat&category=toys', color: '', icon: '🧸' },
       { labelKey: 'accessories', href: '/shop?pet=cat&category=accessories', color: '', icon: '🎀' },
       { labelKey: 'beds', href: '/shop?pet=cat&category=beds', color: '', icon: '🛏️' },
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
   {
     labelKey: 'dogs', href: '/shop?pet=dog', icon: '🐶',
     subs: [
+      { labelKey: 'allDogProducts', href: '/shop?pet=dog', color: '', icon: '🐶' },
       { labelKey: 'toys', href: '/shop?pet=dog&category=toys', color: '', icon: '🦴' },
       { labelKey: 'accessories', href: '/shop?pet=dog&category=accessories', color: '', icon: '🦮' },
       { labelKey: 'beds', href: '/shop?pet=dog&category=beds', color: '', icon: '🛏️' },

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ProductGrid } from '@/components/ProductGrid'
-import { collections } from '@/lib/static-data'
 import { HeroCarousel } from '@/components/HeroCarousel'
 import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth-context'
@@ -67,19 +66,6 @@ export default function HomePage() {
         </section>
       )}
 
-      <section className="section-oval section-oval--collections">
-        <h2>{t('home', 'featuredCollections')}</h2>
-        <div className="collections-grid">
-          {collections.map((c) => (
-            <article key={c.slug} className="collection-card">
-              <h3>{c.title}</h3>
-              <p>{c.description}</p>
-              <Link href={`/collections/${c.slug}`}>{t('home', 'explore')}</Link>
-            </article>
-          ))}
-        </div>
-      </section>
-
       {/* Pet Quiz CTA */}
       <section className="quiz-cta">
         <PawPrint size={32} />
@@ -88,11 +74,6 @@ export default function HomePage() {
           <p>{locale === 'zh' ? '回答几个问题，获得个性化推荐 + 免费赠品' : 'Answer a few questions for personalized picks + a free gift'}</p>
         </div>
         <Link href="/pet-quiz" className="btn-primary">{locale === 'zh' ? '开始问卷' : 'Take the Quiz'} →</Link>
-      </section>
-
-      <section className="section-oval">
-        <h2>{t('home', 'allProducts')}</h2>
-        <ProductGrid items={allProducts} />
       </section>
 
       {newArrivals.length > 0 && (
@@ -108,6 +89,11 @@ export default function HomePage() {
           <ProductGrid items={best} />
         </section>
       )}
+
+      <section className="section-oval">
+        <h2>{t('home', 'allProducts')}</h2>
+        <ProductGrid items={allProducts} />
+      </section>
     </main>
   )
 }

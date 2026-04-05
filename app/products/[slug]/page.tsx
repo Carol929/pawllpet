@@ -218,7 +218,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
                   <button
                     key={v.id}
                     className={`pdp-variant-btn ${selectedVariant === i ? 'pdp-variant-btn--active' : ''}`}
-                    onClick={() => setSelectedVariant(i)}
+                    onClick={() => { setSelectedVariant(i); if (v.imageIndex != null) setSelectedImage(v.imageIndex) }}
                   >
                     {v.name} - ${v.price.toFixed(2)}
                   </button>
