@@ -24,21 +24,19 @@ const navItems: NavItem[] = [
   {
     labelKey: 'cats', href: '/shop?pet=cat', icon: '🐱',
     subs: [
-      { labelKey: 'allCatProducts', href: '/shop?pet=cat', color: '', icon: '🐱' },
-      { labelKey: 'toys', href: '/shop?pet=cat&category=toys', color: '', icon: '🧸' },
-      { labelKey: 'accessories', href: '/shop?pet=cat&category=accessories', color: '', icon: '🎀' },
-      { labelKey: 'beds', href: '/shop?pet=cat&category=beds', color: '', icon: '🛏️' },
-      { labelKey: 'bowls', href: '/shop?pet=cat&category=feeders-bowls', color: '', icon: '🍽️' },
+      { labelKey: 'toys', href: '/shop?pet=cat#toys', color: '', icon: '🧸' },
+      { labelKey: 'accessories', href: '/shop?pet=cat#accessories', color: '', icon: '🎀' },
+      { labelKey: 'beds', href: '/shop?pet=cat#beds', color: '', icon: '🛏️' },
+      { labelKey: 'bowls', href: '/shop?pet=cat#feeders-bowls', color: '', icon: '🍽️' },
     ],
   },
   {
     labelKey: 'dogs', href: '/shop?pet=dog', icon: '🐶',
     subs: [
-      { labelKey: 'allDogProducts', href: '/shop?pet=dog', color: '', icon: '🐶' },
-      { labelKey: 'toys', href: '/shop?pet=dog&category=toys', color: '', icon: '🦴' },
-      { labelKey: 'accessories', href: '/shop?pet=dog&category=accessories', color: '', icon: '🦮' },
-      { labelKey: 'beds', href: '/shop?pet=dog&category=beds', color: '', icon: '🛏️' },
-      { labelKey: 'bowls', href: '/shop?pet=dog&category=feeders-bowls', color: '', icon: '🍽️' },
+      { labelKey: 'toys', href: '/shop?pet=dog#toys', color: '', icon: '🦴' },
+      { labelKey: 'accessories', href: '/shop?pet=dog#accessories', color: '', icon: '🦮' },
+      { labelKey: 'beds', href: '/shop?pet=dog#beds', color: '', icon: '🛏️' },
+      { labelKey: 'bowls', href: '/shop?pet=dog#feeders-bowls', color: '', icon: '🍽️' },
     ],
   },
 ]

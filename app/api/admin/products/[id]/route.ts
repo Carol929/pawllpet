@@ -49,6 +49,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
+    // Enforce draft if required fields are incomplete
+    const hasVariantsWithPrice = (data.variants || []).some(v => v.name && v.price > 0)
+    const price = data.price !== undefined ? data.price : 0
+    if (!data.description || !data.categoryId || !data.petType || (price <= 0 && !hasVariantsWithPrice)) {
+      updateData.status = 'draft'
+    }
+
     // Handle images: delete old, create new
     if (data.imageUrls !== undefined) {
       await prisma.productImage.deleteMany({ where: { productId: id } })
@@ -66,6 +73,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           sku: v.sku,
           price: v.price,
           stock: v.stock,
+          imageIndex: v.imageIndex ?? null,
           sortOrder: i,
         })),
       }

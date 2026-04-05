@@ -53,6 +53,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = productCreateSchema.parse(body)
 
+    // Enforce draft if required fields are incomplete
+    const hasVariantsWithPrice = (data.variants || []).some(v => v.name && v.price > 0)
+    const isIncomplete = !data.description || !data.categoryId || !data.petType || (data.price <= 0 && !hasVariantsWithPrice)
+    const finalStatus = isIncomplete ? 'draft' : (data.status || 'draft')
+
     const product = await prisma.product.create({
       data: {
         name: data.name,
@@ -66,7 +71,7 @@ export async function POST(request: NextRequest) {
         price: data.price,
         compareAtPrice: data.compareAtPrice,
         stock: data.stock,
-        status: data.status,
+        status: finalStatus,
         isNew: data.isNew,
         isBestSeller: data.isBestSeller,
         isDrop: data.isDrop,
@@ -84,6 +89,7 @@ export async function POST(request: NextRequest) {
             sku: v.sku,
             price: v.price,
             stock: v.stock,
+            imageIndex: v.imageIndex ?? null,
             sortOrder: i,
           })),
         },

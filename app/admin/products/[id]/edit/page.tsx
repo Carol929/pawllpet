@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Upload, X, Plus } from 'lucide-react'
+import { ArrowLeft, Upload, X, Plus, GripVertical } from 'lucide-react'
 import Link from 'next/link'
 
 interface Category { id: string; name: string; slug: string }
@@ -102,8 +102,37 @@ export default function EditProduct({ params }: { params: { id: string } }) {
     setVariants(prev => prev.filter((_, i) => i !== index))
   }
 
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const handleDragStart = (i: number) => setDragIdx(i)
+  const handleDragOver = (e: React.DragEvent, i: number) => {
+    e.preventDefault()
+    if (dragIdx === null || dragIdx === i) return
+    setVariants(prev => {
+      const next = [...prev]
+      const [moved] = next.splice(dragIdx, 1)
+      next.splice(i, 0, moved)
+      return next
+    })
+    setDragIdx(i)
+  }
+  const handleDragEnd = () => setDragIdx(null)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate required fields
+    const errors: string[] = []
+    if (!form.name.trim()) errors.push('Product name is required')
+    if (!form.description.trim()) errors.push('Description is required')
+    if (!form.categoryId) errors.push('Category is required')
+    if (!form.petType) errors.push('Pet type is required')
+    if (Number(form.price) <= 0 && variants.filter(v => v.name).length === 0) errors.push('Price must be greater than 0 (or add variants with prices)')
+    if (errors.length > 0) {
+      setToast({ msg: errors.join('. '), type: 'error' })
+      setTimeout(() => setToast(null), 5000)
+      return
+    }
+
     setSaving(true)
 
     try {
@@ -184,8 +213,9 @@ export default function EditProduct({ params }: { params: { id: string } }) {
               </select>
             </div>
             <div className="admin-form-group">
-              <label>Pet Type</label>
-              <select value={form.petType} onChange={e => updateField('petType', e.target.value)}>
+              <label>Pet Type *</label>
+              <select required value={form.petType} onChange={e => updateField('petType', e.target.value)}>
+                <option value="">Select pet type</option>
                 <option value="Dog">Dog</option>
                 <option value="Cat">Cat</option>
                 <option value="Both">Both</option>
@@ -266,7 +296,9 @@ export default function EditProduct({ params }: { params: { id: string } }) {
           <p style={{ fontSize: '.85rem', color: '#6b7280', margin: '0 0 1rem' }}>Add variants for different types, sizes, or flavors.</p>
           <div className="admin-variants-scroll">
             {variants.map((v, i) => (
-              <div key={i} className="admin-variant-row">
+              <div key={i} className={`admin-variant-row ${dragIdx === i ? 'admin-variant-row--dragging' : ''}`}
+                draggable onDragStart={() => handleDragStart(i)} onDragOver={e => handleDragOver(e, i)} onDragEnd={handleDragEnd}>
+                <div className="admin-variant-grip" title="Drag to reorder"><GripVertical size={16} /></div>
                 <div className="admin-form-group">
                   <label>Name</label>
                   <input value={v.name} onChange={e => updateVariant(i, 'name', e.target.value)} placeholder="e.g. Large, Bone" />
