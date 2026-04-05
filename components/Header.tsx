@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
       { labelKey: 'toys', href: '/shop?pet=cat&category=toys', color: '', icon: '🧸' },
       { labelKey: 'accessories', href: '/shop?pet=cat&category=accessories', color: '', icon: '🎀' },
       { labelKey: 'beds', href: '/shop?pet=cat&category=beds', color: '', icon: '🛏️' },
-      { labelKey: 'feeders', href: '/shop?pet=cat&category=feeders-bowls', color: '', icon: '🍽️' },
+      { labelKey: 'bowls', href: '/shop?pet=cat&category=feeders-bowls', color: '', icon: '🍽️' },
     ],
   },
   {
@@ -38,15 +38,7 @@ const navItems: NavItem[] = [
       { labelKey: 'toys', href: '/shop?pet=dog&category=toys', color: '', icon: '🦴' },
       { labelKey: 'accessories', href: '/shop?pet=dog&category=accessories', color: '', icon: '🦮' },
       { labelKey: 'beds', href: '/shop?pet=dog&category=beds', color: '', icon: '🛏️' },
-      { labelKey: 'feeders', href: '/shop?pet=dog&category=feeders-bowls', color: '', icon: '🍽️' },
-    ],
-  },
-  {
-    labelKey: 'mysteryBoxes', href: '/mystery-boxes', icon: '🎁',
-    subs: [
-      { labelKey: 'dogBox', href: '/mystery-boxes?type=dog', color: '', icon: '📦' },
-      { labelKey: 'catBox', href: '/mystery-boxes?type=cat', color: '', icon: '📦' },
-      { labelKey: 'surpriseBox', href: '/mystery-boxes?type=surprise', color: '', icon: '🎉' },
+      { labelKey: 'bowls', href: '/shop?pet=dog&category=feeders-bowls', color: '', icon: '🍽️' },
     ],
   },
 ]

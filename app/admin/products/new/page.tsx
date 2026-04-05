@@ -255,9 +255,19 @@ export default function NewProduct() {
                   <label>Stock</label>
                   <input type="number" min="0" value={v.stock} onChange={e => updateVariant(i, 'stock', e.target.value)} />
                 </div>
-                <div className="admin-form-group">
-                  <label>Image #</label>
-                  <input type="number" min="1" value={v.imageIndex !== null ? v.imageIndex + 1 : ''} onChange={e => updateVariant(i, 'imageIndex', e.target.value ? Number(e.target.value) - 1 : null)} placeholder="-" />
+                <div className="admin-form-group admin-variant-image-picker">
+                  <label>Image</label>
+                  <div className="admin-variant-image-select">
+                    <select value={v.imageIndex !== null ? v.imageIndex : ''} onChange={e => updateVariant(i, 'imageIndex', e.target.value !== '' ? Number(e.target.value) : null)}>
+                      <option value="">—</option>
+                      {imageUrls.map((url, imgIdx) => (
+                        <option key={imgIdx} value={imgIdx}>Image {imgIdx + 1}</option>
+                      ))}
+                    </select>
+                    {v.imageIndex !== null && imageUrls[v.imageIndex] && (
+                      <img src={imageUrls[v.imageIndex]} alt="" className="admin-variant-thumb" />
+                    )}
+                  </div>
                 </div>
                 <button type="button" className="admin-btn admin-btn-sm admin-btn-danger" style={{ marginBottom: 4 }} onClick={() => removeVariant(i)}>
                   <X size={14} />

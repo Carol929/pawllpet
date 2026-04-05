@@ -902,11 +902,31 @@ a { color: inherit; text-decoration: none; }
 .contact-success p { color: #666; }
 
 /* ---------- About ---------- */
-.about-hero { padding: 1.5rem 0; }
-.about-tagline { font-size: 1.2rem; color: #555; line-height: 1.7; max-width: 700px; }
-.about-story { margin-bottom: 2rem; }
-.about-story h2 { font-size: 1.2rem; font-weight: 700; color: #1f2e44; margin: 0 0 .75rem; }
-.about-story p { color: #555; line-height: 1.7; font-size: .95rem; margin: 0 0 1rem; }
+.about-hero { text-align: center; padding: 2.5rem 0 1.5rem; }
+.about-hero-title { font-size: 2.2rem; font-weight: 800; color: #1f2e44; margin: 0 0 .75rem; }
+.about-hero-slogan { font-size: 1.1rem; color: #666; line-height: 1.7; max-width: 650px; margin: 0 auto; }
+.about-section { margin-bottom: 2.5rem; }
+.about-section h2 { font-size: 1.3rem; font-weight: 700; color: #1f2e44; margin: 0 0 1rem; }
+.about-section p { color: #555; line-height: 1.7; font-size: .95rem; margin: 0 0 1rem; }
+.about-shelter { background: #faf8f5; border-radius: 20px; padding: 2rem; }
+.about-shelter-header { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
+.about-shelter-header svg { color: #D4B28C; flex-shrink: 0; }
+.about-shelter-header h2 { margin: 0; }
+.about-shelter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin: 1.5rem 0; }
+.about-shelter-card { padding: 1.25rem; background: #fff; border-radius: 14px; border: 1px solid #ececec; }
+.about-shelter-card svg { color: #D4B28C; margin-bottom: .5rem; }
+.about-shelter-card h3 { font-size: .95rem; font-weight: 700; color: #1f2e44; margin: 0 0 .4rem; }
+.about-shelter-card p { font-size: .85rem; color: #666; line-height: 1.5; margin: 0; }
+.about-shelter-partners { margin-top: 1.5rem; }
+.about-shelter-partners h3 { font-size: 1rem; font-weight: 700; color: #1f2e44; margin: 0 0 .6rem; }
+.about-shelter-partners ul { list-style: none; padding: 0; margin: 0 0 1rem; }
+.about-shelter-partners li { padding: .4rem 0; font-size: .9rem; color: #555; border-bottom: 1px solid #f0ebe4; }
+.about-shelter-partners li:last-child { border-bottom: none; }
+.about-shelter-note { font-size: .85rem; color: #888; margin: 0; }
+.about-cta { text-align: center; padding: 2rem; background: linear-gradient(135deg, #1f2e44, #2a3f5c); border-radius: 20px; color: #fff; margin-bottom: 2rem; }
+.about-cta h2 { color: #D4B28C; margin: 0 0 .5rem; font-size: 1.3rem; }
+.about-cta p { color: #ccc; margin: 0 0 1.25rem; font-size: .95rem; }
+.about-cta .btn-primary { background: #D4B28C; color: #1f2e44; }
 
 /* ---------- Help Center ---------- */
 .help-grid {

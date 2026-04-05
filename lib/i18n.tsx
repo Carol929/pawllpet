@@ -24,6 +24,7 @@ const translations = {
     beds: { en: 'Beds', zh: '宠物床', es: 'Camas', fr: 'Lits', ja: 'ベッド', ko: '침대' },
     apparel: { en: 'Apparel', zh: '服饰', es: 'Ropa', fr: 'Vêtements', ja: 'アパレル', ko: '의류' },
     feeders: { en: 'Feeders & Bowls', zh: '食盆水碗', es: 'Comederos y cuencos', fr: 'Gamelles et bols', ja: 'フィーダー・ボウル', ko: '급식기 & 그릇' },
+    bowls: { en: 'Bowls', zh: '食盆', es: 'Cuencos', fr: 'Bols', ja: 'ボウル', ko: '그릇' },
     travel: { en: 'Travel', zh: '出行装备', es: 'Viaje', fr: 'Voyage', ja: 'トラベル', ko: '여행용품' },
     dogBox: { en: 'Dog Box', zh: '狗狗盲盒', es: 'Caja para perros', fr: 'Boîte chien', ja: '犬用ボックス', ko: '강아지 박스' },
     catBox: { en: 'Cat Box', zh: '猫猫盲盒', es: 'Caja para gatos', fr: 'Boîte chat', ja: '猫用ボックス', ko: '고양이 박스' },
