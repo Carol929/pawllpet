@@ -16,6 +16,7 @@ export const productCreateSchema = z.object({
   slug: z.string().min(1).max(255),
   description: z.string().min(1, 'Description is required'),
   categoryId: z.string().min(1, 'Category is required'),
+  categoryIds: z.array(z.string()).optional().default([]),
   petType: z.enum(['Dog', 'Cat', 'Both']),
   brand: z.string().optional().nullable(),
   material: z.string().optional().nullable(),

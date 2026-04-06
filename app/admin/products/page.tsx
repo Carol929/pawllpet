@@ -11,9 +11,17 @@ interface ProductItem {
   status: string
   price: number
   stock: number
-  category: { name: string }
+  description: string
+  categoryId: string | null
+  petType: string
+  category: { name: string } | null
+  categories: { id: string; name: string }[]
   images: { url: string }[]
   _count: { variants: number }
+}
+
+function isIncomplete(p: ProductItem) {
+  return !p.description || !p.categoryId || !p.petType || !p.category
 }
 
 const statusTabs = ['all', 'live', 'draft', 'archived']
@@ -130,8 +138,11 @@ export default function AdminProducts() {
                       )}
                     </td>
                     <td><strong>{p.name}</strong></td>
-                    <td><span className={`badge badge-${p.status}`}>{p.status}</span></td>
-                    <td>{p.category?.name}</td>
+                    <td>
+                      <span className={`badge badge-${p.status}`}>{p.status}</span>
+                      {isIncomplete(p) && <span className="badge badge-incomplete" title="Missing required fields">Incomplete</span>}
+                    </td>
+                    <td>{p.categories?.length > 0 ? p.categories.map(c => c.name).join(', ') : p.category?.name}</td>
                     <td>${p.price.toFixed(2)}</td>
                     <td>{p.stock}</td>
                     <td>{p._count.variants}</td>

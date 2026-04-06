@@ -41,6 +41,7 @@ table.admin-table { width: 100%; border-collapse: collapse; }
 .badge-live { background: #dcfce7; color: #166534; }
 .badge-draft { background: #fef3c7; color: #92400e; }
 .badge-archived { background: #f3f4f6; color: #6b7280; }
+.badge-incomplete { background: #fde68a; color: #92400e; margin-left: 4px; font-size: .7rem; }
 
 /* Buttons */
 .admin-btn { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem 1rem; border-radius: 8px; font-size: .9rem; cursor: pointer; border: 1px solid #d1d5db; background: #fff; color: #374151; transition: all .2s; }
@@ -74,9 +75,11 @@ table.admin-table { width: 100%; border-collapse: collapse; }
 
 /* Image upload */
 .admin-images { display: flex; gap: .8rem; flex-wrap: wrap; }
-.admin-image-item { position: relative; width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; }
-.admin-image-item img { width: 100%; height: 100%; object-fit: cover; }
-.admin-image-remove { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8rem; }
+.admin-image-item { position: relative; width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; transition: opacity .2s, transform .2s; }
+.admin-image-item img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.admin-image-item--dragging { opacity: 0.5; transform: scale(0.95); border-color: #3b82f6; }
+.admin-image-order { position: absolute; bottom: 4px; left: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; font-size: .75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.admin-image-remove { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8rem; z-index: 2; }
 .admin-image-upload { width: 120px; height: 120px; border: 2px dashed #d1d5db; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #9ca3af; font-size: .8rem; gap: .3rem; transition: border-color .2s; }
 .admin-image-upload:hover { border-color: #1f2e44; color: #1f2e44; }
 

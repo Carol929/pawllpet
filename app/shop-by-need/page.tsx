@@ -4,17 +4,13 @@ import { useState } from 'react'
 import { ProductGrid } from '@/components/ProductGrid'
 import { useLocale } from '@/lib/i18n'
 import { useProducts } from '@/lib/use-products'
-import { Gamepad2, Bed, Scissors, Utensils, Luggage, Shirt, Cookie, Gem } from 'lucide-react'
+import { Gamepad2, Bed, Utensils, Gem } from 'lucide-react'
 
 const categories = [
-  { slug: 'toys', icon: Gamepad2 },
-  { slug: 'beds', icon: Bed },
-  { slug: 'grooming', icon: Scissors },
-  { slug: 'feeders', icon: Utensils },
-  { slug: 'travel', icon: Luggage },
-  { slug: 'apparel', icon: Shirt },
-  { slug: 'treats', icon: Cookie },
-  { slug: 'accessories', icon: Gem },
+  { slug: 'toys', labelKey: 'toys', icon: Gamepad2 },
+  { slug: 'accessories', labelKey: 'accessories', icon: Gem },
+  { slug: 'beds', labelKey: 'beds', icon: Bed },
+  { slug: 'feeders-bowls', labelKey: 'bowls', icon: Utensils },
 ]
 
 export default function ShopByNeed() {
@@ -28,14 +24,14 @@ export default function ShopByNeed() {
       <p className="page-subtitle">{t('pages', 'shopByNeedDesc')}</p>
 
       <div className="filter-cards filter-cards--wrap">
-        {categories.map(({ slug, icon: Icon }) => (
+        {categories.map(({ slug, labelKey, icon: Icon }) => (
           <button
             key={slug}
             className={`filter-card filter-card--sm ${selected === slug ? 'filter-card--active' : ''}`}
             onClick={() => setSelected(selected === slug ? null : slug)}
           >
             <Icon size={24} />
-            <span>{t('nav', slug as 'toys')}</span>
+            <span>{t('nav', labelKey as 'toys')}</span>
           </button>
         ))}
       </div>

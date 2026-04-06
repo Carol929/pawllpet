@@ -21,6 +21,7 @@ function toProductDTO(dbProduct: {
   material: string | null
   weight: number | null
   category: { name: string; slug: string }
+  categories?: { name: string; slug: string }[]
   images: { url: string }[]
   variants: { id?: string; name?: string; price: number; stock?: number; imageIndex?: number | null }[]
 }): Product {
@@ -37,6 +38,7 @@ function toProductDTO(dbProduct: {
     name: dbProduct.name,
     subtitle: dbProduct.subtitle || undefined,
     category: dbProduct.category.slug,
+    categories: dbProduct.categories?.map(c => c.slug),
     petType: dbProduct.petType as 'Dog' | 'Cat' | 'Both',
     price: displayPrice,
     rating: dbProduct.rating,
@@ -88,6 +90,7 @@ export async function getProducts(filters?: {
   full?: boolean // Use full include (for detail pages)
 }): Promise<{ products: Product[]; total: number }> {
   const where: Record<string, unknown> = { status: 'live' }
+  const andConditions: Record<string, unknown>[] = []
 
   if (filters?.ids?.length) {
     where.id = { in: filters.ids }
@@ -96,11 +99,19 @@ export async function getProducts(filters?: {
     where.name = { contains: filters.search, mode: 'insensitive' }
   }
   if (filters?.category) {
-    where.category = { slug: filters.category }
+    andConditions.push({
+      OR: [
+        { category: { slug: filters.category } },
+        { categories: { some: { slug: filters.category } } },
+      ],
+    })
   }
   if (filters?.petType) {
     const pt = filters.petType.charAt(0).toUpperCase() + filters.petType.slice(1).toLowerCase()
-    where.OR = [{ petType: pt }, { petType: 'Both' }]
+    andConditions.push({ OR: [{ petType: pt }, { petType: 'Both' }] })
+  }
+  if (andConditions.length > 0) {
+    where.AND = andConditions
   }
   if (filters?.isNew) where.isNew = true
   if (filters?.isBestSeller) where.isBestSeller = true

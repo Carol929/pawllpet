@@ -5,6 +5,7 @@ export type Product = {
   name: string
   subtitle?: string
   category: string
+  categories?: string[]
   petType: 'Dog' | 'Cat' | 'Both'
   price: number
   rating: number

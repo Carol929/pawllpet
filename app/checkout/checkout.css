@@ -35,6 +35,7 @@
 .checkout-item-img { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; background: #f5f0ea; }
 .checkout-item-info { flex: 1; min-width: 0; }
 .checkout-item-name { font-size: .9rem; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.checkout-item-variant { font-size: .8rem; color: #1f2e44; font-weight: 500; display: block; }
 .checkout-item-qty { font-size: .8rem; color: #888; }
 .checkout-item-price { font-size: .9rem; font-weight: 600; white-space: nowrap; }
 

@@ -101,12 +101,25 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
     : item.price
   const freeShipping = displayPrice >= 80
 
+  // Compute effective stock based on variant selection
+  const effectiveStock = (() => {
+    if (!item) return 0
+    if (item.variants && item.variants.length > 0) {
+      if (selectedVariant !== null) return item.variants[selectedVariant]?.stock ?? 0
+      return item.variants.reduce((sum, v) => sum + v.stock, 0)
+    }
+    return item.stock ?? 0
+  })()
+
   function handleAdd() {
     if (!user) {
       router.push('/auth?tab=login')
       return
     }
-    addItem(item!.id, quantity)
+    const variant = selectedVariant !== null && item?.variants?.[selectedVariant]
+      ? { index: selectedVariant, name: item.variants[selectedVariant].name, price: item.variants[selectedVariant].price }
+      : undefined
+    addItem(item!.id, quantity, variant)
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
   }
@@ -241,15 +254,15 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
           <button
             className={`pdp-add-btn ${added ? 'pdp-add-btn--added' : ''}`}
             onClick={handleAdd}
-            disabled={item.stock === 0}
+            disabled={effectiveStock === 0}
           >
-            {added ? <><Check size={18} /> Added to Cart</> : item.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+            {added ? <><Check size={18} /> Added to Cart</> : effectiveStock === 0 ? 'Out of Stock' : 'Add to Cart'}
           </button>
 
           {/* Stock & Material */}
           <div className="pdp-meta">
-            {item.stock !== undefined && item.stock > 0 && (
-              <span className="pdp-stock pdp-stock--in">In stock ({item.stock})</span>
+            {effectiveStock > 0 && (
+              <span className="pdp-stock pdp-stock--in">In stock ({effectiveStock})</span>
             )}
             {item.brand && <span className="pdp-meta-item">Brand: {item.brand}</span>}
             {item.material && <span className="pdp-meta-item">Material: {item.material}</span>}

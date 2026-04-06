@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         category: true,
+        categories: true,
         images: { orderBy: { sortOrder: 'asc' }, take: 1 },
         _count: { select: { variants: true } },
       },
@@ -58,6 +59,9 @@ export async function POST(request: NextRequest) {
     const isIncomplete = !data.description || !data.categoryId || !data.petType || (data.price <= 0 && !hasVariantsWithPrice)
     const finalStatus = isIncomplete ? 'draft' : (data.status || 'draft')
 
+    // Build categories connect list for many-to-many
+    const allCategoryIds = data.categoryIds?.length ? data.categoryIds : [data.categoryId]
+
     const product = await prisma.product.create({
       data: {
         name: data.name,
@@ -77,6 +81,9 @@ export async function POST(request: NextRequest) {
         isDrop: data.isDrop,
         isBundle: data.isBundle,
         createdById: auth.userId,
+        categories: {
+          connect: allCategoryIds.map(id => ({ id })),
+        },
         images: {
           create: (data.imageUrls || []).map((url, i) => ({
             url,
@@ -96,6 +103,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         category: true,
+        categories: true,
         images: { orderBy: { sortOrder: 'asc' } },
         variants: { orderBy: { sortOrder: 'asc' } },
       },

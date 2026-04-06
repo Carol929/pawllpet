@@ -26,6 +26,9 @@ export default function NewProduct() {
     brand: '', material: '', price: 0, compareAtPrice: 0, stock: 0, weight: 1,
     status: 'draft', isNew: false, isBestSeller: false, isDrop: false, isBundle: false,
   })
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
+  const [petDog, setPetDog] = useState(false)
+  const [petCat, setPetCat] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/categories').then(r => r.json()).then(setCategories).catch(() => {})
@@ -76,6 +79,21 @@ export default function NewProduct() {
     setVariants(prev => prev.filter((_, i) => i !== index))
   }
 
+  const [dragImgIdx, setDragImgIdx] = useState<number | null>(null)
+  const handleImgDragStart = (i: number) => setDragImgIdx(i)
+  const handleImgDragOver = (e: React.DragEvent, i: number) => {
+    e.preventDefault()
+    if (dragImgIdx === null || dragImgIdx === i) return
+    setImageUrls(prev => {
+      const next = [...prev]
+      const [moved] = next.splice(dragImgIdx, 1)
+      next.splice(i, 0, moved)
+      return next
+    })
+    setDragImgIdx(i)
+  }
+  const handleImgDragEnd = () => setDragImgIdx(null)
+
   const [dragIdx, setDragIdx] = useState<number | null>(null)
   const handleDragStart = (i: number) => setDragIdx(i)
   const handleDragOver = (e: React.DragEvent, i: number) => {
@@ -94,12 +112,15 @@ export default function NewProduct() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Compute petType from checkboxes
+    const computedPetType = petDog && petCat ? 'Both' : petDog ? 'Dog' : petCat ? 'Cat' : ''
+
     // Validate required fields
     const errors: string[] = []
     if (!form.name.trim()) errors.push('Product name is required')
     if (!form.description.trim()) errors.push('Description is required')
-    if (!form.categoryId) errors.push('Category is required')
-    if (!form.petType) errors.push('Pet type is required')
+    if (selectedCategoryIds.length === 0) errors.push('At least one category is required')
+    if (!computedPetType) errors.push('At least one pet type is required')
     if (Number(form.price) <= 0 && variants.filter(v => v.name).length === 0) errors.push('Price must be greater than 0 (or add variants with prices)')
     if (errors.length > 0) {
       setToast({ msg: errors.join('. '), type: 'error' })
@@ -115,6 +136,9 @@ export default function NewProduct() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          petType: computedPetType,
+          categoryId: selectedCategoryIds[0],
+          categoryIds: selectedCategoryIds,
           price: Number(form.price),
           compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : null,
           stock: Number(form.stock),
@@ -178,20 +202,30 @@ export default function NewProduct() {
               <textarea required value={form.description} onChange={e => updateField('description', e.target.value)} placeholder="Product description..." />
             </div>
             <div className="admin-form-group">
-              <label>Category *</label>
-              <select required value={form.categoryId} onChange={e => updateField('categoryId', e.target.value)}>
-                <option value="">Select category</option>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <label>Categories * <span style={{ fontWeight: 400, fontSize: '.8rem', color: '#6b7280' }}>(select all that apply)</span></label>
+              <div className="admin-checkbox-group">
+                {categories.map(c => (
+                  <label key={c.id} className="admin-checkbox">
+                    <input type="checkbox" checked={selectedCategoryIds.includes(c.id)}
+                      onChange={e => {
+                        if (e.target.checked) setSelectedCategoryIds(prev => [...prev, c.id])
+                        else setSelectedCategoryIds(prev => prev.filter(id => id !== c.id))
+                      }} />
+                    {c.name}
+                  </label>
+                ))}
+              </div>
             </div>
             <div className="admin-form-group">
-              <label>Pet Type *</label>
-              <select required value={form.petType} onChange={e => updateField('petType', e.target.value)}>
-                <option value="">Select pet type</option>
-                <option value="Dog">Dog</option>
-                <option value="Cat">Cat</option>
-                <option value="Both">Both</option>
-              </select>
+              <label>Pet Type * <span style={{ fontWeight: 400, fontSize: '.8rem', color: '#6b7280' }}>(select all that apply)</span></label>
+              <div className="admin-checkbox-group">
+                <label className="admin-checkbox">
+                  <input type="checkbox" checked={petDog} onChange={e => setPetDog(e.target.checked)} /> 🐶 Dog
+                </label>
+                <label className="admin-checkbox">
+                  <input type="checkbox" checked={petCat} onChange={e => setPetCat(e.target.checked)} /> 🐱 Cat
+                </label>
+              </div>
             </div>
             <div className="admin-form-group">
               <label>Brand</label>
@@ -209,8 +243,11 @@ export default function NewProduct() {
           <h2>Images</h2>
           <div className="admin-images">
             {imageUrls.map((url, i) => (
-              <div key={i} className="admin-image-item">
+              <div key={i} className={`admin-image-item ${dragImgIdx === i ? 'admin-image-item--dragging' : ''}`}
+                draggable onDragStart={() => handleImgDragStart(i)} onDragOver={e => handleImgDragOver(e, i)} onDragEnd={handleImgDragEnd}
+                style={{ cursor: 'grab' }}>
                 <img src={url} alt={`Product image ${i + 1}`} />
+                <span className="admin-image-order">{i + 1}</span>
                 <button type="button" className="admin-image-remove" onClick={() => removeImage(i)}><X size={12} /></button>
               </div>
             ))}

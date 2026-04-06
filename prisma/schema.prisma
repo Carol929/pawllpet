@@ -53,7 +53,8 @@ model Category {
   id       String    @id @default(cuid())
   name     String    @unique
   slug     String    @unique
-  products Product[]
+  products Product[] @relation("PrimaryCategory")
+  taggedProducts Product[] @relation("ProductCategories")
 
   @@map("categories")
 }
@@ -83,12 +84,13 @@ model Product {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  category  Category         @relation(fields: [categoryId], references: [id])
-  createdBy User?            @relation(fields: [createdById], references: [id])
-  images    ProductImage[]
-  variants  ProductVariant[]
-  wishlists Wishlist[]
-  reviews   Review[]
+  category   Category         @relation("PrimaryCategory", fields: [categoryId], references: [id])
+  categories Category[]       @relation("ProductCategories")
+  createdBy  User?            @relation(fields: [createdById], references: [id])
+  images     ProductImage[]
+  variants   ProductVariant[]
+  wishlists  Wishlist[]
+  reviews    Review[]
 
   @@index([status])
   @@index([status, createdAt])

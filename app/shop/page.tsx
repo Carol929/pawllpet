@@ -93,8 +93,15 @@ function ShopContent() {
     const hash = window.location.hash.slice(1)
     if (hash) {
       setTimeout(() => {
-        document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }, 100)
+        const el = document.getElementById(hash)
+        if (!el) return
+        const header = document.querySelector('.site-header') as HTMLElement
+        const headerH = header ? header.offsetHeight : 0
+        const sectionNav = document.querySelector('.shop-section-nav') as HTMLElement
+        const navH = sectionNav ? sectionNav.offsetHeight : 0
+        const y = el.getBoundingClientRect().top + window.scrollY - headerH - navH - 16
+        window.scrollTo({ top: y, behavior: 'smooth' })
+      }, 200)
     }
   }, [sectionedMode, sectionLoading])
 
@@ -140,7 +147,17 @@ function ShopContent() {
           <nav className="shop-section-nav">
             {CATEGORY_SECTIONS.map(sec => (
               <a key={sec.slug} href={`#${sec.slug}`} className="shop-section-nav-link"
-                onClick={e => { e.preventDefault(); document.getElementById(sec.slug)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>
+                onClick={e => {
+                  e.preventDefault()
+                  const el = document.getElementById(sec.slug)
+                  if (!el) return
+                  const header = document.querySelector('.site-header') as HTMLElement
+                  const headerH = header ? header.offsetHeight : 0
+                  const sectionNav = document.querySelector('.shop-section-nav') as HTMLElement
+                  const navH = sectionNav ? sectionNav.offsetHeight : 0
+                  const y = el.getBoundingClientRect().top + window.scrollY - headerH - navH - 16
+                  window.scrollTo({ top: y, behavior: 'smooth' })
+                }}>
                 {en ? sec.en : sec.zh}
               </a>
             ))}

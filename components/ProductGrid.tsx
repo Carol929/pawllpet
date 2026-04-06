@@ -33,7 +33,7 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
 
   return (
     <article className="product-card" key={product.id}>
-      <div className="product-image-wrapper">
+      <Link href={`/products/${product.slug}`} className="product-image-wrapper product-image-link">
         <Image src={product.image} alt={product.name} width={320} height={320} sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, 25vw" className="product-image" />
         {user && (
           <button
@@ -51,7 +51,7 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
         >
           {added ? <Check size={16} /> : <ShoppingCart size={16} />}
         </button>
-      </div>
+      </Link>
       <h3>{product.name}</h3>
       {product.subtitle && <p className="product-subtitle">{product.subtitle}</p>}
       <div className="product-meta">

@@ -59,10 +59,15 @@ export default function CheckoutPage() {
   }, [items])
 
   const cartProducts = items
-    .map(item => { const p = productMap[item.productId]; return p ? { ...p, quantity: item.quantity } : null })
-    .filter(Boolean) as (Product & { quantity: number })[]
+    .map(item => {
+      const p = productMap[item.productId]
+      if (!p) return null
+      const unitPrice = item.variantPrice ?? p.price
+      return { ...p, quantity: item.quantity, unitPrice, variantName: item.variantName }
+    })
+    .filter(Boolean) as (Product & { quantity: number; unitPrice: number; variantName?: string })[]
 
-  const subtotal = cartProducts.reduce((sum, p) => sum + p.price * p.quantity, 0)
+  const subtotal = cartProducts.reduce((sum, p) => sum + p.unitPrice * p.quantity, 0)
   const totalCount = cartProducts.reduce((sum, p) => sum + p.quantity, 0)
 
   // Calculate weight, shipping, tax only after address confirmed
@@ -235,14 +240,15 @@ export default function CheckoutPage() {
         <div className="checkout-summary">
           <h2>Order Summary</h2>
           <div className="checkout-items">
-            {cartProducts.map(p => (
-              <div key={p.id} className="checkout-item">
+            {cartProducts.map((p, idx) => (
+              <div key={`${p.id}-${idx}`} className="checkout-item">
                 <img src={p.image} alt={p.name} className="checkout-item-img" />
                 <div className="checkout-item-info">
                   <span className="checkout-item-name">{p.name}</span>
+                  {p.variantName && <span className="checkout-item-variant">{p.variantName}</span>}
                   <span className="checkout-item-qty">Qty: {p.quantity}</span>
                 </div>
-                <span className="checkout-item-price">${(p.price * p.quantity).toFixed(2)}</span>
+                <span className="checkout-item-price">${(p.unitPrice * p.quantity).toFixed(2)}</span>
               </div>
             ))}
           </div>

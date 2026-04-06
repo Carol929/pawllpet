@@ -61,6 +61,12 @@
   margin-bottom: .25rem;
 }
 
+.cart-item-variant {
+  font-size: .85rem;
+  color: #1f2e44;
+  font-weight: 500;
+}
+
 .cart-item-category {
   font-size: .82rem;
   color: #888;

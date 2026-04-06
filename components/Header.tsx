@@ -109,9 +109,12 @@ export default function Header() {
     <header className="site-header">
       <div className="top-banner">{t('header', 'topBanner')}</div>
       <div className="container header-inner">
-        <Link href="/" className="logo" aria-label="PawLL Pet Home">
-          <Image src="/logo.png" alt="PawLL Pet" width={200} height={200} priority />
-        </Link>
+        <div className="logo-group">
+          <Link href="/" className="logo" aria-label="PawLL Pet Home">
+            <Image src="/logo.png" alt="PawLL Pet" width={200} height={200} priority />
+          </Link>
+          <Link href="/about" className="about-link">About Us</Link>
+        </div>
 
         <nav className="nav-list">
           {navItems.map((item) => (

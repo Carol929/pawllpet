@@ -3,13 +3,19 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
 import { useAuth } from '@/lib/auth-context'
 
-export type CartItem = { productId: string; quantity: number }
+export type CartItem = {
+  productId: string
+  quantity: number
+  variantIndex?: number
+  variantName?: string
+  variantPrice?: number
+}
 
 interface CartContextValue {
   items: CartItem[]
-  addItem: (productId: string, qty?: number) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, qty: number) => void
+  addItem: (productId: string, qty?: number, variant?: { index: number; name: string; price: number }) => void
+  removeItem: (productId: string, variantIndex?: number) => void
+  updateQuantity: (productId: string, qty: number, variantIndex?: number) => void
   clearCart: () => void
   totalItems: number
 }
@@ -57,25 +63,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (loaded && user) saveCart(items)
   }, [items, loaded, user])
 
-  const addItem = useCallback((productId: string, qty = 1) => {
+  const addItem = useCallback((productId: string, qty = 1, variant?: { index: number; name: string; price: number }) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.productId === productId)
+      const match = (i: CartItem) => i.productId === productId && (i.variantIndex ?? -1) === (variant?.index ?? -1)
+      const existing = prev.find(match)
       if (existing) {
-        return prev.map((i) => i.productId === productId ? { ...i, quantity: i.quantity + qty } : i)
+        return prev.map((i) => match(i) ? { ...i, quantity: i.quantity + qty } : i)
       }
-      return [...prev, { productId, quantity: qty }]
+      return [...prev, {
+        productId, quantity: qty,
+        ...(variant ? { variantIndex: variant.index, variantName: variant.name, variantPrice: variant.price } : {}),
+      }]
     })
   }, [])
 
-  const removeItem = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((i) => i.productId !== productId))
+  const removeItem = useCallback((productId: string, variantIndex?: number) => {
+    setItems((prev) => prev.filter((i) => !(i.productId === productId && (i.variantIndex ?? -1) === (variantIndex ?? -1))))
   }, [])
 
-  const updateQuantity = useCallback((productId: string, qty: number) => {
+  const updateQuantity = useCallback((productId: string, qty: number, variantIndex?: number) => {
+    const match = (i: CartItem) => i.productId === productId && (i.variantIndex ?? -1) === (variantIndex ?? -1)
     if (qty <= 0) {
-      setItems((prev) => prev.filter((i) => i.productId !== productId))
+      setItems((prev) => prev.filter((i) => !match(i)))
     } else {
-      setItems((prev) => prev.map((i) => i.productId === productId ? { ...i, quantity: qty } : i))
+      setItems((prev) => prev.map((i) => match(i) ? { ...i, quantity: qty } : i))
     }
   }, [])
 

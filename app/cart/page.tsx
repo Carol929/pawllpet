@@ -32,12 +32,17 @@ export default function CartPage() {
   }, [items])
 
   const cartProducts = items
-    .map(item => { const p = productMap[item.productId]; return p ? { ...p, quantity: item.quantity } : null })
-    .filter(Boolean) as (Product & { quantity: number })[]
+    .map(item => {
+      const p = productMap[item.productId]
+      if (!p) return null
+      const unitPrice = item.variantPrice ?? p.price
+      return { ...p, quantity: item.quantity, unitPrice, variantName: item.variantName, variantIndex: item.variantIndex }
+    })
+    .filter(Boolean) as (Product & { quantity: number; unitPrice: number; variantName?: string; variantIndex?: number })[]
 
   const hasGift = cartProducts.some(p => p.slug === 'quiz-gift')
-  const paidSubtotal = cartProducts.filter(p => p.slug !== 'quiz-gift').reduce((sum, p) => sum + p.price * p.quantity, 0)
-  const subtotal = cartProducts.reduce((sum, p) => sum + p.price * p.quantity, 0)
+  const paidSubtotal = cartProducts.filter(p => p.slug !== 'quiz-gift').reduce((sum, p) => sum + p.unitPrice * p.quantity, 0)
+  const subtotal = cartProducts.reduce((sum, p) => sum + p.unitPrice * p.quantity, 0)
   const totalCount = cartProducts.reduce((sum, p) => sum + p.quantity, 0)
   const freeShipping = subtotal >= 80
   const shipping = freeShipping ? 0 : 5.99
@@ -69,20 +74,21 @@ export default function CartPage() {
       <h1 className="cart-title">Shopping Bag ({totalCount})</h1>
       <div className="cart-layout">
         <div className="cart-items">
-          {cartProducts.map((p) => (
-            <div key={p.id} className="cart-item">
+          {cartProducts.map((p, idx) => (
+            <div key={`${p.id}-${p.variantIndex ?? 'base'}`} className="cart-item">
               <Link href={`/products/${p.slug}`}><img src={p.image} alt={p.name} className="cart-item-image" /></Link>
               <div className="cart-item-info">
                 <Link href={`/products/${p.slug}`} className="cart-item-name cart-item-link">{p.name}</Link>
+                {p.variantName && <div className="cart-item-variant">{p.variantName}</div>}
                 <div className="cart-item-category">{p.category.replace('-', ' ')}</div>
               </div>
               <div className="qty-selector">
-                <button className="qty-btn" onClick={() => updateQuantity(p.id, p.quantity - 1)} disabled={p.quantity <= 1}>−</button>
+                <button className="qty-btn" onClick={() => updateQuantity(p.id, p.quantity - 1, p.variantIndex)} disabled={p.quantity <= 1}>−</button>
                 <span className="qty-value">{p.quantity}</span>
-                <button className="qty-btn" onClick={() => updateQuantity(p.id, p.quantity + 1)}>+</button>
+                <button className="qty-btn" onClick={() => updateQuantity(p.id, p.quantity + 1, p.variantIndex)}>+</button>
               </div>
-              <div className="cart-item-price">${(p.price * p.quantity).toFixed(2)}</div>
-              <button className="cart-item-remove" onClick={() => removeItem(p.id)}><Trash2 size={16} /></button>
+              <div className="cart-item-price">${(p.unitPrice * p.quantity).toFixed(2)}</div>
+              <button className="cart-item-remove" onClick={() => removeItem(p.id, p.variantIndex)}><Trash2 size={16} /></button>
             </div>
           ))}
         </div>
