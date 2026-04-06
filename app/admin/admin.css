@@ -116,3 +116,28 @@ table.admin-table { width: 100%; border-collapse: collapse; }
 .admin-toast-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
 .admin-toast-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
 @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* Image Cropper Modal */
+.img-cropper-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+.img-cropper-modal { background: #fff; border-radius: 16px; max-width: 800px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+.img-cropper-header { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.5rem; border-bottom: 1px solid #e5e7eb; }
+.img-cropper-header h2 { margin: 0; font-size: 1.1rem; color: #1c2333; }
+.img-cropper-loading { padding: 3rem; text-align: center; color: #9ca3af; }
+.img-cropper-list { overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+.img-cropper-item { border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; }
+.img-cropper-compare { display: flex; align-items: center; gap: 1rem; }
+.img-cropper-arrow { font-size: 1.5rem; color: #9ca3af; flex-shrink: 0; }
+.img-cropper-preview { flex: 1; text-align: center; }
+.img-cropper-preview img { width: 100%; max-width: 280px; aspect-ratio: 1; object-fit: contain; border-radius: 8px; background: #f8f6f3; border: 1px solid #e5e7eb; }
+.img-cropper-preview--result img { border-color: #3b82f6; }
+.img-cropper-label { display: block; font-size: .8rem; font-weight: 600; color: #6b7280; margin-bottom: .4rem; text-transform: uppercase; letter-spacing: .03em; }
+.img-cropper-dims { display: block; font-size: .75rem; color: #9ca3af; margin-top: .3rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; margin-inline: auto; }
+.img-cropper-actions { display: flex; gap: .5rem; margin-top: .8rem; justify-content: center; }
+.img-cropper-active { background: #1f2e44 !important; color: #fff !important; border-color: #1f2e44 !important; }
+.img-cropper-footer { display: flex; justify-content: flex-end; gap: .8rem; padding: 1.2rem 1.5rem; border-top: 1px solid #e5e7eb; }
+
+@media (max-width: 600px) {
+  .img-cropper-compare { flex-direction: column; }
+  .img-cropper-arrow { transform: rotate(90deg); }
+  .img-cropper-overlay { padding: 1rem; }
+}

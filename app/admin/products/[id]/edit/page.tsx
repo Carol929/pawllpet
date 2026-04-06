@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, X, Plus, GripVertical } from 'lucide-react'
 import Link from 'next/link'
+import ImageCropper from '@/components/admin/ImageCropper'
 
 interface Category { id: string; name: string; slug: string }
 interface Variant { name: string; price: number; stock: number; sku: string; imageIndex: number | null }
@@ -73,14 +74,22 @@ export default function EditProduct({ params }: { params: { id: string } }) {
     })
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files?.length) return
+    setPendingFiles(Array.from(files))
+    e.target.value = ''
+  }
+
+  const handleCropConfirm = async (blobs: Blob[]) => {
+    setPendingFiles([])
     setUploading(true)
 
-    for (const file of Array.from(files)) {
+    for (const blob of blobs) {
       const fd = new FormData()
-      fd.append('file', file)
+      fd.append('file', new File([blob], `product-${Date.now()}.webp`, { type: 'image/webp' }))
       try {
         const res = await fetch('/api/admin/products/upload', { method: 'POST', body: fd })
         const data = await res.json()
@@ -91,7 +100,6 @@ export default function EditProduct({ params }: { params: { id: string } }) {
       }
     }
     setUploading(false)
-    e.target.value = ''
   }
 
   const removeImage = (index: number) => {
@@ -286,9 +294,16 @@ export default function EditProduct({ params }: { params: { id: string } }) {
             <label className="admin-image-upload">
               <Upload size={20} />
               <span>{uploading ? 'Uploading...' : 'Upload'}</span>
-              <input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={handleImageUpload} disabled={uploading} />
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={handleImageSelect} disabled={uploading} />
             </label>
           </div>
+          {pendingFiles.length > 0 && (
+            <ImageCropper
+              files={pendingFiles}
+              onConfirm={handleCropConfirm}
+              onCancel={() => setPendingFiles([])}
+            />
+          )}
         </div>
 
         <div className="admin-form-section">
