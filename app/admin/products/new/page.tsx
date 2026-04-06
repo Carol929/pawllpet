@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Upload, X, Plus, GripVertical } from 'lucide-react'
+import { ArrowLeft, Upload, X, Plus, GripVertical, Crop } from 'lucide-react'
 import Link from 'next/link'
 import ImageCropper from '@/components/admin/ImageCropper'
 
@@ -44,6 +44,7 @@ export default function NewProduct() {
   }
 
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [recropIndex, setRecropIndex] = useState<number | null>(null)
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -53,22 +54,46 @@ export default function NewProduct() {
   }
 
   const handleCropConfirm = async (blobs: Blob[]) => {
+    const replacingIndex = recropIndex
     setPendingFiles([])
+    setRecropIndex(null)
     setUploading(true)
 
-    for (const blob of blobs) {
+    for (let b = 0; b < blobs.length; b++) {
       const fd = new FormData()
-      fd.append('file', new File([blob], `product-${Date.now()}.webp`, { type: 'image/webp' }))
+      fd.append('file', new File([blobs[b]], `product-${Date.now()}.webp`, { type: 'image/webp' }))
       try {
         const res = await fetch('/api/admin/products/upload', { method: 'POST', body: fd })
         const data = await res.json()
-        if (data.url) setImageUrls(prev => [...prev, data.url])
-        else setToast({ msg: data.error || 'Upload failed', type: 'error' })
+        if (data.url) {
+          if (replacingIndex !== null && b === 0) {
+            // Replace the existing image at that index
+            setImageUrls(prev => prev.map((u, i) => i === replacingIndex ? data.url : u))
+          } else {
+            setImageUrls(prev => [...prev, data.url])
+          }
+        } else {
+          setToast({ msg: data.error || 'Upload failed', type: 'error' })
+        }
       } catch {
         setToast({ msg: 'Upload failed', type: 'error' })
       }
     }
     setUploading(false)
+  }
+
+  const handleRecrop = async (index: number) => {
+    const url = imageUrls[index]
+    try {
+      const res = await fetch(url)
+      const blob = await res.blob()
+      const file = new File([blob], `recrop-${index}.webp`, { type: blob.type })
+      setRecropIndex(index)
+      setPendingFiles([file])
+    } catch {
+      setToast({ msg: 'Failed to load image for processing', type: 'error' })
+      setTimeout(() => setToast(null), 3000)
+    }
   }
 
   const removeImage = (index: number) => {
@@ -256,6 +281,7 @@ export default function NewProduct() {
                 style={{ cursor: 'grab' }}>
                 <img src={url} alt={`Product image ${i + 1}`} />
                 <span className="admin-image-order">{i + 1}</span>
+                <button type="button" className="admin-image-crop" onClick={() => handleRecrop(i)} title="Re-crop/pad"><Crop size={12} /></button>
                 <button type="button" className="admin-image-remove" onClick={() => removeImage(i)}><X size={12} /></button>
               </div>
             ))}
@@ -269,7 +295,7 @@ export default function NewProduct() {
             <ImageCropper
               files={pendingFiles}
               onConfirm={handleCropConfirm}
-              onCancel={() => setPendingFiles([])}
+              onCancel={() => { setPendingFiles([]); setRecropIndex(null) }}
             />
           )}
         </div>

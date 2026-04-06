@@ -79,6 +79,9 @@ table.admin-table { width: 100%; border-collapse: collapse; }
 .admin-image-item img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
 .admin-image-item--dragging { opacity: 0.5; transform: scale(0.95); border-color: #3b82f6; }
 .admin-image-order { position: absolute; bottom: 4px; left: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; font-size: .75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.admin-image-crop { position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8rem; z-index: 2; opacity: 0; transition: opacity .2s; }
+.admin-image-item:hover .admin-image-crop { opacity: 1; }
+.admin-image-crop:hover { background: rgba(59,130,246,.8); }
 .admin-image-remove { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8rem; z-index: 2; }
 .admin-image-upload { width: 120px; height: 120px; border: 2px dashed #d1d5db; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #9ca3af; font-size: .8rem; gap: .3rem; transition: border-color .2s; }
 .admin-image-upload:hover { border-color: #1f2e44; color: #1f2e44; }
