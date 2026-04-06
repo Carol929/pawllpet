@@ -44,13 +44,15 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
             <Heart size={16} fill={isWished(product.id) ? '#e74c3c' : 'none'} />
           </button>
         )}
-        <button
-          className={`product-quick-add ${added ? 'product-quick-add--added' : ''}`}
-          onClick={handleQuickAdd}
-          aria-label={`Add ${product.name} to cart`}
-        >
-          {added ? <Check size={16} /> : <ShoppingCart size={16} />}
-        </button>
+        {(!product.variants || product.variants.length === 0) && (
+          <button
+            className={`product-quick-add ${added ? 'product-quick-add--added' : ''}`}
+            onClick={handleQuickAdd}
+            aria-label={`Add ${product.name} to cart`}
+          >
+            {added ? <Check size={16} /> : <ShoppingCart size={16} />}
+          </button>
+        )}
       </Link>
       <h3>{product.name}</h3>
       {product.subtitle && <p className="product-subtitle">{product.subtitle}</p>}

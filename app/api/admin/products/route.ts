@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         category: true,
         categories: true,
         images: { orderBy: { sortOrder: 'asc' }, take: 1 },
+        variants: { select: { price: true, stock: true }, orderBy: { price: 'asc' } },
         _count: { select: { variants: true } },
       },
       orderBy: { updatedAt: 'desc' },

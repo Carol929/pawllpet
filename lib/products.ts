@@ -69,7 +69,7 @@ const fullInclude = {
 const listInclude = {
   category: { select: { name: true, slug: true } },
   images: { take: 1, orderBy: { sortOrder: 'asc' as const } },
-  variants: { select: { price: true }, orderBy: { price: 'asc' as const } },
+  variants: { select: { id: true, price: true }, orderBy: { price: 'asc' as const } },
 }
 
 export async function getProducts(filters?: {

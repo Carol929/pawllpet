@@ -632,8 +632,9 @@ a { color: inherit; text-decoration: none; }
 }
 .pdp-main-image {
   width: 100%;
-  height: 480px;
-  object-fit: cover;
+  max-height: 560px;
+  height: auto;
+  object-fit: contain;
   display: block;
 }
 .pdp-nav-btn {
@@ -1346,7 +1347,7 @@ a { color: inherit; text-decoration: none; }
   .hero-carousel-arrow { width: 34px; height: 34px; }
   .hero-carousel-arrow--left { left: .5rem; }
   .hero-carousel-arrow--right { right: .5rem; }
-  .pdp-main-image { height: 320px; }
+  .pdp-main-image { max-height: 320px; height: auto; }
   .pdp-skeleton-image { height: 320px; }
   .pdp-title { font-size: 1.25rem; }
   .pdp-tab { padding: .6rem 1rem; font-size: .85rem; }

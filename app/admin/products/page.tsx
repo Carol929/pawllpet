@@ -16,8 +16,20 @@ interface ProductItem {
   petType: string
   category: { name: string } | null
   categories: { id: string; name: string }[]
+  variants: { price: number; stock: number }[]
   images: { url: string }[]
   _count: { variants: number }
+}
+
+function displayPrice(p: ProductItem) {
+  if (p.price > 0) return p.price
+  if (p.variants.length > 0) return Math.min(...p.variants.map(v => v.price))
+  return 0
+}
+
+function displayStock(p: ProductItem) {
+  if (p.variants.length > 0) return p.variants.reduce((sum, v) => sum + v.stock, 0)
+  return p.stock
 }
 
 function isIncomplete(p: ProductItem) {
@@ -143,8 +155,8 @@ export default function AdminProducts() {
                       {isIncomplete(p) && <span className="badge badge-incomplete" title="Missing required fields">Incomplete</span>}
                     </td>
                     <td>{p.categories?.length > 0 ? p.categories.map(c => c.name).join(', ') : p.category?.name}</td>
-                    <td>${p.price.toFixed(2)}</td>
-                    <td>{p.stock}</td>
+                    <td>${displayPrice(p).toFixed(2)}{p.price === 0 && p.variants.length > 0 && <span style={{ fontSize: '.75rem', color: '#6b7280' }}> (variant)</span>}</td>
+                    <td>{displayStock(p)}</td>
                     <td>{p._count.variants}</td>
                     <td>
                       <div style={{ display: 'flex', gap: 4 }}>
