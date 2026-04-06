@@ -27,7 +27,7 @@ const navItems: NavItem[] = [
       { labelKey: 'toys', href: '/shop?pet=cat#toys', color: '', icon: '🧸' },
       { labelKey: 'accessories', href: '/shop?pet=cat#accessories', color: '', icon: '🎀' },
       { labelKey: 'beds', href: '/shop?pet=cat#beds', color: '', icon: '🛏️' },
-      { labelKey: 'bowls', href: '/shop?pet=cat#feeders-bowls', color: '', icon: '🍽️' },
+      { labelKey: 'bowls', href: '/shop?pet=cat#bowls', color: '', icon: '🍽️' },
     ],
   },
   {
@@ -36,7 +36,7 @@ const navItems: NavItem[] = [
       { labelKey: 'toys', href: '/shop?pet=dog#toys', color: '', icon: '🦴' },
       { labelKey: 'accessories', href: '/shop?pet=dog#accessories', color: '', icon: '🦮' },
       { labelKey: 'beds', href: '/shop?pet=dog#beds', color: '', icon: '🛏️' },
-      { labelKey: 'bowls', href: '/shop?pet=dog#feeders-bowls', color: '', icon: '🍽️' },
+      { labelKey: 'bowls', href: '/shop?pet=dog#bowls', color: '', icon: '🍽️' },
     ],
   },
 ]

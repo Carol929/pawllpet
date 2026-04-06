@@ -15,7 +15,7 @@ export type Product = {
 }
 
 export const categories = [
-  'toys', 'treats', 'grooming', 'accessories', 'beds', 'apparel', 'feeders-bowls', 'travel',
+  'toys', 'accessories', 'beds', 'bowls',
 ]
 
 const adjectives = ['Cloud', 'Luna', 'Pebble', 'Sunny', 'Maple', 'Cozy']

@@ -10,7 +10,7 @@ const categories = [
   { slug: 'toys', labelKey: 'toys', icon: Gamepad2 },
   { slug: 'accessories', labelKey: 'accessories', icon: Gem },
   { slug: 'beds', labelKey: 'beds', icon: Bed },
-  { slug: 'feeders-bowls', labelKey: 'bowls', icon: Utensils },
+  { slug: 'bowls', labelKey: 'bowls', icon: Utensils },
 ]
 
 export default function ShopByNeed() {

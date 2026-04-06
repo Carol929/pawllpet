@@ -5,13 +5,9 @@ const prisma = new PrismaClient()
 
 const categories = [
   { name: 'Toys', slug: 'toys' },
-  { name: 'Treats', slug: 'treats' },
-  { name: 'Grooming', slug: 'grooming' },
   { name: 'Accessories', slug: 'accessories' },
   { name: 'Beds', slug: 'beds' },
-  { name: 'Apparel', slug: 'apparel' },
-  { name: 'Feeders & Bowls', slug: 'feeders-bowls' },
-  { name: 'Travel', slug: 'travel' },
+  { name: 'Bowls', slug: 'bowls' },
 ]
 
 async function main() {
@@ -41,7 +37,7 @@ async function main() {
     })
   }
 
-  console.log('Seed complete: admin user + 8 categories')
+  console.log('Seed complete: admin user + 4 categories')
 }
 
 main().finally(async () => prisma.$disconnect())

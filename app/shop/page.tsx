@@ -23,7 +23,7 @@ const CATEGORY_SECTIONS = [
   { slug: 'toys', en: 'Toys', zh: '玩具' },
   { slug: 'accessories', en: 'Accessories', zh: '配饰' },
   { slug: 'beds', en: 'Beds', zh: '宠物床' },
-  { slug: 'feeders-bowls', en: 'Bowls', zh: '食盆' },
+  { slug: 'bowls', en: 'Bowls', zh: '食盆' },
 ]
 
 const PAGE_SIZE = 12
