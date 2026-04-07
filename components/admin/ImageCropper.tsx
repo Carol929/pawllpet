@@ -25,10 +25,10 @@ interface ImageCropperProps {
   onCancel: () => void
 }
 
-function loadImageEl(src: string): Promise<HTMLImageElement> {
+function loadImageEl(src: string, useCors = false): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
-    img.crossOrigin = 'anonymous'
+    if (useCors) img.crossOrigin = 'anonymous'
     img.onload = () => resolve(img)
     img.onerror = () => reject(new Error('Failed to load image'))
     img.src = src
@@ -63,9 +63,17 @@ function detectBgColor(img: HTMLImageElement): string {
   let rS = 0, gS = 0, bS = 0, n = 0
   for (const [x, y] of spots) {
     if (x < 0 || x >= sw || y < 0 || y >= sh) continue
-    try { const p = ctx.getImageData(x, y, 1, 1).data; rS += p[0]; gS += p[1]; bS += p[2]; n++ } catch {}
+    try {
+      const p = ctx.getImageData(x, y, 1, 1).data
+      rS += p[0]; gS += p[1]; bS += p[2]; n++
+    } catch (err) {
+      console.warn('detectBgColor getImageData failed:', err)
+    }
   }
-  if (!n) return '#f8f6f3'
+  if (!n) {
+    console.warn('detectBgColor: all samples failed, using fallback')
+    return '#f8f6f3'
+  }
   return `rgb(${Math.round(rS / n)},${Math.round(gS / n)},${Math.round(bS / n)})`
 }
 
