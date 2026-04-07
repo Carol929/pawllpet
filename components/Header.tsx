@@ -24,35 +24,19 @@ const navItems: NavItem[] = [
   {
     labelKey: 'cats', href: '/shop?pet=cat',
     subs: [
-      { labelKey: 'toys', href: '/shop?pet=cat&category=toys', color: '#fce8f0' },
-      { labelKey: 'treats', href: '/shop?pet=cat&category=treats', color: '#f9e0ea' },
-      { labelKey: 'grooming', href: '/shop?pet=cat&category=grooming', color: '#f5d8e4' },
-      { labelKey: 'accessories', href: '/shop?pet=cat&category=accessories', color: '#fce8f0' },
-      { labelKey: 'beds', href: '/shop?pet=cat&category=beds', color: '#f9e0ea' },
-      { labelKey: 'apparel', href: '/shop?pet=cat&category=apparel', color: '#f5d8e4' },
-      { labelKey: 'feeders', href: '/shop?pet=cat&category=feeders-bowls', color: '#fce8f0' },
-      { labelKey: 'travel', href: '/shop?pet=cat&category=travel', color: '#f9e0ea' },
+      { labelKey: 'toys', href: '/shop?pet=cat#toys', color: '#fce8f0' },
+      { labelKey: 'accessories', href: '/shop?pet=cat#accessories', color: '#f9e0ea' },
+      { labelKey: 'beds', href: '/shop?pet=cat#beds', color: '#f5d8e4' },
+      { labelKey: 'bowls', href: '/shop?pet=cat#bowls', color: '#fce8f0' },
     ],
   },
   {
     labelKey: 'dogs', href: '/shop?pet=dog',
     subs: [
-      { labelKey: 'toys', href: '/shop?pet=dog&category=toys', color: '#e3f0ee' },
-      { labelKey: 'treats', href: '/shop?pet=dog&category=treats', color: '#dce8f0' },
-      { labelKey: 'grooming', href: '/shop?pet=dog&category=grooming', color: '#d5e4ed' },
-      { labelKey: 'accessories', href: '/shop?pet=dog&category=accessories', color: '#e3f0ee' },
-      { labelKey: 'beds', href: '/shop?pet=dog&category=beds', color: '#dce8f0' },
-      { labelKey: 'apparel', href: '/shop?pet=dog&category=apparel', color: '#d5e4ed' },
-      { labelKey: 'feeders', href: '/shop?pet=dog&category=feeders-bowls', color: '#e3f0ee' },
-      { labelKey: 'travel', href: '/shop?pet=dog&category=travel', color: '#dce8f0' },
-    ],
-  },
-  {
-    labelKey: 'mysteryBoxes', href: '/mystery-boxes',
-    subs: [
-      { labelKey: 'dogBox', href: '/mystery-boxes?type=dog', color: '#e3f0ee' },
-      { labelKey: 'catBox', href: '/mystery-boxes?type=cat', color: '#fce8f0' },
-      { labelKey: 'surpriseBox', href: '/mystery-boxes?type=surprise', color: '#fef3e2' },
+      { labelKey: 'toys', href: '/shop?pet=dog#toys', color: '#e3f0ee' },
+      { labelKey: 'accessories', href: '/shop?pet=dog#accessories', color: '#dce8f0' },
+      { labelKey: 'beds', href: '/shop?pet=dog#beds', color: '#d5e4ed' },
+      { labelKey: 'bowls', href: '/shop?pet=dog#bowls', color: '#e3f0ee' },
     ],
   },
 ]
