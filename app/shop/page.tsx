@@ -69,20 +69,28 @@ function ShopContent() {
     fetch('/api/categories').then(r => r.json()).then(setCategories).catch(() => {})
   }, [])
 
-  // Fetch sectioned data
+  // Fetch sectioned data + all products for this pet type
+  const [allPetProducts, setAllPetProducts] = useState<Product[]>([])
+
   useEffect(() => {
     if (!sectionedMode) return
     setSectionLoading(true)
-    const fetches = CATEGORY_SECTIONS.map(sec =>
+    const catFetches = CATEGORY_SECTIONS.map(sec =>
       fetch(`/api/products?petType=${pet}&category=${sec.slug}&pageSize=50&sort=${sort}`)
         .then(r => r.json())
         .then(data => ({ slug: sec.slug, products: data.products || [] }))
         .catch(() => ({ slug: sec.slug, products: [] }))
     )
-    Promise.all(fetches).then(results => {
+    const allFetch = fetch(`/api/products?petType=${pet}&pageSize=200&sort=${sort}`)
+      .then(r => r.json())
+      .then(data => data.products || [])
+      .catch(() => [])
+
+    Promise.all([Promise.all(catFetches), allFetch]).then(([results, allProducts]) => {
       const map: Record<string, Product[]> = {}
       results.forEach(r => { map[r.slug] = r.products })
       setSectionData(map)
+      setAllPetProducts(allProducts)
       setSectionLoading(false)
     })
   }, [pet, sort, sectionedMode])
@@ -166,16 +174,31 @@ function ShopContent() {
           {sectionLoading ? (
             <ProductGridSkeleton count={8} />
           ) : (
-            CATEGORY_SECTIONS.map(sec => {
-              const items = sectionData[sec.slug] || []
-              if (items.length === 0) return null
-              return (
-                <section key={sec.slug} id={sec.slug} className="shop-category-section">
-                  <h2 className="shop-section-title">{en ? sec.en : sec.zh}</h2>
-                  <ProductGrid items={items} />
-                </section>
-              )
-            })
+            <>
+              {CATEGORY_SECTIONS.map(sec => {
+                const items = sectionData[sec.slug] || []
+                if (items.length === 0) return null
+                return (
+                  <section key={sec.slug} id={sec.slug} className="shop-category-section">
+                    <h2 className="shop-section-title">{en ? sec.en : sec.zh}</h2>
+                    <ProductGrid items={items} />
+                  </section>
+                )
+              })}
+              {(() => {
+                const shownIds = new Set(
+                  CATEGORY_SECTIONS.flatMap(sec => (sectionData[sec.slug] || []).map(p => p.id))
+                )
+                const remaining = allPetProducts.filter(p => !shownIds.has(p.id))
+                if (remaining.length === 0) return null
+                return (
+                  <section id="all-products" className="shop-category-section">
+                    <h2 className="shop-section-title">{en ? 'All Products' : '全部商品'}</h2>
+                    <ProductGrid items={remaining} />
+                  </section>
+                )
+              })()}
+            </>
           )}
         </div>
       ) : (

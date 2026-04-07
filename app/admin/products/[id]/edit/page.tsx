@@ -32,6 +32,7 @@ export default function EditProduct({ params }: { params: { id: string } }) {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
   const [petDog, setPetDog] = useState(false)
   const [petCat, setPetCat] = useState(false)
+  const [weightUnit, setWeightUnit] = useState<'lb' | 'g'>('g')
 
   useEffect(() => {
     Promise.all([
@@ -58,6 +59,10 @@ export default function EditProduct({ params }: { params: { id: string } }) {
         setSelectedCategoryIds(catIds)
         setPetDog(product.petType === 'Dog' || product.petType === 'Both')
         setPetCat(product.petType === 'Cat' || product.petType === 'Both')
+        // Show weight in grams by default, convert from lb
+        const weightLb = product.weight || 1
+        setWeightUnit('g')
+        setForm(prev => ({ ...prev, weight: Math.round(weightLb * 453.592) }))
       }
       setLoading(false)
     }).catch(() => {
@@ -218,6 +223,7 @@ export default function EditProduct({ params }: { params: { id: string } }) {
           price: Number(form.price),
           compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : null,
           stock: Number(form.stock),
+          weight: weightUnit === 'g' ? Number(form.weight) / 453.592 : Number(form.weight),
           imageUrls,
           variants: variants.filter(v => v.name).map(v => ({
             ...v,
@@ -360,8 +366,18 @@ export default function EditProduct({ params }: { params: { id: string } }) {
               <input type="number" min="0" value={form.stock} onChange={e => updateField('stock', e.target.value)} />
             </div>
             <div className="admin-form-group">
-              <label>Weight (lb)</label>
-              <input type="number" min="0" step="0.1" value={form.weight} onChange={e => updateField('weight', e.target.value)} />
+              <label>Weight</label>
+              <div className="admin-weight-input">
+                <input type="number" min="0" step={weightUnit === 'g' ? '1' : '0.1'} value={form.weight} onChange={e => updateField('weight', e.target.value)} />
+                <div className="admin-unit-toggle">
+                  <button type="button" className={weightUnit === 'g' ? 'active' : ''} onClick={() => {
+                    if (weightUnit === 'lb') { updateField('weight', Math.round(Number(form.weight) * 453.592)); setWeightUnit('g') }
+                  }}>g</button>
+                  <button type="button" className={weightUnit === 'lb' ? 'active' : ''} onClick={() => {
+                    if (weightUnit === 'g') { updateField('weight', Math.round(Number(form.weight) / 453.592 * 100) / 100); setWeightUnit('lb') }
+                  }}>lb</button>
+                </div>
+              </div>
             </div>
             <div className="admin-form-group">
               <label>Status</label>

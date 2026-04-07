@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { X, Check } from 'lucide-react'
+import { X, Check, RefreshCw } from 'lucide-react'
 
 interface ProcessedImage {
   file: File
@@ -15,8 +15,9 @@ interface ImageCropperProps {
   files: File[]
   onConfirm: (blobs: Blob[]) => void
   onCancel: () => void
-  targetSize?: number
 }
+
+const TARGET_SIZE = 800
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -28,36 +29,43 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
-/** Sample corner pixels to detect the dominant background color */
+/** Detect background color by sampling edge pixels on a small canvas */
 function detectBgColor(img: HTMLImageElement): string {
-  const canvas = document.createElement('canvas')
-  const s = Math.min(img.width, img.height, 200) // sample at most 200px
-  canvas.width = img.width
-  canvas.height = img.height
-  const ctx = canvas.getContext('2d')!
-  ctx.drawImage(img, 0, 0)
+  // Draw to a tiny canvas to avoid memory issues with large images
+  const maxSample = 200
+  const scale = Math.min(1, maxSample / Math.max(img.width, img.height))
+  const sw = Math.round(img.width * scale)
+  const sh = Math.round(img.height * scale)
 
-  // Sample pixels from corners and edges (5px inset)
-  const inset = 5
+  const canvas = document.createElement('canvas')
+  canvas.width = sw
+  canvas.height = sh
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return '#f8f6f3'
+  ctx.drawImage(img, 0, 0, sw, sh)
+
+  const inset = Math.max(1, Math.round(2 * scale))
   const spots = [
-    [inset, inset],                                  // top-left
-    [img.width - inset, inset],                      // top-right
-    [inset, img.height - inset],                     // bottom-left
-    [img.width - inset, img.height - inset],         // bottom-right
-    [Math.floor(img.width / 2), inset],              // top-center
-    [Math.floor(img.width / 2), img.height - inset], // bottom-center
-    [inset, Math.floor(img.height / 2)],             // left-center
-    [img.width - inset, Math.floor(img.height / 2)], // right-center
+    [inset, inset],
+    [sw - inset, inset],
+    [inset, sh - inset],
+    [sw - inset, sh - inset],
+    [Math.floor(sw / 2), inset],
+    [Math.floor(sw / 2), sh - inset],
+    [inset, Math.floor(sh / 2)],
+    [sw - inset, Math.floor(sh / 2)],
   ]
 
   let rSum = 0, gSum = 0, bSum = 0, count = 0
   for (const [x, y] of spots) {
-    if (x < 0 || x >= img.width || y < 0 || y >= img.height) continue
-    const pixel = ctx.getImageData(x, y, 1, 1).data
-    rSum += pixel[0]
-    gSum += pixel[1]
-    bSum += pixel[2]
-    count++
+    if (x < 0 || x >= sw || y < 0 || y >= sh) continue
+    try {
+      const pixel = ctx.getImageData(x, y, 1, 1).data
+      rSum += pixel[0]
+      gSum += pixel[1]
+      bSum += pixel[2]
+      count++
+    } catch { /* skip */ }
   }
 
   if (count === 0) return '#f8f6f3'
@@ -67,25 +75,31 @@ function detectBgColor(img: HTMLImageElement): string {
   return `rgb(${r},${g},${b})`
 }
 
-function padToSquare(img: HTMLImageElement, size: number, bgColor: string): string {
+function processImage(img: HTMLImageElement, bgColor: string): string {
   const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  ctx.fillStyle = bgColor
-  ctx.fillRect(0, 0, size, size)
-  const scale = Math.min(size / img.width, size / img.height)
-  const w = img.width * scale
-  const h = img.height * scale
-  const x = (size - w) / 2
-  const y = (size - h) / 2
-  ctx.drawImage(img, x, y, w, h)
-  // Try WebP first, fall back to PNG
-  try {
-    const dataUrl = canvas.toDataURL('image/webp', 0.92)
-    if (dataUrl.startsWith('data:image/webp')) return dataUrl
-  } catch { /* fallback */ }
-  return canvas.toDataURL('image/png', 0.92)
+  canvas.width = TARGET_SIZE
+  canvas.height = TARGET_SIZE
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Cannot create canvas context')
+
+  const ratio = img.width / img.height
+
+  if (ratio >= 0.95 && ratio <= 1.05) {
+    // Nearly square — resize directly
+    ctx.drawImage(img, 0, 0, TARGET_SIZE, TARGET_SIZE)
+  } else {
+    // Not square — pad with detected bg color
+    ctx.fillStyle = bgColor
+    ctx.fillRect(0, 0, TARGET_SIZE, TARGET_SIZE)
+    const scale = Math.min(TARGET_SIZE / img.width, TARGET_SIZE / img.height)
+    const w = img.width * scale
+    const h = img.height * scale
+    const x = (TARGET_SIZE - w) / 2
+    const y = (TARGET_SIZE - h) / 2
+    ctx.drawImage(img, x, y, w, h)
+  }
+
+  return canvas.toDataURL('image/png')
 }
 
 function dataUrlToBlob(dataUrl: string): Blob {
@@ -97,7 +111,7 @@ function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([arr], { type: mime })
 }
 
-export default function ImageCropper({ files, onConfirm, onCancel, targetSize = 1200 }: ImageCropperProps) {
+export default function ImageCropper({ files, onConfirm, onCancel }: ImageCropperProps) {
   const [images, setImages] = useState<ProcessedImage[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -115,33 +129,12 @@ export default function ImageCropper({ files, onConfirm, onCancel, targetSize = 
         })
 
         const img = await loadImage(dataUrl)
-        const ratio = img.width / img.height
-
-        // Detect background color from the image itself
         const detectedColor = detectBgColor(img)
-
-        // If already square-ish, just resize; otherwise pad with detected bg color
-        let result: string
-        if (ratio >= 0.95 && ratio <= 1.05) {
-          // Nearly square — just resize
-          const canvas = document.createElement('canvas')
-          canvas.width = targetSize
-          canvas.height = targetSize
-          const ctx = canvas.getContext('2d')!
-          ctx.drawImage(img, 0, 0, targetSize, targetSize)
-          try {
-            result = canvas.toDataURL('image/webp', 0.92)
-            if (!result.startsWith('data:image/webp')) result = canvas.toDataURL('image/png', 0.92)
-          } catch {
-            result = canvas.toDataURL('image/png', 0.92)
-          }
-        } else {
-          // Not square — pad with auto-detected background color
-          result = padToSquare(img, targetSize, detectedColor)
-        }
+        const result = processImage(img, detectedColor)
 
         results.push({ file, original: dataUrl, result, detectedColor })
       } catch (err) {
+        console.error('ImageCropper processing error:', err)
         results.push({
           file,
           original: '',
@@ -154,11 +147,29 @@ export default function ImageCropper({ files, onConfirm, onCancel, targetSize = 
 
     setImages(results)
     setLoading(false)
-  }, [files, targetSize])
+  }, [files])
 
   useEffect(() => {
     processFiles()
   }, [processFiles])
+
+  const retryImage = async (index: number) => {
+    const file = images[index].file
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = () => reject(new Error('Failed to read file'))
+        reader.readAsDataURL(file)
+      })
+      const img = await loadImage(dataUrl)
+      const detectedColor = detectBgColor(img)
+      const result = processImage(img, detectedColor)
+      setImages(prev => prev.map((item, i) => i === index ? { file, original: dataUrl, result, detectedColor } : item))
+    } catch (err) {
+      console.error('ImageCropper retry error:', err)
+    }
+  }
 
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index))
@@ -190,29 +201,41 @@ export default function ImageCropper({ files, onConfirm, onCancel, targetSize = 
             {images.map((img, i) => (
               <div key={i} className="img-cropper-item">
                 {img.error ? (
-                  <div className="img-cropper-error">Failed: {img.error} — {img.file.name}</div>
+                  <>
+                    <div className="img-cropper-error">Failed: {img.error} — {img.file.name}</div>
+                    <div className="img-cropper-actions">
+                      <button type="button" className="admin-btn admin-btn-sm" onClick={() => retryImage(i)}>
+                        <RefreshCw size={14} /> Retry
+                      </button>
+                      <button type="button" className="admin-btn admin-btn-sm admin-btn-danger" onClick={() => removeImage(i)}>
+                        <X size={14} /> Remove
+                      </button>
+                    </div>
+                  </>
                 ) : (
-                  <div className="img-cropper-compare">
-                    <div className="img-cropper-preview">
-                      <span className="img-cropper-label">Original</span>
-                      <img src={img.original} alt="Original" />
-                      <span className="img-cropper-dims">{img.file.name}</span>
+                  <>
+                    <div className="img-cropper-compare">
+                      <div className="img-cropper-preview">
+                        <span className="img-cropper-label">Original</span>
+                        <img src={img.original} alt="Original" />
+                        <span className="img-cropper-dims">{img.file.name}</span>
+                      </div>
+                      <div className="img-cropper-arrow">&rarr;</div>
+                      <div className="img-cropper-preview img-cropper-preview--result">
+                        <span className="img-cropper-label">Result ({TARGET_SIZE}x{TARGET_SIZE})</span>
+                        <img src={img.result} alt="Processed" />
+                        <span className="img-cropper-dims">
+                          BG: <span style={{ display: 'inline-block', width: 12, height: 12, background: img.detectedColor, borderRadius: 2, verticalAlign: -1, border: '1px solid #ccc' }} />
+                        </span>
+                      </div>
                     </div>
-                    <div className="img-cropper-arrow">&rarr;</div>
-                    <div className="img-cropper-preview img-cropper-preview--result">
-                      <span className="img-cropper-label">Result (Auto-padded)</span>
-                      <img src={img.result} alt="Processed" />
-                      <span className="img-cropper-dims">
-                        {targetSize}x{targetSize} &middot; BG: <span style={{ display: 'inline-block', width: 12, height: 12, background: img.detectedColor, borderRadius: 2, verticalAlign: -1, border: '1px solid #ccc' }} />
-                      </span>
+                    <div className="img-cropper-actions">
+                      <button type="button" className="admin-btn admin-btn-sm admin-btn-danger" onClick={() => removeImage(i)}>
+                        <X size={14} /> Remove
+                      </button>
                     </div>
-                  </div>
+                  </>
                 )}
-                <div className="img-cropper-actions">
-                  <button type="button" className="admin-btn admin-btn-sm admin-btn-danger" onClick={() => removeImage(i)}>
-                    <X size={14} /> Remove
-                  </button>
-                </div>
               </div>
             ))}
           </div>
