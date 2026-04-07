@@ -47,8 +47,7 @@ function ProductCard({ product }: { product: Product }) {
           {added ? <Check size={16} /> : <ShoppingCart size={16} />}
         </button>
       </div>
-      <h3>{product.name}</h3>
-      <p>{product.description}</p>
+      <h3 className="product-card-name">{product.name}</h3>
       <div className="product-meta">
         <span>${product.price.toFixed(2)}</span>
         <span>★ {product.rating}</span>
