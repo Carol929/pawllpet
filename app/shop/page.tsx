@@ -103,13 +103,7 @@ function ShopContent() {
       if (!hash) return
       setTimeout(() => {
         const el = document.getElementById(hash)
-        if (!el) return
-        const header = document.querySelector('.site-header') as HTMLElement
-        const headerH = header ? header.offsetHeight : 0
-        const sectionNav = document.querySelector('.shop-section-nav') as HTMLElement
-        const navH = sectionNav ? sectionNav.offsetHeight : 0
-        const y = el.getBoundingClientRect().top + window.scrollY - headerH - navH - 16
-        window.scrollTo({ top: y, behavior: 'smooth' })
+        if (el) el.scrollIntoView({ behavior: 'smooth' })
       }, 200)
     }
     scrollToHash()
@@ -162,13 +156,7 @@ function ShopContent() {
                 onClick={e => {
                   e.preventDefault()
                   const el = document.getElementById(sec.slug)
-                  if (!el) return
-                  const header = document.querySelector('.site-header') as HTMLElement
-                  const headerH = header ? header.offsetHeight : 0
-                  const sectionNav = document.querySelector('.shop-section-nav') as HTMLElement
-                  const navH = sectionNav ? sectionNav.offsetHeight : 0
-                  const y = el.getBoundingClientRect().top + window.scrollY - headerH - navH - 16
-                  window.scrollTo({ top: y, behavior: 'smooth' })
+                  if (el) el.scrollIntoView({ behavior: 'smooth' })
                 }}>
                 {en ? sec.en : sec.zh}
               </a>
@@ -182,8 +170,8 @@ function ShopContent() {
               {CATEGORY_SECTIONS.map(sec => {
                 const items = sectionData[sec.slug] || []
                 return (
-                  <section key={sec.slug} id={sec.slug} className="shop-category-section">
-                    <h2 className="shop-section-title">{en ? sec.en : sec.zh}</h2>
+                  <section key={sec.slug} className="shop-category-section">
+                    <h2 id={sec.slug} className="shop-section-title">{en ? sec.en : sec.zh}</h2>
                     {items.length > 0 ? (
                       <ProductGrid items={items} />
                     ) : (
