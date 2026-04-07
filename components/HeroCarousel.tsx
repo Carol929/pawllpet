@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const slides = [
@@ -103,8 +104,7 @@ export function HeroCarousel() {
       >
         {loopSlides.map((slide, i) => (
           <div key={i} className="hero-carousel-slide">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={slide.src} alt={slide.alt} loading={i <= 2 ? 'eager' : 'lazy'} />
+            <Image src={slide.src} alt={slide.alt} width={1200} height={600} sizes="100vw" priority={i <= 2} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
         ))}
       </div>

@@ -11,15 +11,45 @@ interface WishlistCtx {
 
 const Ctx = createContext<WishlistCtx>({ wishlistIds: new Set(), toggle: () => {}, isWished: () => false })
 
+const WL_CACHE_KEY = 'pawll-wishlist-cache'
+const WL_CACHE_TTL = 60_000 // 60 seconds
+
+function getCachedWishlist(): string[] | null {
+  try {
+    const raw = sessionStorage.getItem(WL_CACHE_KEY)
+    if (!raw) return null
+    const { ids, ts } = JSON.parse(raw)
+    if (Date.now() - ts < WL_CACHE_TTL) return ids
+  } catch {}
+  return null
+}
+
+function setCachedWishlist(ids: string[]) {
+  try {
+    sessionStorage.setItem(WL_CACHE_KEY, JSON.stringify({ ids, ts: Date.now() }))
+  } catch {}
+}
+
 export function WishlistProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
-  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set())
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    const cached = getCachedWishlist()
+    return cached ? new Set(cached) : new Set()
+  })
 
   useEffect(() => {
     if (!user) { setWishlistIds(new Set()); return }
+    // Use cache on subsequent navigations, refresh in background
+    const cached = getCachedWishlist()
+    if (cached) setWishlistIds(new Set(cached))
     fetch('/api/wishlist')
       .then(r => r.json())
-      .then(items => setWishlistIds(new Set(items.map((i: { id: string }) => i.id))))
+      .then(items => {
+        const ids = items.map((i: { id: string }) => i.id)
+        setWishlistIds(new Set(ids))
+        setCachedWishlist(ids)
+      })
       .catch(() => {})
   }, [user])
 
@@ -37,6 +67,11 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         method: isIn ? 'DELETE' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId }),
+      })
+      // Update cache after successful toggle
+      setWishlistIds(current => {
+        setCachedWishlist(Array.from(current))
+        return current
       })
     } catch {
       // Revert

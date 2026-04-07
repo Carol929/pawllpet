@@ -76,12 +76,12 @@ function ShopContent() {
     if (!sectionedMode) return
     setSectionLoading(true)
     const catFetches = CATEGORY_SECTIONS.map(sec =>
-      fetch(`/api/products?petType=${pet}&category=${sec.slug}&pageSize=50&sort=${sort}`)
+      fetch(`/api/products?petType=${pet}&category=${sec.slug}&pageSize=8&sort=${sort}`)
         .then(r => r.json())
         .then(data => ({ slug: sec.slug, products: data.products || [] }))
         .catch(() => ({ slug: sec.slug, products: [] }))
     )
-    const allFetch = fetch(`/api/products?petType=${pet}&pageSize=200&sort=${sort}`)
+    const allFetch = fetch(`/api/products?petType=${pet}&pageSize=50&sort=${sort}`)
       .then(r => r.json())
       .then(data => data.products || [])
       .catch(() => [])

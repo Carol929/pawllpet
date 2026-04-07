@@ -1,5 +1,4 @@
 export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { getProducts } from '@/lib/products'
@@ -18,7 +17,7 @@ export async function GET() {
     }
 
     const [all, newArr, best] = await Promise.all([
-      getProducts({ limit: 200 }),
+      getProducts({ limit: 20 }),
       getProducts({ isNew: true, limit: 4 }),
       getProducts({ isBestSeller: true, limit: 4 }),
     ])

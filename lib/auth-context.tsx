@@ -29,9 +29,34 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+const AUTH_CACHE_KEY = 'pawll-auth-cache'
+const AUTH_CACHE_TTL = 30_000 // 30 seconds
+
+function getCachedAuth(): AuthUser | null {
+  try {
+    const raw = sessionStorage.getItem(AUTH_CACHE_KEY)
+    if (!raw) return null
+    const { user, ts } = JSON.parse(raw)
+    if (Date.now() - ts < AUTH_CACHE_TTL) return user
+  } catch {}
+  return null
+}
+
+function setCachedAuth(user: AuthUser | null) {
+  try {
+    sessionStorage.setItem(AUTH_CACHE_KEY, JSON.stringify({ user, ts: Date.now() }))
+  } catch {}
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    if (typeof window === 'undefined') return null
+    return getCachedAuth()
+  })
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return getCachedAuth() === null
+  })
 
   const refresh = useCallback(async () => {
     try {
@@ -39,8 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json()
         setUser(data)
+        setCachedAuth(data)
       } else {
         setUser(null)
+        setCachedAuth(null)
       }
     } catch {
       setUser(null)
@@ -63,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // ignore
     }
     setUser(null)
+    try { sessionStorage.removeItem(AUTH_CACHE_KEY) } catch {}
   }, [])
 
   const value = useMemo(() => ({ user, loading, login, logout, refresh }), [user, loading, login, logout, refresh])
