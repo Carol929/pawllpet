@@ -19,9 +19,12 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
   const router = useRouter()
   const [added, setAdded] = useState(false)
 
+  const inStock = product.stock === undefined || product.stock > 0
+
   function handleQuickAdd(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
+    if (!inStock) return
     if (!user) {
       router.push(`/auth?tab=login&redirect=${encodeURIComponent(`/products/${product.slug}`)}`)
       return
@@ -44,7 +47,7 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
             <Heart size={16} fill={isWished(product.id) ? '#e74c3c' : 'none'} />
           </button>
         )}
-        {(!product.variants || product.variants.length === 0) && (
+        {(!product.variants || product.variants.length === 0) && inStock && (
           <button
             className={`product-quick-add ${added ? 'product-quick-add--added' : ''}`}
             onClick={handleQuickAdd}

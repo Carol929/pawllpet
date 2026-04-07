@@ -39,9 +39,10 @@ export default function CartPage() {
       const p = productMap[item.productId]
       if (!p) return null
       const unitPrice = item.variantPrice ?? p.price
-      return { ...p, quantity: item.quantity, unitPrice, variantName: item.variantName, variantIndex: item.variantIndex }
+      const outOfStock = p.stock !== undefined && p.stock === 0
+      return { ...p, quantity: item.quantity, unitPrice, variantName: item.variantName, variantIndex: item.variantIndex, outOfStock }
     })
-    .filter(Boolean) as (Product & { quantity: number; unitPrice: number; variantName?: string; variantIndex?: number })[]
+    .filter(Boolean) as (Product & { quantity: number; unitPrice: number; variantName?: string; variantIndex?: number; outOfStock: boolean })[]
 
   const hasGift = cartProducts.some(p => p.slug === 'quiz-gift')
   const paidSubtotal = cartProducts.filter(p => p.slug !== 'quiz-gift').reduce((sum, p) => sum + p.unitPrice * p.quantity, 0)
@@ -51,9 +52,11 @@ export default function CartPage() {
   const shipping = freeShipping ? 0 : 5.99
   const giftBlocked = hasGift && paidSubtotal < 10
 
+  const hasOutOfStock = cartProducts.some(p => p.outOfStock)
+
   function handleCheckout() {
     if (!user) { router.push('/auth?tab=login&redirect=%2Fcart'); return }
-    if (giftBlocked) { return }
+    if (giftBlocked || hasOutOfStock) { return }
     router.push('/checkout')
   }
 
@@ -84,12 +87,13 @@ export default function CartPage() {
       <div className="cart-layout">
         <div className="cart-items">
           {cartProducts.map((p, idx) => (
-            <div key={`${p.id}-${p.variantIndex ?? 'base'}`} className="cart-item">
+            <div key={`${p.id}-${p.variantIndex ?? 'base'}`} className={`cart-item ${p.outOfStock ? 'cart-item--out-of-stock' : ''}`}>
               <Link href={`/products/${p.slug}`}><img src={p.image} alt={p.name} className="cart-item-image" /></Link>
               <div className="cart-item-info">
                 <Link href={`/products/${p.slug}`} className="cart-item-name cart-item-link">{p.name}</Link>
                 {p.variantName && <div className="cart-item-variant">{p.variantName}</div>}
                 <div className="cart-item-category">{p.category.replace('-', ' ')}</div>
+                {p.outOfStock && <div className="cart-item-out-of-stock">Out of Stock</div>}
               </div>
               <div className="qty-selector">
                 <button className="qty-btn" onClick={() => updateQuantity(p.id, p.quantity - 1, p.variantIndex)} disabled={p.quantity <= 1}>−</button>
@@ -115,7 +119,10 @@ export default function CartPage() {
           {giftBlocked && (
             <div className="cart-gift-warning">🎁 Spend ${(10 - paidSubtotal).toFixed(2)} more to redeem your free gift!</div>
           )}
-          <button className="cart-checkout-btn" onClick={handleCheckout} disabled={giftBlocked}>CHECK OUT</button>
+          {hasOutOfStock && (
+            <div className="cart-gift-warning">Remove out-of-stock items before checking out.</div>
+          )}
+          <button className="cart-checkout-btn" onClick={handleCheckout} disabled={giftBlocked || hasOutOfStock}>CHECK OUT</button>
           {!freeShipping && <div className="cart-free-shipping">Add <strong>${(80 - subtotal).toFixed(2)}</strong> more for free shipping!</div>}
         </div>
       </div>
