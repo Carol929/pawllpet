@@ -115,9 +115,22 @@ export default function EditProduct({ params }: { params: { id: string } }) {
   const handleRecrop = async (index: number) => {
     const url = imageUrls[index]
     try {
-      const res = await fetch(url)
-      const blob = await res.blob()
-      const file = new File([blob], `recrop-${index}.webp`, { type: blob.type })
+      // Use canvas to convert image to blob (avoids CORS fetch issues)
+      const img = new window.Image()
+      img.crossOrigin = 'anonymous'
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error('load failed'))
+        img.src = url
+      })
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      canvas.getContext('2d')!.drawImage(img, 0, 0)
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png')
+      })
+      const file = new File([blob], `recrop-${index}.png`, { type: 'image/png' })
       setRecropIndex(index)
       setPendingFiles([file])
     } catch {

@@ -137,6 +137,7 @@ table.admin-table { width: 100%; border-collapse: collapse; }
 .img-cropper-dims { display: block; font-size: .75rem; color: #9ca3af; margin-top: .3rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; margin-inline: auto; }
 .img-cropper-actions { display: flex; gap: .5rem; margin-top: .8rem; justify-content: center; }
 .img-cropper-active { background: #1f2e44 !important; color: #fff !important; border-color: #1f2e44 !important; }
+.img-cropper-error { padding: 1rem; color: #dc2626; font-size: .9rem; text-align: center; }
 .img-cropper-footer { display: flex; justify-content: flex-end; gap: .8rem; padding: 1.2rem 1.5rem; border-top: 1px solid #e5e7eb; }
 
 @media (max-width: 600px) {
