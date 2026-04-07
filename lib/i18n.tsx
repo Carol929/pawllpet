@@ -46,6 +46,7 @@ const translations = {
     allProducts: { en: 'All Products', zh: '全部产品', es: 'Todos los productos', fr: 'Tous les produits', ja: 'すべての商品', ko: '전체 상품' },
     explore: { en: 'Explore', zh: '探索', es: 'Explorar', fr: 'Explorer', ja: '探索する', ko: '탐색' },
     viewDetails: { en: 'View details', zh: '查看详情', es: 'Ver detalles', fr: 'Voir les détails', ja: '詳細を見る', ko: '상세 보기' },
+    noProductsFound: { en: 'No products found.', zh: '暂无商品。', es: 'No se encontraron productos.', fr: 'Aucun produit trouvé.', ja: '商品が見つかりません。', ko: '상품을 찾을 수 없습니다.' },
   },
   auth: {
     logIn: { en: 'Log In', zh: '登录', es: 'Iniciar sesión', fr: 'Se connecter', ja: 'ログイン', ko: '로그인' },

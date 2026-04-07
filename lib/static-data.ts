@@ -2,9 +2,9 @@
 // (separated from lib/products.ts which imports Prisma)
 
 export const collections = [
-  { slug: 'spring-social-club', title: 'Spring Social Club', description: 'Fresh launch styles for walks and playdates.' },
-  { slug: 'cozy-evenings', title: 'Cozy Evenings', description: 'Soft textures and calming routines for nighttime.' },
-  { slug: 'weekend-travel-kit', title: 'Weekend Travel Kit', description: 'Portable essentials for pets on the move.' },
+  { slug: 'spring-social-club', title: 'Spring Social Club', titleZh: '春日社交俱乐部', description: 'Fresh launch styles for walks and playdates.', descriptionZh: '散步和玩耍的新款时尚单品。' },
+  { slug: 'cozy-evenings', title: 'Cozy Evenings', titleZh: '温馨夜晚', description: 'Soft textures and calming routines for nighttime.', descriptionZh: '柔软材质，打造宁静的夜间时光。' },
+  { slug: 'weekend-travel-kit', title: 'Weekend Travel Kit', titleZh: '周末出行套装', description: 'Portable essentials for pets on the move.', descriptionZh: '为爱宠出行准备的便携必备品。' },
 ]
 
 export const blogPosts = [

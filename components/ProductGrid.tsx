@@ -66,6 +66,10 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
 })
 
 export function ProductGrid({ items }: { items: Product[] }) {
+  const { t } = useLocale()
+  if (items.length === 0) {
+    return <p style={{ textAlign: 'center', color: '#888', padding: '2rem 0' }}>{t('home', 'noProductsFound')}</p>
+  }
   return (
     <div className="products-grid">
       {items.map((product) => (
