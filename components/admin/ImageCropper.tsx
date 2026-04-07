@@ -1,14 +1,22 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { X, Check, RefreshCw } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { X, Check, Move } from 'lucide-react'
 
-interface ProcessedImage {
+const OUTPUT_SIZE = 800
+
+interface LoadedImage {
   file: File
-  original: string
-  result: string
-  detectedColor: string
-  error?: string
+  dataUrl: string
+  width: number
+  height: number
+}
+
+interface CropState {
+  // Crop square position & size in original image coordinates
+  x: number
+  y: number
+  size: number
 }
 
 interface ImageCropperProps {
@@ -16,8 +24,6 @@ interface ImageCropperProps {
   onConfirm: (blobs: Blob[]) => void
   onCancel: () => void
 }
-
-const TARGET_SIZE = 800
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -29,77 +35,13 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
-/** Detect background color by sampling edge pixels on a small canvas */
-function detectBgColor(img: HTMLImageElement): string {
-  // Draw to a tiny canvas to avoid memory issues with large images
-  const maxSample = 200
-  const scale = Math.min(1, maxSample / Math.max(img.width, img.height))
-  const sw = Math.round(img.width * scale)
-  const sh = Math.round(img.height * scale)
-
-  const canvas = document.createElement('canvas')
-  canvas.width = sw
-  canvas.height = sh
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return '#f8f6f3'
-  ctx.drawImage(img, 0, 0, sw, sh)
-
-  const inset = Math.max(1, Math.round(2 * scale))
-  const spots = [
-    [inset, inset],
-    [sw - inset, inset],
-    [inset, sh - inset],
-    [sw - inset, sh - inset],
-    [Math.floor(sw / 2), inset],
-    [Math.floor(sw / 2), sh - inset],
-    [inset, Math.floor(sh / 2)],
-    [sw - inset, Math.floor(sh / 2)],
-  ]
-
-  let rSum = 0, gSum = 0, bSum = 0, count = 0
-  for (const [x, y] of spots) {
-    if (x < 0 || x >= sw || y < 0 || y >= sh) continue
-    try {
-      const pixel = ctx.getImageData(x, y, 1, 1).data
-      rSum += pixel[0]
-      gSum += pixel[1]
-      bSum += pixel[2]
-      count++
-    } catch { /* skip */ }
-  }
-
-  if (count === 0) return '#f8f6f3'
-  const r = Math.round(rSum / count)
-  const g = Math.round(gSum / count)
-  const b = Math.round(bSum / count)
-  return `rgb(${r},${g},${b})`
-}
-
-function processImage(img: HTMLImageElement, bgColor: string): string {
-  const canvas = document.createElement('canvas')
-  canvas.width = TARGET_SIZE
-  canvas.height = TARGET_SIZE
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Cannot create canvas context')
-
-  const ratio = img.width / img.height
-
-  if (ratio >= 0.95 && ratio <= 1.05) {
-    // Nearly square — resize directly
-    ctx.drawImage(img, 0, 0, TARGET_SIZE, TARGET_SIZE)
-  } else {
-    // Not square — pad with detected bg color
-    ctx.fillStyle = bgColor
-    ctx.fillRect(0, 0, TARGET_SIZE, TARGET_SIZE)
-    const scale = Math.min(TARGET_SIZE / img.width, TARGET_SIZE / img.height)
-    const w = img.width * scale
-    const h = img.height * scale
-    const x = (TARGET_SIZE - w) / 2
-    const y = (TARGET_SIZE - h) / 2
-    ctx.drawImage(img, x, y, w, h)
-  }
-
-  return canvas.toDataURL('image/png')
+function readFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.readAsDataURL(file)
+  })
 }
 
 function dataUrlToBlob(dataUrl: string): Blob {
@@ -111,140 +53,221 @@ function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([arr], { type: mime })
 }
 
-export default function ImageCropper({ files, onConfirm, onCancel }: ImageCropperProps) {
-  const [images, setImages] = useState<ProcessedImage[]>([])
-  const [loading, setLoading] = useState(true)
+/** Interactive crop editor for a single image */
+function CropEditor({ image, crop, onChange }: {
+  image: LoadedImage
+  crop: CropState
+  onChange: (c: CropState) => void
+}) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const dragging = useRef(false)
+  const dragStart = useRef({ mx: 0, my: 0, cx: 0, cy: 0 })
 
-  const processFiles = useCallback(async () => {
+  // Display scale: fit image into 400px container
+  const maxDisplay = 400
+  const displayScale = Math.min(maxDisplay / image.width, maxDisplay / image.height, 1)
+  const dw = image.width * displayScale
+  const dh = image.height * displayScale
+
+  // Crop rect in display coordinates
+  const dx = crop.x * displayScale
+  const dy = crop.y * displayScale
+  const ds = crop.size * displayScale
+
+  const clampCrop = (x: number, y: number, size: number) => {
+    const s = Math.max(50, Math.min(size, image.width, image.height))
+    const cx = Math.max(0, Math.min(x, image.width - s))
+    const cy = Math.max(0, Math.min(y, image.height - s))
+    return { x: cx, y: cy, size: s }
+  }
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    dragging.current = true
+    dragStart.current = { mx: e.clientX, my: e.clientY, cx: crop.x, cy: crop.y }
+  }
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragging.current) return
+      const ddx = (e.clientX - dragStart.current.mx) / displayScale
+      const ddy = (e.clientY - dragStart.current.my) / displayScale
+      onChange(clampCrop(dragStart.current.cx + ddx, dragStart.current.cy + ddy, crop.size))
+    }
+    const handleMouseUp = () => { dragging.current = false }
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [crop.size, displayScale, onChange])
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault()
+    const delta = e.deltaY > 0 ? 30 : -30
+    const newSize = crop.size + delta
+    // Keep centered while resizing
+    const diff = newSize - crop.size
+    const newCrop = clampCrop(crop.x - diff / 2, crop.y - diff / 2, newSize)
+    onChange(newCrop)
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="crop-editor"
+      style={{ width: dw, height: dh }}
+      onWheel={handleWheel}
+    >
+      <img src={image.dataUrl} alt="" style={{ width: dw, height: dh }} draggable={false} />
+      {/* Dark overlay with cutout */}
+      <div className="crop-overlay">
+        <div className="crop-overlay-top" style={{ height: dy, width: dw }} />
+        <div className="crop-overlay-mid" style={{ height: ds }}>
+          <div className="crop-overlay-left" style={{ width: dx }} />
+          <div
+            className="crop-selection"
+            style={{ width: ds, height: ds }}
+            onMouseDown={handleMouseDown}
+          >
+            <Move size={20} className="crop-move-icon" />
+          </div>
+          <div className="crop-overlay-right" style={{ width: Math.max(0, dw - dx - ds) }} />
+        </div>
+        <div className="crop-overlay-bottom" style={{ height: Math.max(0, dh - dy - ds), width: dw }} />
+      </div>
+      <div className="crop-hint">Drag to move · Scroll to resize</div>
+    </div>
+  )
+}
+
+/** Generate final cropped output */
+function generateOutput(img: HTMLImageElement, crop: CropState): string {
+  const canvas = document.createElement('canvas')
+  canvas.width = OUTPUT_SIZE
+  canvas.height = OUTPUT_SIZE
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(img, crop.x, crop.y, crop.size, crop.size, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
+  return canvas.toDataURL('image/png')
+}
+
+export default function ImageCropper({ files, onConfirm, onCancel }: ImageCropperProps) {
+  const [images, setImages] = useState<LoadedImage[]>([])
+  const [crops, setCrops] = useState<CropState[]>([])
+  const [currentIdx, setCurrentIdx] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const loadFiles = useCallback(async () => {
     setLoading(true)
-    const results: ProcessedImage[] = []
+    setError('')
+    const loaded: LoadedImage[] = []
+    const cropStates: CropState[] = []
 
     for (const file of files) {
       try {
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve(reader.result as string)
-          reader.onerror = () => reject(new Error('Failed to read file'))
-          reader.readAsDataURL(file)
-        })
-
+        const dataUrl = await readFile(file)
         const img = await loadImage(dataUrl)
-        const detectedColor = detectBgColor(img)
-        const result = processImage(img, detectedColor)
-
-        results.push({ file, original: dataUrl, result, detectedColor })
-      } catch (err) {
-        console.error('ImageCropper processing error:', err)
-        results.push({
-          file,
-          original: '',
-          result: '',
-          detectedColor: '#f8f6f3',
-          error: err instanceof Error ? err.message : 'Processing failed',
+        loaded.push({ file, dataUrl, width: img.width, height: img.height })
+        // Default crop: largest centered square
+        const size = Math.min(img.width, img.height)
+        cropStates.push({
+          x: (img.width - size) / 2,
+          y: (img.height - size) / 2,
+          size,
         })
+      } catch (err) {
+        console.error('Failed to load image:', err)
+        setError(`Failed to load: ${file.name}`)
       }
     }
 
-    setImages(results)
+    setImages(loaded)
+    setCrops(cropStates)
+    setCurrentIdx(0)
     setLoading(false)
   }, [files])
 
-  useEffect(() => {
-    processFiles()
-  }, [processFiles])
+  useEffect(() => { loadFiles() }, [loadFiles])
 
-  const retryImage = async (index: number) => {
-    const file = images[index].file
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result as string)
-        reader.onerror = () => reject(new Error('Failed to read file'))
-        reader.readAsDataURL(file)
-      })
-      const img = await loadImage(dataUrl)
-      const detectedColor = detectBgColor(img)
-      const result = processImage(img, detectedColor)
-      setImages(prev => prev.map((item, i) => i === index ? { file, original: dataUrl, result, detectedColor } : item))
-    } catch (err) {
-      console.error('ImageCropper retry error:', err)
+  const updateCrop = useCallback((crop: CropState) => {
+    setCrops(prev => prev.map((c, i) => i === currentIdx ? crop : c))
+  }, [currentIdx])
+
+  const handleConfirm = async () => {
+    const blobs: Blob[] = []
+    for (let i = 0; i < images.length; i++) {
+      try {
+        const img = await loadImage(images[i].dataUrl)
+        const result = generateOutput(img, crops[i])
+        blobs.push(dataUrlToBlob(result))
+      } catch (err) {
+        console.error('Failed to generate output:', err)
+      }
     }
-  }
-
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleConfirm = () => {
-    const valid = images.filter(img => !img.error && img.result)
-    if (valid.length === 0) { onCancel(); return }
-    const blobs = valid.map(img => dataUrlToBlob(img.result))
+    if (blobs.length === 0) { onCancel(); return }
     onConfirm(blobs)
   }
 
-  const validCount = images.filter(img => !img.error).length
+  const currentImage = images[currentIdx]
+  const currentCrop = crops[currentIdx]
 
   return (
     <div className="img-cropper-overlay" onClick={e => { if (e.target === e.currentTarget) onCancel() }}>
       <div className="img-cropper-modal">
         <div className="img-cropper-header">
-          <h2>Process Images ({validCount})</h2>
+          <h2>Crop Images ({images.length})</h2>
           <button type="button" className="admin-btn admin-btn-sm" onClick={onCancel}><X size={16} /></button>
         </div>
 
         {loading ? (
-          <div className="img-cropper-loading">Processing images...</div>
-        ) : images.length === 0 ? (
+          <div className="img-cropper-loading">Loading images...</div>
+        ) : error ? (
+          <div className="img-cropper-error">{error}</div>
+        ) : !currentImage ? (
           <div className="img-cropper-loading">No images to process</div>
         ) : (
-          <div className="img-cropper-list">
-            {images.map((img, i) => (
-              <div key={i} className="img-cropper-item">
-                {img.error ? (
-                  <>
-                    <div className="img-cropper-error">Failed: {img.error} — {img.file.name}</div>
-                    <div className="img-cropper-actions">
-                      <button type="button" className="admin-btn admin-btn-sm" onClick={() => retryImage(i)}>
-                        <RefreshCw size={14} /> Retry
-                      </button>
-                      <button type="button" className="admin-btn admin-btn-sm admin-btn-danger" onClick={() => removeImage(i)}>
-                        <X size={14} /> Remove
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="img-cropper-compare">
-                      <div className="img-cropper-preview">
-                        <span className="img-cropper-label">Original</span>
-                        <img src={img.original} alt="Original" />
-                        <span className="img-cropper-dims">{img.file.name}</span>
-                      </div>
-                      <div className="img-cropper-arrow">&rarr;</div>
-                      <div className="img-cropper-preview img-cropper-preview--result">
-                        <span className="img-cropper-label">Result ({TARGET_SIZE}x{TARGET_SIZE})</span>
-                        <img src={img.result} alt="Processed" />
-                        <span className="img-cropper-dims">
-                          BG: <span style={{ display: 'inline-block', width: 12, height: 12, background: img.detectedColor, borderRadius: 2, verticalAlign: -1, border: '1px solid #ccc' }} />
-                        </span>
-                      </div>
-                    </div>
-                    <div className="img-cropper-actions">
-                      <button type="button" className="admin-btn admin-btn-sm admin-btn-danger" onClick={() => removeImage(i)}>
-                        <X size={14} /> Remove
-                      </button>
-                    </div>
-                  </>
-                )}
+          <div className="img-cropper-editor">
+            {/* Image tabs for multiple images */}
+            {images.length > 1 && (
+              <div className="crop-tabs">
+                {images.map((img, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className={`crop-tab ${i === currentIdx ? 'active' : ''}`}
+                    onClick={() => setCurrentIdx(i)}
+                  >
+                    {img.file.name.length > 15 ? img.file.name.slice(0, 12) + '...' : img.file.name}
+                  </button>
+                ))}
               </div>
-            ))}
+            )}
+
+            <div className="crop-workspace">
+              <CropEditor
+                image={currentImage}
+                crop={currentCrop}
+                onChange={updateCrop}
+              />
+            </div>
+
+            <div className="crop-info">
+              {currentImage.width} × {currentImage.height}px → {OUTPUT_SIZE} × {OUTPUT_SIZE}px
+            </div>
           </div>
         )}
 
         <div className="img-cropper-footer">
           <button type="button" className="admin-btn" onClick={onCancel}>Cancel</button>
-          <button type="button" className="admin-btn admin-btn-primary" onClick={handleConfirm} disabled={loading || validCount === 0}>
-            <Check size={16} /> Confirm & Upload {validCount > 0 && `(${validCount})`}
+          <button
+            type="button"
+            className="admin-btn admin-btn-primary"
+            onClick={handleConfirm}
+            disabled={loading || images.length === 0}
+          >
+            <Check size={16} /> Confirm & Upload ({images.length})
           </button>
         </div>
       </div>

@@ -18,7 +18,7 @@ export async function GET() {
     }
 
     const [all, newArr, best] = await Promise.all([
-      getProducts({ limit: 8 }),
+      getProducts({ limit: 200 }),
       getProducts({ isNew: true, limit: 4 }),
       getProducts({ isBestSeller: true, limit: 4 }),
     ])
