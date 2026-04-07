@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         category: true,
         categories: true,
         images: { orderBy: { sortOrder: 'asc' }, take: 1 },
-        variants: { select: { price: true, stock: true }, orderBy: { price: 'asc' } },
+        variants: { select: { name: true, price: true, stock: true }, orderBy: { price: 'asc' } },
         _count: { select: { variants: true } },
       },
       orderBy: { updatedAt: 'desc' },
@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
         isBestSeller: data.isBestSeller,
         isDrop: data.isDrop,
         isBundle: data.isBundle,
+        weight: data.weight ?? null,
         createdById: auth.userId,
         categories: {
           connect: allCategoryIds.map(id => ({ id })),

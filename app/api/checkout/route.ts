@@ -36,7 +36,10 @@ export async function POST(request: NextRequest) {
     const productIds = items.map((i: { productId: string }) => i.productId)
     const products = await prisma.product.findMany({
       where: { id: { in: productIds }, status: 'live' },
-      include: { images: { take: 1, orderBy: { sortOrder: 'asc' } } },
+      include: {
+        images: { take: 1, orderBy: { sortOrder: 'asc' } },
+        variants: { select: { id: true, name: true, price: true, stock: true } },
+      },
     })
 
     const productMap = new Map(products.map(p => [p.id, p]))
@@ -48,19 +51,32 @@ export async function POST(request: NextRequest) {
       const product = productMap.get(item.productId)
       if (!product) continue
 
-      // Stock validation — prevent overselling
-      if (product.price > 0 && product.stock < item.quantity) {
-        return NextResponse.json({ error: `${product.name} only has ${product.stock} in stock` }, { status: 400 })
+      // Resolve variant price if specified
+      let price = product.price
+      let itemName = product.name
+      if (item.variantId && product.variants?.length) {
+        const variant = product.variants.find((v: { id: string }) => v.id === item.variantId)
+        if (variant) {
+          price = variant.price
+          itemName = `${product.name} - ${variant.name}`
+          // Stock validation for variant
+          if (variant.stock < item.quantity) {
+            return NextResponse.json({ error: `${itemName} only has ${variant.stock} in stock` }, { status: 400 })
+          }
+        }
       }
 
-      const price = product.price
+      // Stock validation — prevent overselling (base product)
+      if (!item.variantId && product.price > 0 && product.stock < item.quantity) {
+        return NextResponse.json({ error: `${product.name} only has ${product.stock} in stock` }, { status: 400 })
+      }
       subtotal += price * item.quantity
 
       lineItems.push({
         price_data: {
           currency: 'usd',
           product_data: {
-            name: product.name,
+            name: itemName,
             images: product.images[0] ? [product.images[0].url] : [],
           },
           unit_amount: Math.round(price * 100),
@@ -70,7 +86,7 @@ export async function POST(request: NextRequest) {
 
       orderItems.push({
         productId: product.id,
-        name: product.name,
+        name: itemName,
         image: product.images[0]?.url || '/product-placeholder.svg',
         price,
         quantity: item.quantity,
@@ -88,7 +104,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Spend $10 or more to redeem your free gift' }, { status: 400 })
     }
 
-    const totalWeight = calculateTotalWeight(orderItems.map(i => ({ quantity: i.quantity, weight: (productMap.get(i.productId) as any)?.weight || 1 })))
+    const totalWeight = calculateTotalWeight(orderItems.map(i => ({ quantity: i.quantity, weight: (productMap.get(i.productId) as Record<string, unknown>)?.weight as number || 1 })))
     const method = shippingMethod === 'express' ? 'express' : 'standard' as const
     const { cost: shipping } = calculateShipping(totalWeight, method, subtotal)
 

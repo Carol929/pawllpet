@@ -52,7 +52,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // Update product fields
     const updateData: Record<string, unknown> = {}
-    const fields = ['name', 'subtitle', 'slug', 'description', 'categoryId', 'petType', 'brand', 'material', 'price', 'compareAtPrice', 'stock', 'status', 'isNew', 'isBestSeller', 'isDrop', 'isBundle'] as const
+    const fields = ['name', 'subtitle', 'slug', 'description', 'categoryId', 'petType', 'brand', 'material', 'price', 'compareAtPrice', 'stock', 'weight', 'status', 'isNew', 'isBestSeller', 'isDrop', 'isBundle'] as const
     for (const field of fields) {
       if (data[field] !== undefined) {
         updateData[field] = data[field]
