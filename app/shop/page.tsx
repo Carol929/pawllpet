@@ -98,8 +98,9 @@ function ShopContent() {
   // Handle anchor scroll after section data loads
   useEffect(() => {
     if (!sectionedMode || sectionLoading) return
-    const hash = window.location.hash.slice(1)
-    if (hash) {
+    const scrollToHash = () => {
+      const hash = window.location.hash.slice(1)
+      if (!hash) return
       setTimeout(() => {
         const el = document.getElementById(hash)
         if (!el) return
@@ -111,6 +112,9 @@ function ShopContent() {
         window.scrollTo({ top: y, behavior: 'smooth' })
       }, 200)
     }
+    scrollToHash()
+    window.addEventListener('hashchange', scrollToHash)
+    return () => window.removeEventListener('hashchange', scrollToHash)
   }, [sectionedMode, sectionLoading])
 
   const updateUrl = useCallback((updates: Record<string, string>) => {
@@ -177,11 +181,14 @@ function ShopContent() {
             <>
               {CATEGORY_SECTIONS.map(sec => {
                 const items = sectionData[sec.slug] || []
-                if (items.length === 0) return null
                 return (
                   <section key={sec.slug} id={sec.slug} className="shop-category-section">
                     <h2 className="shop-section-title">{en ? sec.en : sec.zh}</h2>
-                    <ProductGrid items={items} />
+                    {items.length > 0 ? (
+                      <ProductGrid items={items} />
+                    ) : (
+                      <p className="shop-section-empty">{en ? 'No products yet' : '暂无商品'}</p>
+                    )}
                   </section>
                 )
               })}
