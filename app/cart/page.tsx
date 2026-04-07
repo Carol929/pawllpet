@@ -9,12 +9,18 @@ import { useAuth } from '@/lib/auth-context'
 import { Product } from '@/lib/product-types'
 import './cart.css'
 
+function itemKey(productId: string, variantIndex?: number) {
+  return variantIndex !== undefined ? `${productId}:${variantIndex}` : productId
+}
+
 export default function CartPage() {
   const { items, updateQuantity, removeItem } = useCart()
   const { user } = useAuth()
   const router = useRouter()
   const [productMap, setProductMap] = useState<Record<string, Product>>({})
   const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
     if (items.length === 0) { setLoading(false); return }
@@ -31,6 +37,40 @@ export default function CartPage() {
       .catch(() => setLoading(false))
   }, [items])
 
+  // Default: select all non-out-of-stock items
+  useEffect(() => {
+    if (loading || initialized) return
+    const keys = new Set<string>()
+    items.forEach(item => {
+      const p = productMap[item.productId]
+      const outOfStock = p && p.stock !== undefined && p.stock === 0
+      if (!outOfStock && p) {
+        keys.add(itemKey(item.productId, item.variantIndex))
+      }
+    })
+    setSelected(keys)
+    setInitialized(true)
+  }, [loading, initialized, items, productMap])
+
+  function toggleSelect(key: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    const selectableKeys = cartProducts.filter(p => !p.outOfStock).map(p => itemKey(p.id, p.variantIndex))
+    const allSelected = selectableKeys.every(k => selected.has(k))
+    if (allSelected) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(selectableKeys))
+    }
+  }
+
   // Find items whose products are no longer available
   const unavailableItems = !loading ? items.filter(item => !productMap[item.productId]) : []
 
@@ -44,19 +84,26 @@ export default function CartPage() {
     })
     .filter(Boolean) as (Product & { quantity: number; unitPrice: number; variantName?: string; variantIndex?: number; outOfStock: boolean })[]
 
-  const hasGift = cartProducts.some(p => p.slug === 'quiz-gift')
-  const paidSubtotal = cartProducts.filter(p => p.slug !== 'quiz-gift').reduce((sum, p) => sum + p.unitPrice * p.quantity, 0)
-  const subtotal = cartProducts.reduce((sum, p) => sum + p.unitPrice * p.quantity, 0)
+  const selectedProducts = cartProducts.filter(p => selected.has(itemKey(p.id, p.variantIndex)))
+  const hasGift = selectedProducts.some(p => p.slug === 'quiz-gift')
+  const paidSubtotal = selectedProducts.filter(p => p.slug !== 'quiz-gift').reduce((sum, p) => sum + p.unitPrice * p.quantity, 0)
+  const subtotal = selectedProducts.reduce((sum, p) => sum + p.unitPrice * p.quantity, 0)
+  const selectedCount = selectedProducts.reduce((sum, p) => sum + p.quantity, 0)
   const totalCount = cartProducts.reduce((sum, p) => sum + p.quantity, 0)
   const freeShipping = subtotal >= 80
-  const shipping = freeShipping ? 0 : 5.99
+  const shipping = selectedCount === 0 ? 0 : (freeShipping ? 0 : 5.99)
   const giftBlocked = hasGift && paidSubtotal < 10
 
-  const hasOutOfStock = cartProducts.some(p => p.outOfStock)
+  const hasOutOfStock = selectedProducts.some(p => p.outOfStock)
+  const selectableKeys = cartProducts.filter(p => !p.outOfStock).map(p => itemKey(p.id, p.variantIndex))
+  const allSelected = selectableKeys.length > 0 && selectableKeys.every(k => selected.has(k))
 
   function handleCheckout() {
     if (!user) { router.push('/auth?tab=login&redirect=%2Fcart'); return }
-    if (giftBlocked || hasOutOfStock) { return }
+    if (giftBlocked || hasOutOfStock || selectedCount === 0) { return }
+    // Store selected item keys for checkout page
+    const selectedKeys = Array.from(selected)
+    sessionStorage.setItem('checkout-selected', JSON.stringify(selectedKeys))
     router.push('/checkout')
   }
 
@@ -86,34 +133,56 @@ export default function CartPage() {
       )}
       <div className="cart-layout">
         <div className="cart-items">
-          {cartProducts.map((p, idx) => (
-            <div key={`${p.id}-${p.variantIndex ?? 'base'}`} className={`cart-item ${p.outOfStock ? 'cart-item--out-of-stock' : ''}`}>
-              <Link href={`/products/${p.slug}`}><img src={p.image} alt={p.name} className="cart-item-image" /></Link>
-              <div className="cart-item-info">
-                <Link href={`/products/${p.slug}`} className="cart-item-name cart-item-link">{p.name}</Link>
-                {p.variantName && <div className="cart-item-variant">{p.variantName}</div>}
-                <div className="cart-item-category">{p.category.replace('-', ' ')}</div>
-                {p.outOfStock && <div className="cart-item-out-of-stock">Out of Stock</div>}
+          <div className="cart-select-all">
+            <label className="cart-checkbox-label">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={toggleSelectAll}
+                className="cart-checkbox"
+              />
+              Select All
+            </label>
+          </div>
+          {cartProducts.map((p) => {
+            const key = itemKey(p.id, p.variantIndex)
+            const isSelected = selected.has(key)
+            return (
+              <div key={key} className={`cart-item ${p.outOfStock ? 'cart-item--out-of-stock' : ''} ${!isSelected && !p.outOfStock ? 'cart-item--unselected' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => toggleSelect(key)}
+                  disabled={p.outOfStock}
+                  className="cart-checkbox"
+                />
+                <Link href={`/products/${p.slug}`}><img src={p.image} alt={p.name} className="cart-item-image" /></Link>
+                <div className="cart-item-info">
+                  <Link href={`/products/${p.slug}`} className="cart-item-name cart-item-link">{p.name}</Link>
+                  {p.variantName && <div className="cart-item-variant">{p.variantName}</div>}
+                  <div className="cart-item-category">{p.category.replace('-', ' ')}</div>
+                  {p.outOfStock && <div className="cart-item-out-of-stock">Out of Stock</div>}
+                </div>
+                <div className="qty-selector">
+                  <button className="qty-btn" onClick={() => updateQuantity(p.id, p.quantity - 1, p.variantIndex)} disabled={p.quantity <= 1}>−</button>
+                  <span className="qty-value">{p.quantity}</span>
+                  <button className="qty-btn" onClick={() => updateQuantity(p.id, p.quantity + 1, p.variantIndex)}>+</button>
+                </div>
+                <div className="cart-item-price">${(p.unitPrice * p.quantity).toFixed(2)}</div>
+                <button className="cart-item-remove" onClick={() => removeItem(p.id, p.variantIndex)}><Trash2 size={16} /></button>
               </div>
-              <div className="qty-selector">
-                <button className="qty-btn" onClick={() => updateQuantity(p.id, p.quantity - 1, p.variantIndex)} disabled={p.quantity <= 1}>−</button>
-                <span className="qty-value">{p.quantity}</span>
-                <button className="qty-btn" onClick={() => updateQuantity(p.id, p.quantity + 1, p.variantIndex)}>+</button>
-              </div>
-              <div className="cart-item-price">${(p.unitPrice * p.quantity).toFixed(2)}</div>
-              <button className="cart-item-remove" onClick={() => removeItem(p.id, p.variantIndex)}><Trash2 size={16} /></button>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         <div className="cart-summary">
           <div className="cart-summary-title">Order Summary</div>
-          <div className="cart-summary-row"><span>Subtotal</span><span>${subtotal.toFixed(2)} USD</span></div>
-          <div className="cart-summary-row"><span>Shipping</span><span>{freeShipping ? 'FREE' : `$${shipping.toFixed(2)}`}</span></div>
+          <div className="cart-summary-row"><span>Subtotal ({selectedCount} items)</span><span>${subtotal.toFixed(2)} USD</span></div>
+          <div className="cart-summary-row"><span>Shipping</span><span>{selectedCount === 0 ? '—' : freeShipping ? 'FREE' : `$${shipping.toFixed(2)}`}</span></div>
           <div className="cart-summary-row"><span>Tax</span><span>Calculated at checkout</span></div>
           <hr className="cart-summary-divider" />
           <div className="cart-summary-total">
-            <span className="cart-summary-total-label">Total({totalCount})</span>
+            <span className="cart-summary-total-label">Total({selectedCount})</span>
             <span><span className="cart-summary-total-price">${(subtotal + shipping).toFixed(2)}</span><span className="cart-summary-currency">USD</span></span>
           </div>
           {giftBlocked && (
@@ -122,8 +191,10 @@ export default function CartPage() {
           {hasOutOfStock && (
             <div className="cart-gift-warning">Remove out-of-stock items before checking out.</div>
           )}
-          <button className="cart-checkout-btn" onClick={handleCheckout} disabled={giftBlocked || hasOutOfStock}>CHECK OUT</button>
-          {!freeShipping && <div className="cart-free-shipping">Add <strong>${(80 - subtotal).toFixed(2)}</strong> more for free shipping!</div>}
+          <button className="cart-checkout-btn" onClick={handleCheckout} disabled={giftBlocked || hasOutOfStock || selectedCount === 0}>
+            {selectedCount === 0 ? 'SELECT ITEMS TO CHECK OUT' : 'CHECK OUT'}
+          </button>
+          {selectedCount > 0 && !freeShipping && <div className="cart-free-shipping">Add <strong>${(80 - subtotal).toFixed(2)}</strong> more for free shipping!</div>}
         </div>
       </div>
     </main>

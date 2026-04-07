@@ -19,6 +19,10 @@ interface Addr {
 
 const emptyAddr: Addr = { fullName: '', phone: '', street: '', street2: '', city: '', state: '', zip: '', country: 'US' }
 
+function itemKey(productId: string, variantIndex?: number) {
+  return variantIndex !== undefined ? `${productId}:${variantIndex}` : productId
+}
+
 export default function CheckoutPage() {
   const { items } = useCart()
   const { user, loading: authLoading } = useAuth()
@@ -36,6 +40,16 @@ export default function CheckoutPage() {
   // Two-step flow
   const [addressConfirmed, setAddressConfirmed] = useState(false)
   const [shippingMethod, setShippingMethod] = useState<'standard' | 'express'>('standard')
+
+  // Read selected item keys from cart page
+  const [selectedKeys] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set<string>()
+    try {
+      const raw = sessionStorage.getItem('checkout-selected')
+      if (raw) return new Set<string>(JSON.parse(raw))
+    } catch {}
+    return new Set<string>()
+  })
 
   useEffect(() => {
     if (!authLoading && !user) { router.push('/auth?tab=login'); return }
@@ -58,14 +72,19 @@ export default function CheckoutPage() {
     })
   }, [items])
 
-  const cartProducts = items
+  // Filter to only selected items from cart
+  const checkoutItems = selectedKeys.size > 0
+    ? items.filter(item => selectedKeys.has(itemKey(item.productId, item.variantIndex)))
+    : items
+
+  const cartProducts = checkoutItems
     .map(item => {
       const p = productMap[item.productId]
       if (!p) return null
       const unitPrice = item.variantPrice ?? p.price
-      return { ...p, quantity: item.quantity, unitPrice, variantName: item.variantName }
+      return { ...p, quantity: item.quantity, unitPrice, variantName: item.variantName, variantIndex: item.variantIndex }
     })
-    .filter(Boolean) as (Product & { quantity: number; unitPrice: number; variantName?: string })[]
+    .filter(Boolean) as (Product & { quantity: number; unitPrice: number; variantName?: string; variantIndex?: number })[]
 
   const subtotal = cartProducts.reduce((sum, p) => sum + p.unitPrice * p.quantity, 0)
   const totalCount = cartProducts.reduce((sum, p) => sum + p.quantity, 0)
@@ -120,7 +139,7 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: items.map(item => {
+          items: checkoutItems.map(item => {
             const p = productMap[item.productId]
             const variantId = p?.variants && item.variantIndex !== undefined
               ? p.variants[item.variantIndex]?.id
