@@ -119,7 +119,17 @@ export default function CheckoutPage() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, shippingAddress: trimmed, shippingMethod }),
+        body: JSON.stringify({
+          items: items.map(item => {
+            const p = productMap[item.productId]
+            const variantId = p?.variants && item.variantIndex !== undefined
+              ? p.variants[item.variantIndex]?.id
+              : undefined
+            return { productId: item.productId, quantity: item.quantity, variantId }
+          }),
+          shippingAddress: trimmed,
+          shippingMethod,
+        }),
       })
       const data = await res.json()
       if (data.url) {

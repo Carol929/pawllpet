@@ -306,3 +306,26 @@
     display: none;
   }
 }
+
+.cart-unavailable-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .75rem 1rem;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 10px;
+  font-size: .9rem;
+  color: #856404;
+  margin-bottom: 1rem;
+}
+.cart-unavailable-notice button {
+  background: none;
+  border: none;
+  color: #856404;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: .85rem;
+  white-space: nowrap;
+}

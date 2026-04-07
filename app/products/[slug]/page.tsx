@@ -113,7 +113,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
 
   function handleAdd() {
     if (!user) {
-      router.push('/auth?tab=login')
+      router.push(`/auth?tab=login&redirect=${encodeURIComponent(`/products/${slug}`)}`)
       return
     }
     const variant = selectedVariant !== null && item?.variants?.[selectedVariant]

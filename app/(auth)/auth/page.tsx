@@ -55,6 +55,8 @@ function AuthPageInner() {
 
   const searchParams = useSearchParams()
 
+  const redirectTo = searchParams.get('redirect') || '/'
+
   useEffect(() => {
     const tab = searchParams.get('tab')
     if (tab === 'login' || tab === 'signup') setActiveTab(tab)
@@ -75,7 +77,7 @@ function AuthPageInner() {
       if (!res.ok) throw new Error(data.error || 'Login failed')
 
       setAuthUser(data.user)
-      router.push('/')
+      router.push(redirectTo)
       router.refresh()
     } catch (err: any) {
       setError(err.message)
@@ -160,7 +162,7 @@ function AuthPageInner() {
       if (!res.ok) throw new Error(data.error || 'Verification failed')
 
       setAuthUser(data.user)
-      router.push('/')
+      router.push(redirectTo)
       router.refresh()
     } catch (err: any) {
       setError(err.message)
@@ -324,6 +326,7 @@ function AuthPageInner() {
                       value={signupData.birthdayMonth}
                       onChange={(e) => {
                         const v = e.target.value.replace(/\D/g, '').slice(0, 2)
+                        if (v && parseInt(v) > 12) return
                         setSignupData({ ...signupData, birthdayMonth: v })
                         if (v.length === 2) document.getElementById('signupBdayDay')?.focus()
                       }}
@@ -337,6 +340,7 @@ function AuthPageInner() {
                       value={signupData.birthdayDay}
                       onChange={(e) => {
                         const v = e.target.value.replace(/\D/g, '').slice(0, 2)
+                        if (v && parseInt(v) > 31) return
                         setSignupData({ ...signupData, birthdayDay: v })
                         if (v.length === 2) document.getElementById('signupBdayYear')?.focus()
                       }}
@@ -350,6 +354,7 @@ function AuthPageInner() {
                       value={signupData.birthdayYear}
                       onChange={(e) => {
                         const v = e.target.value.replace(/\D/g, '').slice(0, 4)
+                        if (v.length === 4 && (parseInt(v) < 1920 || parseInt(v) > new Date().getFullYear())) return
                         setSignupData({ ...signupData, birthdayYear: v })
                       }}
                       className="birthday-input birthday-input-year"

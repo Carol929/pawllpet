@@ -23,7 +23,7 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
     e.preventDefault()
     e.stopPropagation()
     if (!user) {
-      router.push('/auth?tab=login')
+      router.push(`/auth?tab=login&redirect=${encodeURIComponent(`/products/${product.slug}`)}`)
       return
     }
     addItem(product.id)

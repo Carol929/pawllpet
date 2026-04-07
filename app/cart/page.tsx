@@ -31,6 +31,9 @@ export default function CartPage() {
       .catch(() => setLoading(false))
   }, [items])
 
+  // Find items whose products are no longer available
+  const unavailableItems = !loading ? items.filter(item => !productMap[item.productId]) : []
+
   const cartProducts = items
     .map(item => {
       const p = productMap[item.productId]
@@ -49,7 +52,7 @@ export default function CartPage() {
   const giftBlocked = hasGift && paidSubtotal < 10
 
   function handleCheckout() {
-    if (!user) { router.push('/auth?tab=login'); return }
+    if (!user) { router.push('/auth?tab=login&redirect=%2Fcart'); return }
     if (giftBlocked) { return }
     router.push('/checkout')
   }
@@ -72,6 +75,12 @@ export default function CartPage() {
   return (
     <main className="container page-stack">
       <h1 className="cart-title">Shopping Bag ({totalCount})</h1>
+      {unavailableItems.length > 0 && (
+        <div className="cart-unavailable-notice">
+          {unavailableItems.length} {unavailableItems.length === 1 ? 'item is' : 'items are'} no longer available and {unavailableItems.length === 1 ? 'has' : 'have'} been removed.
+          <button onClick={() => unavailableItems.forEach(i => removeItem(i.productId, i.variantIndex))}>Dismiss</button>
+        </div>
+      )}
       <div className="cart-layout">
         <div className="cart-items">
           {cartProducts.map((p, idx) => (

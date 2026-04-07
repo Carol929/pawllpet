@@ -47,7 +47,7 @@ export default function Footer() {
           ) : (
             <form className="footer-subscribe" onSubmit={handleSubscribe}>
               <input type="email" placeholder={en ? 'Your email address' : '输入邮箱地址'} value={email} onChange={e => setEmail(e.target.value)} required />
-              <button type="submit">Sign Me Up</button>
+              <button type="submit">{en ? 'Sign Me Up' : '订阅'}</button>
             </form>
           )}
 
