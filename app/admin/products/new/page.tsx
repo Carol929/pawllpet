@@ -122,8 +122,8 @@ export default function NewProduct() {
           <Link href="/admin/products" className="admin-btn admin-btn-sm"><ArrowLeft size={16} /></Link>
           <h1>Add Product</h1>
         </div>
-        <button className="admin-btn admin-btn-primary" onClick={handleSubmit} disabled={saving}>
-          {saving ? 'Saving...' : 'Save Product'}
+        <button className="admin-btn admin-btn-primary" onClick={handleSubmit} disabled={saving || uploading}>
+          {saving ? 'Saving...' : uploading ? 'Uploading...' : 'Save Product'}
         </button>
       </div>
 
@@ -175,9 +175,11 @@ export default function NewProduct() {
           <h2>Images</h2>
           <div className="admin-images">
             {imageUrls.map((url, i) => (
-              <div key={i} className="admin-image-item">
+              <div key={i} className={`admin-image-item ${i === 0 ? 'admin-image-primary' : ''}`}
+                onClick={() => { if (i > 0) { const reordered = [...imageUrls]; const [moved] = reordered.splice(i, 1); reordered.unshift(moved); setImageUrls(reordered) } }}>
+                {i === 0 && <span className="admin-image-primary-badge">Primary</span>}
                 <img src={url} alt={`Product image ${i + 1}`} />
-                <button type="button" className="admin-image-remove" onClick={() => removeImage(i)}><X size={12} /></button>
+                <button type="button" className="admin-image-remove" onClick={e => { e.stopPropagation(); removeImage(i) }}><X size={12} /></button>
               </div>
             ))}
             <label className="admin-image-upload">

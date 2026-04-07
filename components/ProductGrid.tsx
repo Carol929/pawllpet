@@ -17,11 +17,17 @@ function ProductCard({ product }: { product: Product }) {
   const router = useRouter()
   const [added, setAdded] = useState(false)
 
+  const hasVariants = product.variants && product.variants.length > 0
+
   function handleQuickAdd(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
     if (!user) {
       router.push('/auth?tab=login')
+      return
+    }
+    if (hasVariants) {
+      router.push(`/products/${product.slug}`)
       return
     }
     addItem(product.id)
@@ -53,6 +59,9 @@ function ProductCard({ product }: { product: Product }) {
 }
 
 export function ProductGrid({ items }: { items: Product[] }) {
+  if (items.length === 0) {
+    return <p style={{ textAlign: 'center', color: '#888', padding: '2rem 0' }}>No products found.</p>
+  }
   return (
     <div className="products-grid">
       {items.map((product) => (

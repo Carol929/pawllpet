@@ -148,8 +148,8 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
           <h1>Edit Product</h1>
           <span className={`badge badge-${form.status}`}>{form.status}</span>
         </div>
-        <button className="admin-btn admin-btn-primary" onClick={handleSubmit} disabled={saving}>
-          {saving ? 'Saving...' : 'Update Product'}
+        <button className="admin-btn admin-btn-primary" onClick={handleSubmit} disabled={saving || uploading}>
+          {saving ? 'Saving...' : uploading ? 'Uploading...' : 'Update Product'}
         </button>
       </div>
 
@@ -199,9 +199,11 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
           <h2>Images</h2>
           <div className="admin-images">
             {imageUrls.map((url, i) => (
-              <div key={i} className="admin-image-item">
+              <div key={i} className={`admin-image-item ${i === 0 ? 'admin-image-primary' : ''}`}
+                onClick={() => { if (i > 0) { const reordered = [...imageUrls]; const [moved] = reordered.splice(i, 1); reordered.unshift(moved); setImageUrls(reordered) } }}>
+                {i === 0 && <span className="admin-image-primary-badge">Primary</span>}
                 <img src={url} alt={`Product image ${i + 1}`} />
-                <button type="button" className="admin-image-remove" onClick={() => removeImage(i)}><X size={12} /></button>
+                <button type="button" className="admin-image-remove" onClick={e => { e.stopPropagation(); removeImage(i) }}><X size={12} /></button>
               </div>
             ))}
             <label className="admin-image-upload">

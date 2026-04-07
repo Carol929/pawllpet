@@ -7,7 +7,7 @@ import { useProducts } from '@/lib/use-products'
 
 export default function CollectionDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
-  const { products, loading } = useProducts({ limit: '8' })
+  const { products, loading } = useProducts({ pageSize: '50' })
 
   const c = collections.find((c) => c.slug === slug)
 

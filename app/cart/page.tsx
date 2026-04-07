@@ -1,22 +1,32 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { ShoppingCart, Trash2 } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
+import { useAuth } from '@/lib/auth-context'
 import { Product } from '@/lib/products'
 import './cart.css'
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem } = useCart()
+  const { user } = useAuth()
+  const router = useRouter()
   const [productMap, setProductMap] = useState<Record<string, Product>>({})
   const [loading, setLoading] = useState(true)
+  const prevIds = useRef('')
 
   useEffect(() => {
     if (items.length === 0) {
       setLoading(false)
       return
     }
+
+    // Only refetch when the set of product IDs changes
+    const ids = items.map(i => i.productId).sort().join(',')
+    if (ids === prevIds.current && Object.keys(productMap).length > 0) return
+    prevIds.current = ids
 
     // Fetch all products and build a lookup map
     fetch('/api/products')
@@ -28,7 +38,7 @@ export default function CartPage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [items.length])
+  }, [items, productMap])
 
   const cartProducts = items
     .map(item => {
@@ -75,7 +85,7 @@ export default function CartPage() {
               <div className="qty-selector">
                 <button className="qty-btn" onClick={() => updateQuantity(p.id, p.quantity - 1)} disabled={p.quantity <= 1} aria-label="Decrease quantity">−</button>
                 <span className="qty-value">{p.quantity}</span>
-                <button className="qty-btn" onClick={() => updateQuantity(p.id, p.quantity + 1)} aria-label="Increase quantity">+</button>
+                <button className="qty-btn" onClick={() => updateQuantity(p.id, p.quantity + 1)} disabled={p.stock !== undefined && p.quantity >= p.stock} aria-label="Increase quantity">+</button>
               </div>
               <div className="cart-item-price">${(p.price * p.quantity).toFixed(2)}</div>
               <button className="cart-item-remove" onClick={() => removeItem(p.id)} aria-label={`Remove ${p.name}`}>
@@ -94,7 +104,7 @@ export default function CartPage() {
             <span className="cart-summary-total-label">Total({totalCount})</span>
             <span><span className="cart-summary-total-price">${subtotal.toFixed(2)}</span><span className="cart-summary-currency">USD</span></span>
           </div>
-          <button className="cart-checkout-btn">CHECK OUT</button>
+          <button className="cart-checkout-btn" onClick={() => { if (!user) { router.push('/auth?tab=login') } else { router.push('/checkout') } }}>CHECK OUT</button>
           {!freeShipping && <div className="cart-free-shipping">Add <strong>${(65 - subtotal).toFixed(2)}</strong> more for free shipping!</div>}
         </div>
       </div>
