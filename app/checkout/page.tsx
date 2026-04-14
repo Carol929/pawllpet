@@ -8,7 +8,7 @@ import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { Product } from '@/lib/product-types'
 import { calculateTax } from '@/lib/tax-rates'
-import { calculateShipping, calculateTotalWeight } from '@/lib/shipping-rates'
+import { calculateShipping, calculateTotalWeight, isShippingEligible, isPOBox, hasUnweighedItems } from '@/lib/shipping-rates'
 import { StateSelect, formatPhone } from '@/components/StateSelect'
 import './checkout.css'
 
@@ -104,11 +104,26 @@ export default function CheckoutPage() {
     setForm(f => ({ ...f, [field]: val.trimStart() }))
   }
 
+  // Check for restricted states, PO Box, unweighed items
+  const addrForCheck = useNew ? form : savedAddrs[selectedSaved]
+  const stateEligibility = addrForCheck?.state ? isShippingEligible(addrForCheck.state) : { eligible: true }
+  const poBoxDetected = addrForCheck ? isPOBox(addrForCheck.street || '') || isPOBox(addrForCheck.street2 || '') : false
+  const missingWeights = hasUnweighedItems(cartProducts.map(p => ({ weight: p.weight || undefined })))
+
   function handleConfirmAddress() {
     const addr = useNew ? form : savedAddrs[selectedSaved]
     if (!addr) { setError('Please select or enter an address'); return }
     if (!addr.fullName?.trim() || !addr.street?.trim() || !addr.city?.trim() || !addr.state?.trim() || !addr.zip?.trim()) {
       setError('Please fill in all required fields'); return
+    }
+    // Check restricted states
+    const eligibility = isShippingEligible(addr.state)
+    if (!eligibility.eligible) {
+      setError(eligibility.reason || 'Shipping is not available to this location.'); return
+    }
+    // Check PO Box
+    if (isPOBox(addr.street) || isPOBox(addr.street2 || '')) {
+      setError('We currently cannot ship to PO Box, APO, or FPO addresses. Please enter a street address.'); return
     }
     setError('')
     setAddressConfirmed(true)
@@ -211,6 +226,10 @@ export default function CheckoutPage() {
 
               {error && <p className="checkout-error">{error}</p>}
 
+              <p style={{ fontSize: '.8rem', color: '#888', marginTop: '.5rem' }}>
+                Shipping available to contiguous US (48 states) only. Alaska, Hawaii, PO Box, APO/FPO addresses are not supported at this time.
+              </p>
+
               <button className="checkout-confirm-btn" onClick={handleConfirmAddress}>
                 Confirm Address →
               </button>
@@ -238,7 +257,7 @@ export default function CheckoutPage() {
                       <span>{standardInfo.estimate}</span>
                     </div>
                   </div>
-                  <span className="checkout-shipping-price">{standardInfo.cost === 0 ? 'FREE' : `$${standardInfo.cost.toFixed(2)}`}</span>
+                  <span className="checkout-shipping-price">{standardInfo.needsReview ? 'TBD' : standardInfo.cost === 0 ? 'FREE' : `$${standardInfo.cost.toFixed(2)}`}</span>
                 </label>
                 <label className={`checkout-shipping-option ${shippingMethod === 'express' ? 'checkout-shipping-option--active' : ''}`}>
                   <input type="radio" name="shipping" checked={shippingMethod === 'express'} onChange={() => setShippingMethod('express')} />
@@ -249,7 +268,7 @@ export default function CheckoutPage() {
                       <span>{expressInfo.estimate}</span>
                     </div>
                   </div>
-                  <span className="checkout-shipping-price">${expressInfo.cost.toFixed(2)}</span>
+                  <span className="checkout-shipping-price">{expressInfo.needsReview ? 'TBD' : `$${expressInfo.cost.toFixed(2)}`}</span>
                 </label>
               </div>
 
@@ -286,7 +305,7 @@ export default function CheckoutPage() {
             <div className="checkout-row"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
             <div className="checkout-row">
               <span>Shipping</span>
-              <span>{addressConfirmed ? (shippingInfo.cost === 0 ? 'FREE' : `$${shippingInfo.cost.toFixed(2)}`) : '—'}</span>
+              <span>{addressConfirmed ? (shippingInfo.needsReview ? 'TBD' : shippingInfo.cost === 0 ? 'FREE' : `$${shippingInfo.cost.toFixed(2)}`) : '—'}</span>
             </div>
             <div className="checkout-row">
               <span>Tax{addressConfirmed && taxRate > 0 ? ` (${taxState} ${(taxRate * 100).toFixed(1)}%)` : ''}</span>
@@ -299,9 +318,21 @@ export default function CheckoutPage() {
           </div>
 
           {addressConfirmed ? (
-            <button className="checkout-pay-btn" onClick={handlePay} disabled={paying}>
+            shippingInfo.needsReview ? (
+              <div className="checkout-pay-placeholder" style={{ background: '#fff8e1', color: '#8b6914' }}>
+                Your order exceeds our standard shipping weight limit. We&apos;ll contact you with a custom shipping quote after you place your order — or email us at support@pawllpet.com.
+              </div>
+            ) : missingWeights ? (
+              <div className="checkout-pay-placeholder" style={{ background: '#fff8e1', color: '#8b6914' }}>
+                Some items are missing weight info. Shipping will be calculated after order review. You can still proceed — we&apos;ll confirm the final total by email.
+              </div>
+            ) : null
+          ) : null}
+
+          {addressConfirmed ? (
+            <button className="checkout-pay-btn" onClick={handlePay} disabled={paying || shippingInfo.needsReview}>
               <Lock size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-              {paying ? 'REDIRECTING TO PAYMENT...' : `PAY $${total.toFixed(2)}`}
+              {paying ? 'REDIRECTING TO PAYMENT...' : shippingInfo.needsReview ? 'SHIPPING QUOTE REQUIRED' : `PAY $${total.toFixed(2)}`}
             </button>
           ) : (
             <div className="checkout-pay-placeholder">

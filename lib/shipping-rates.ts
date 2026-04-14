@@ -1,8 +1,10 @@
 /**
- * UPS Shipping Rate Table (2026 estimates)
+ * Temporary Shipping Rate Table (2026 estimates)
  * Origin: Arlington, VA 22202
- * Includes residential surcharge ($6.50)
- * Based on UPS Small Business rates + average zone pricing
+ * Contiguous US only (48 states) — excludes AK, HI, PO Box, APO/FPO
+ * Based on UPS Small Business rates + residential surcharge
+ *
+ * TODO: Replace with live UPS API integration
  */
 
 interface ShippingRate {
@@ -21,7 +23,41 @@ const RATE_TABLE: ShippingRate[] = [
 ]
 
 const FREE_STANDARD_THRESHOLD = 80 // Free standard shipping at $80+
-const DEFAULT_PRODUCT_WEIGHT = 1   // lb, if product weight not set
+const MAX_STANDARD_WEIGHT = 50     // lbs — orders above this need manual review
+
+// States that are NOT eligible for flat-rate shipping
+const RESTRICTED_STATES = new Set(['AK', 'HI'])
+
+/**
+ * Check if a shipping address is eligible for flat-rate shipping
+ */
+export function isShippingEligible(state: string, zip?: string): { eligible: boolean; reason?: string } {
+  const st = state.trim().toUpperCase()
+
+  if (RESTRICTED_STATES.has(st)) {
+    return { eligible: false, reason: 'Shipping to Alaska and Hawaii is not available at this time. Please contact support@pawllpet.com for a custom quote.' }
+  }
+
+  // PO Box / APO / FPO detection (checked against street address in checkout)
+  return { eligible: true }
+}
+
+/**
+ * Check if a street address is a PO Box / APO / FPO
+ */
+export function isPOBox(street: string): boolean {
+  const s = street.trim().toLowerCase()
+  return /\bp\.?\s*o\.?\s*box\b/i.test(s)
+    || /\bapo\b/i.test(s)
+    || /\bfpo\b/i.test(s)
+}
+
+/**
+ * Check if all items in the cart have weight set
+ */
+export function hasUnweighedItems(items: { weight?: number }[]): boolean {
+  return items.some(item => !item.weight || item.weight <= 0)
+}
 
 /**
  * Calculate shipping cost
@@ -33,10 +69,20 @@ export function calculateShipping(
   totalWeightLbs: number,
   method: 'standard' | 'express',
   subtotal: number
-): { cost: number; label: string; estimate: string } {
-  // Free standard shipping for orders >= $50
+): { cost: number; label: string; estimate: string; needsReview: boolean } {
+  // Check if order is too heavy for flat-rate
+  if (totalWeightLbs > MAX_STANDARD_WEIGHT) {
+    return {
+      cost: 0,
+      label: 'Shipping calculated after order review',
+      estimate: 'We will contact you with shipping options',
+      needsReview: true,
+    }
+  }
+
+  // Free standard shipping for orders >= $80
   if (method === 'standard' && subtotal >= FREE_STANDARD_THRESHOLD) {
-    return { cost: 0, label: 'Standard Shipping (Free)', estimate: '5-7 business days' }
+    return { cost: 0, label: 'Standard Shipping (Free)', estimate: '5-7 business days', needsReview: false }
   }
 
   const weight = Math.max(totalWeightLbs, 0.1)
@@ -44,18 +90,22 @@ export function calculateShipping(
   const cost = method === 'standard' ? tier.standard : tier.express
 
   if (method === 'standard') {
-    return { cost, label: `Standard Shipping`, estimate: '5-7 business days' }
+    return { cost, label: 'Standard Shipping', estimate: '5-7 business days', needsReview: false }
   }
-  return { cost, label: `Express Shipping`, estimate: '2-3 business days' }
+  return { cost, label: 'Express Shipping', estimate: '2-3 business days', needsReview: false }
 }
 
 /**
  * Calculate total weight from cart items
+ * Returns 0 if any item is missing weight (caller should handle this)
  */
 export function calculateTotalWeight(
   items: { quantity: number; weight?: number }[]
 ): number {
-  return items.reduce((sum, item) => sum + (item.weight || DEFAULT_PRODUCT_WEIGHT) * item.quantity, 0)
+  return items.reduce((sum, item) => {
+    if (!item.weight || item.weight <= 0) return sum // skip unweighed items — flagged separately
+    return sum + item.weight * item.quantity
+  }, 0)
 }
 
-export { FREE_STANDARD_THRESHOLD }
+export { FREE_STANDARD_THRESHOLD, RESTRICTED_STATES }

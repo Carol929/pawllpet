@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { calculateTax } from '@/lib/tax-rates'
-import { calculateShipping, calculateTotalWeight } from '@/lib/shipping-rates'
+import { calculateShipping, calculateTotalWeight, isShippingEligible, isPOBox } from '@/lib/shipping-rates'
 import { prisma } from '@/lib/db'
 import { requireUser } from '@/lib/user-auth'
 
@@ -23,6 +23,15 @@ export async function POST(request: NextRequest) {
     // Validate shipping address
     if (!shippingAddress.fullName || !shippingAddress.street || !shippingAddress.city || !shippingAddress.state || !shippingAddress.zip) {
       return NextResponse.json({ error: 'Incomplete shipping address' }, { status: 400 })
+    }
+
+    // Validate shipping eligibility — contiguous US only
+    const eligibility = isShippingEligible(shippingAddress.state)
+    if (!eligibility.eligible) {
+      return NextResponse.json({ error: eligibility.reason || 'Shipping not available to this location' }, { status: 400 })
+    }
+    if (isPOBox(shippingAddress.street)) {
+      return NextResponse.json({ error: 'We cannot ship to PO Box, APO, or FPO addresses. Please use a street address.' }, { status: 400 })
     }
 
     // Validate quantities
@@ -104,7 +113,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Spend $10 or more to redeem your free gift' }, { status: 400 })
     }
 
-    const totalWeight = calculateTotalWeight(orderItems.map(i => ({ quantity: i.quantity, weight: (productMap.get(i.productId) as Record<string, unknown>)?.weight as number || 1 })))
+    const totalWeight = calculateTotalWeight(orderItems.map(i => ({ quantity: i.quantity, weight: (productMap.get(i.productId) as Record<string, unknown>)?.weight as number || undefined })))
     const method = shippingMethod === 'express' ? 'express' : 'standard' as const
     const { cost: shipping } = calculateShipping(totalWeight, method, subtotal)
 
