@@ -115,25 +115,18 @@ export async function POST(request: NextRequest) {
 
     const totalWeight = calculateTotalWeight(orderItems.map(i => ({ quantity: i.quantity, weight: (productMap.get(i.productId) as Record<string, unknown>)?.weight as number || undefined })))
     const method = shippingMethod === 'express' ? 'express' : 'standard' as const
-    const { cost: shipping } = calculateShipping(totalWeight, method, subtotal)
+    const shippingResult = calculateShipping(totalWeight, method, subtotal)
+
+    // Block checkout if shipping needs manual review
+    if (shippingResult.needsReview) {
+      return NextResponse.json({ error: 'Your order exceeds standard shipping limits. Please contact support@pawllpet.com for a custom shipping quote.' }, { status: 400 })
+    }
+
+    const shipping = shippingResult.cost
 
     // Calculate sales tax based on shipping state (only for nexus states)
     const { rate: taxRate, amount: tax, stateAbbr } = calculateTax(subtotal, shippingAddress.state || '')
     const total = subtotal + shipping + tax
-
-    // Create order in DB (pending until Stripe confirms)
-    const order = await prisma.order.create({
-      data: {
-        userId,
-        status: 'pending',
-        subtotal,
-        shipping,
-        tax,
-        total,
-        shippingAddress,
-        items: { create: orderItems },
-      },
-    })
 
     // Add tax as a line item if applicable
     if (tax > 0) {
@@ -147,34 +140,66 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Create Stripe Checkout Session
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
-    const session = await getStripe().checkout.sessions.create({
-      mode: 'payment',
-      line_items: lineItems,
-      ...(shipping > 0 ? {
-        shipping_options: [{
-          shipping_rate_data: {
-            type: 'fixed_amount',
-            fixed_amount: { amount: Math.round(shipping * 100), currency: 'usd' },
-            display_name: 'Standard Shipping',
-            delivery_estimate: { minimum: { unit: 'business_day', value: 5 }, maximum: { unit: 'business_day', value: 7 } },
-          },
-        }],
-      } : {
-        shipping_options: [{
-          shipping_rate_data: {
-            type: 'fixed_amount',
-            fixed_amount: { amount: 0, currency: 'usd' },
-            display_name: 'Free Shipping',
-            delivery_estimate: { minimum: { unit: 'business_day', value: 5 }, maximum: { unit: 'business_day', value: 7 } },
-          },
-        }],
-      }),
-      success_url: `${siteUrl}/checkout/success?orderId=${order.id}`,
-      cancel_url: `${siteUrl}/checkout/cancel`,
-      metadata: { orderId: order.id },
+    // Create order in DB first (pending until Stripe webhook confirms)
+    const order = await prisma.order.create({
+      data: {
+        userId,
+        status: 'pending',
+        subtotal,
+        shipping,
+        tax,
+        total,
+        shippingAddress,
+        items: { create: orderItems },
+      },
     })
+
+    console.log(`[Checkout] Order ${order.id} created for user ${userId}, total: $${total.toFixed(2)}`)
+
+    // Create Stripe Checkout Session with idempotency
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+    let session
+    try {
+      session = await getStripe().checkout.sessions.create({
+        mode: 'payment',
+        line_items: lineItems,
+        ...(shipping > 0 ? {
+          shipping_options: [{
+            shipping_rate_data: {
+              type: 'fixed_amount',
+              fixed_amount: { amount: Math.round(shipping * 100), currency: 'usd' },
+              display_name: shippingResult.label,
+              delivery_estimate: method === 'express'
+                ? { minimum: { unit: 'business_day', value: 2 }, maximum: { unit: 'business_day', value: 3 } }
+                : { minimum: { unit: 'business_day', value: 5 }, maximum: { unit: 'business_day', value: 7 } },
+            },
+          }],
+        } : {
+          shipping_options: [{
+            shipping_rate_data: {
+              type: 'fixed_amount',
+              fixed_amount: { amount: 0, currency: 'usd' },
+              display_name: 'Free Shipping',
+              delivery_estimate: { minimum: { unit: 'business_day', value: 5 }, maximum: { unit: 'business_day', value: 7 } },
+            },
+          }],
+        }),
+        success_url: `${siteUrl}/checkout/success?orderId=${order.id}`,
+        cancel_url: `${siteUrl}/checkout/cancel`,
+        metadata: { orderId: order.id },
+        expires_at: Math.floor(Date.now() / 1000) + 1800, // 30 min expiry
+      }, {
+        idempotencyKey: `checkout_${order.id}`,
+      })
+    } catch (stripeErr) {
+      // Stripe session failed — mark order as cancelled so it doesn't linger as 'pending'
+      console.error(`[Checkout] Stripe session creation failed for order ${order.id}:`, stripeErr)
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { status: 'cancelled' },
+      }).catch(() => {})
+      return NextResponse.json({ error: 'Unable to start payment. Please try again.' }, { status: 500 })
+    }
 
     // Save stripe session ID to order
     await prisma.order.update({
@@ -182,11 +207,12 @@ export async function POST(request: NextRequest) {
       data: { stripeSessionId: session.id },
     })
 
+    console.log(`[Checkout] Stripe session ${session.id} created for order ${order.id}`)
     return NextResponse.json({ url: session.url })
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
     const stack = error instanceof Error ? error.stack : ''
-    console.error('Checkout error:', msg, stack)
+    console.error('[Checkout] Error:', msg, stack)
     if (msg.includes('STRIPE_SECRET_KEY')) {
       return NextResponse.json({ error: 'Payment system not configured. Please contact support.' }, { status: 500 })
     }
