@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (!eligibility.eligible) {
       return NextResponse.json({ error: eligibility.reason || 'Shipping not available to this location' }, { status: 400 })
     }
-    if (isPOBox(shippingAddress.street)) {
+    if (isPOBox(shippingAddress.street) || isPOBox(shippingAddress.street2 || '')) {
       return NextResponse.json({ error: 'We cannot ship to PO Box, APO, or FPO addresses. Please use a street address.' }, { status: 400 })
     }
 
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     const productMap = new Map(products.map(p => [p.id, p]))
     const lineItems: { price_data: { currency: string; product_data: { name: string; images?: string[] }; unit_amount: number }; quantity: number }[] = []
-    const orderItems: { productId: string; name: string; image: string; price: number; quantity: number }[] = []
+    const orderItems: { productId: string; variantId?: string; name: string; image: string; price: number; quantity: number }[] = []
     let subtotal = 0
 
     for (const item of items) {
@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
 
       orderItems.push({
         productId: product.id,
+        ...(item.variantId ? { variantId: item.variantId } : {}),
         name: itemName,
         image: product.images[0]?.url || '/product-placeholder.svg',
         price,
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Spend $10 or more to redeem your free gift' }, { status: 400 })
     }
 
-    const totalWeight = calculateTotalWeight(orderItems.map(i => ({ quantity: i.quantity, weight: (productMap.get(i.productId) as Record<string, unknown>)?.weight as number || undefined })))
+    const totalWeight = calculateTotalWeight(orderItems.map(i => ({ quantity: i.quantity, weight: productMap.get(i.productId)?.weight ?? undefined })))
     const method = shippingMethod === 'express' ? 'express' : 'standard' as const
     const shippingResult = calculateShipping(totalWeight, method, subtotal)
 
@@ -185,7 +186,7 @@ export async function POST(request: NextRequest) {
           }],
         }),
         success_url: `${siteUrl}/checkout/success?orderId=${order.id}`,
-        cancel_url: `${siteUrl}/checkout/cancel`,
+        cancel_url: `${siteUrl}/checkout/cancel?orderId=${order.id}`,
         metadata: { orderId: order.id },
         expires_at: Math.floor(Date.now() / 1000) + 1800, // 30 min expiry
       }, {
@@ -219,6 +220,6 @@ export async function POST(request: NextRequest) {
     if (msg.includes('Unknown argument') || msg.includes('Invalid')) {
       return NextResponse.json({ error: 'Database schema needs update. Please contact support.' }, { status: 500 })
     }
-    return NextResponse.json({ error: `Checkout failed: ${msg}` }, { status: 500 })
+    return NextResponse.json({ error: 'Checkout failed. Please try again or contact support.' }, { status: 500 })
   }
 }

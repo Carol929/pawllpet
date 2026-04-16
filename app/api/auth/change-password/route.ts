@@ -6,10 +6,7 @@ import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { jwtVerify } from 'jose'
 import { z } from 'zod'
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'your-secret-key-change-in-production'
-)
+import { getJwtSecret } from '@/lib/jwt'
 
 async function getUserId(request: NextRequest) {
   const cookieHeader = request.headers.get('cookie')
@@ -17,7 +14,7 @@ async function getUserId(request: NextRequest) {
   const match = cookieHeader.match(/auth-token=([^;]+)/)
   if (!match) return null
   try {
-    const { payload } = await jwtVerify(match[1], JWT_SECRET)
+    const { payload } = await jwtVerify(match[1], getJwtSecret())
     return payload.userId as string
   } catch {
     return null

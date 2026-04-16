@@ -2,17 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'your-secret-key-change-in-production'
-)
+import { getJwtSecret } from '@/lib/jwt'
 
 export async function requireUser(request: NextRequest): Promise<{ userId: string } | NextResponse> {
   // Method 1: Custom JWT token (email/password login)
   const token = request.cookies.get('auth-token')?.value
   if (token) {
     try {
-      const { payload } = await jwtVerify(token, JWT_SECRET)
+      const { payload } = await jwtVerify(token, getJwtSecret())
       return { userId: payload.userId as string }
     } catch {
       // Token invalid, try NextAuth

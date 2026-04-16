@@ -7,11 +7,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { jwtVerify } from 'jose'
-
-// JWT密钥（从环境变量获取）
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'your-secret-key-change-in-production'
-)
+import { getJwtSecret } from '@/lib/jwt'
 
 // 从Cookie中获取token
 function getTokenFromRequest(request: NextRequest): string | null {
@@ -30,7 +26,7 @@ function getTokenFromRequest(request: NextRequest): string | null {
 // 验证JWT token
 async function verifyToken(token: string): Promise<{ userId: string; role: string } | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, getJwtSecret())
     return {
       userId: payload.userId as string,
       role: payload.role as string,

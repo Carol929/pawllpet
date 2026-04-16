@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/db'
+import { sendOrderConfirmationEmail } from '@/lib/email'
 import type Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
@@ -54,15 +55,45 @@ export async function POST(request: NextRequest) {
 
       for (const item of order.items) {
         try {
-          await prisma.product.update({
-            where: { id: item.productId },
-            data: { stock: { decrement: item.quantity } },
-          })
-          console.log(`[Stripe Webhook] Decremented stock for ${item.productId} by ${item.quantity}`)
+          if (item.variantId) {
+            // Decrement variant stock
+            await prisma.productVariant.update({
+              where: { id: item.variantId },
+              data: { stock: { decrement: item.quantity } },
+            })
+            console.log(`[Stripe Webhook] Decremented variant stock for ${item.variantId} by ${item.quantity}`)
+          } else {
+            // Decrement base product stock
+            await prisma.product.update({
+              where: { id: item.productId },
+              data: { stock: { decrement: item.quantity } },
+            })
+            console.log(`[Stripe Webhook] Decremented product stock for ${item.productId} by ${item.quantity}`)
+          }
         } catch (err) {
-          console.error(`[Stripe Webhook] FAILED to decrement stock for ${item.productId}:`, err)
+          console.error(`[Stripe Webhook] FAILED to decrement stock for ${item.variantId || item.productId}:`, err)
           // Don't throw — payment is already confirmed. Log for manual review.
         }
+      }
+
+      // Send order confirmation email
+      try {
+        const user = await prisma.user.findUnique({ where: { id: order.userId }, select: { email: true, fullName: true } })
+        if (user?.email) {
+          await sendOrderConfirmationEmail(user.email, user.fullName, {
+            orderId,
+            items: order.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
+            subtotal: order.subtotal,
+            shipping: order.shipping,
+            tax: order.tax,
+            total: order.total,
+            shippingAddress: order.shippingAddress as Record<string, string>,
+          })
+          console.log(`[Stripe Webhook] Confirmation email sent for order ${orderId}`)
+        }
+      } catch (emailErr) {
+        console.error(`[Stripe Webhook] FAILED to send confirmation email for order ${orderId}:`, emailErr)
+        // Don't throw — payment is confirmed, email failure is non-critical
       }
     }
   }

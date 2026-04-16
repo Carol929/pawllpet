@@ -9,6 +9,7 @@ import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { SignJWT } from 'jose'
+import { getJwtSecret } from '@/lib/jwt'
 
 // 登录表单验证schema
 const loginSchema = z.object({
@@ -16,18 +17,13 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 })
 
-// JWT密钥（从环境变量获取）
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'your-secret-key-change-in-production'
-)
-
 // 创建JWT token
 async function createToken(userId: string, role: string) {
   const token = await new SignJWT({ userId, role })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d') // 7天过期
-    .sign(JWT_SECRET)
+    .sign(getJwtSecret())
 
   return token
 }

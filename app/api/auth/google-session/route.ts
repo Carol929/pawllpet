@@ -8,15 +8,11 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { SignJWT } from 'jose'
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'your-secret-key-change-in-production'
-)
+import { getJwtSecret } from '@/lib/jwt'
 
 export async function GET() {
   try {
     const session = await auth()
-    console.log('Google session bridge - session:', JSON.stringify(session))
 
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'No Google session found' }, { status: 401 })
@@ -39,7 +35,6 @@ export async function GET() {
         isBlocked: true,
         createdAt: true,
         lastLoginAt: true,
-        password: true,
       },
     })
 
@@ -56,10 +51,9 @@ export async function GET() {
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d')
-      .sign(JWT_SECRET)
+      .sign(getJwtSecret())
 
-    const { password, ...userWithoutPassword } = user
-    const response = NextResponse.json({ user: { ...userWithoutPassword, hasPassword: Boolean(password) } })
+    const response = NextResponse.json({ user })
 
     response.cookies.set('auth-token', token, {
       httpOnly: true,

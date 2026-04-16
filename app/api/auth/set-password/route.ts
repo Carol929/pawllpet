@@ -6,10 +6,7 @@ import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import { z } from 'zod'
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'your-secret-key-change-in-production'
-)
+import { getJwtSecret } from '@/lib/jwt'
 
 const passwordSchema = z.string()
   .min(8, 'Password must be at least 8 characters')
@@ -33,7 +30,7 @@ async function getUserIdFromToken(request: NextRequest): Promise<string | null> 
   const match = cookieHeader.match(/auth-token=([^;]+)/)
   if (!match) return null
   try {
-    const { payload } = await jwtVerify(match[1], JWT_SECRET)
+    const { payload } = await jwtVerify(match[1], getJwtSecret())
     return payload.userId as string
   } catch {
     return null
@@ -81,7 +78,7 @@ export async function POST(request: NextRequest) {
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
       .setExpirationTime('7d')
-      .sign(JWT_SECRET)
+      .sign(getJwtSecret())
 
     const response = NextResponse.json({
       message: 'Password set successfully',

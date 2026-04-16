@@ -174,15 +174,17 @@ model Order {
 
 // 订单商品表
 model OrderItem {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   orderId   String
-  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
+  variantId String? // ProductVariant ID — null for base product purchases
   name      String
   image     String
   price     Float
   quantity  Int
 
+  @@index([orderId])
   @@map("order_items")
 }
 

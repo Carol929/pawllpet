@@ -2,17 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'your-secret-key-change-in-production'
-)
+import { getJwtSecret } from '@/lib/jwt'
 
 export async function requireAdmin(request: NextRequest): Promise<{ userId: string; role: string } | NextResponse> {
   // Method 1: Check custom JWT token (email/password login)
   const token = request.cookies.get('auth-token')?.value
   if (token) {
     try {
-      const { payload } = await jwtVerify(token, JWT_SECRET)
+      const { payload } = await jwtVerify(token, getJwtSecret())
       if (payload.role === 'admin') {
         return { userId: payload.userId as string, role: 'admin' }
       }

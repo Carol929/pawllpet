@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { auth } from '@/lib/auth'
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'your-secret-key-change-in-production'
-)
+import { getJwtSecret } from '@/lib/jwt'
 
 // Check custom auth-token cookie (email/password login)
 async function checkCustomToken(request: NextRequest): Promise<string | null> {
@@ -12,7 +9,7 @@ async function checkCustomToken(request: NextRequest): Promise<string | null> {
   if (!token) return null
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, getJwtSecret())
     return payload.role as string || null
   } catch {
     return null

@@ -28,7 +28,7 @@ export const STATE_TAX_RATES: Record<string, number> = {
   LA: 0.0445,   // Louisiana
   ME: 0.055,    // Maine
   MD: 0.06,     // Maryland
-  MA: 0.056,    // Massachusetts (6.25% effective but 5.6% as listed)
+  MA: 0.0625,   // Massachusetts
   MI: 0.06,     // Michigan
   MN: 0.06875,  // Minnesota
   MS: 0.07,     // Mississippi
