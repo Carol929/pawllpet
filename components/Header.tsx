@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart, Search, Menu, X, ChevronDown, Globe, User, LogOut, Package, Settings } from 'lucide-react'
+import { ShoppingCart, Search, Menu, X, ChevronDown, Globe, User, LogOut, Package, Settings, Heart } from 'lucide-react'
 import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth-context'
 import { useCart } from '@/lib/cart-context'
+import { useWishlist } from '@/lib/wishlist-context'
 
 type SubItem = { labelKey: string; href: string; color: string; icon: string }
 type NavItem = { labelKey: string; href: string; icon: string; subs: SubItem[] }
@@ -46,6 +47,15 @@ export default function Header() {
   const { locale, setLocale, t } = useLocale()
   const { user, loading: authLoading, logout } = useAuth()
   const { totalItems, clearCart } = useCart()
+  const { wishlistIds } = useWishlist()
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50)
+    handleScroll() // check initial position
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState<{ slug: string; name: string; image: string; price: number }[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -106,7 +116,7 @@ export default function Header() {
   const userInitial = user?.fullName?.charAt(0)?.toUpperCase() || '?'
 
   return (
-    <header className="site-header">
+    <header className={`site-header ${scrolled ? 'header--scrolled' : ''}`}>
       <div className="top-banner">{t('header', 'topBanner')}</div>
       <div className="container header-inner">
         <div className="logo-group">
@@ -229,6 +239,11 @@ export default function Header() {
               </div>
             )}
           </div>
+
+          <Link href="/wishlist" className="header-wishlist-btn" aria-label="Wishlist">
+            <Heart size={20} strokeWidth={1.8} />
+            {wishlistIds.size > 0 && <span className="wishlist-badge">{wishlistIds.size > 99 ? '99+' : wishlistIds.size}</span>}
+          </Link>
 
           <Link href="/cart" className="header-cart-btn" aria-label={t('header', 'cartLabel')}>
             <ShoppingCart size={22} strokeWidth={1.8} />

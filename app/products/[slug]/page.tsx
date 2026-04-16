@@ -250,14 +250,25 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
             </div>
           </div>
 
-          {/* Add to Cart */}
-          <button
-            className={`pdp-add-btn ${added ? 'pdp-add-btn--added' : ''}`}
-            onClick={handleAdd}
-            disabled={effectiveStock === 0}
-          >
-            {added ? <><Check size={18} /> Added to Cart</> : effectiveStock === 0 ? 'Out of Stock' : 'Add to Cart'}
-          </button>
+          {/* Add to Cart + Wishlist */}
+          <div className="pdp-cart-row">
+            <button
+              className={`pdp-add-btn ${added ? 'pdp-add-btn--added' : ''}`}
+              onClick={handleAdd}
+              disabled={effectiveStock === 0}
+            >
+              {added ? <><Check size={18} /> Added to Cart</> : effectiveStock === 0 ? 'Out of Stock' : 'Add to Cart'}
+            </button>
+            {user && (
+              <button
+                className={`pdp-wishlist-inline ${isWished(item.id) ? 'pdp-wishlist-inline--active' : ''}`}
+                onClick={() => toggle(item.id)}
+                aria-label="Add to wishlist"
+              >
+                <Heart size={20} fill={isWished(item.id) ? '#e74c3c' : 'none'} />
+              </button>
+            )}
+          </div>
 
           {/* Stock & Material */}
           <div className="pdp-meta">
