@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/db'
-import { sendOrderConfirmationEmail } from '@/lib/email'
+import { sendOrderConfirmationEmail, sendAdminOrderNotificationEmail } from '@/lib/email'
 import type Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
@@ -76,9 +76,10 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Send order confirmation email
+      // Send order confirmation email + admin notification
+      const user = await prisma.user.findUnique({ where: { id: order.userId }, select: { email: true, fullName: true } })
+
       try {
-        const user = await prisma.user.findUnique({ where: { id: order.userId }, select: { email: true, fullName: true } })
         if (user?.email) {
           await sendOrderConfirmationEmail(user.email, user.fullName, {
             orderId,
@@ -94,6 +95,24 @@ export async function POST(request: NextRequest) {
       } catch (emailErr) {
         console.error(`[Stripe Webhook] FAILED to send confirmation email for order ${orderId}:`, emailErr)
         // Don't throw — payment is confirmed, email failure is non-critical
+      }
+
+      try {
+        await sendAdminOrderNotificationEmail({
+          orderId,
+          customerName: user?.fullName || 'Unknown Customer',
+          customerEmail: user?.email || '',
+          items: order.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
+          subtotal: order.subtotal,
+          shipping: order.shipping,
+          tax: order.tax,
+          total: order.total,
+          shippingAddress: order.shippingAddress as Record<string, string>,
+        })
+        console.log(`[Stripe Webhook] Admin notification email sent for order ${orderId}`)
+      } catch (adminEmailErr) {
+        console.error(`[Stripe Webhook] FAILED to send admin notification for order ${orderId}:`, adminEmailErr)
+        // Don't throw — payment is confirmed, admin notification failure is non-critical
       }
     }
   }

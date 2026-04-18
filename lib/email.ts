@@ -172,7 +172,7 @@ export async function sendOrderConfirmationEmail(
         <div style="padding: 32px;">
           <h2 style="color: #1f2e44; margin: 0 0 8px; font-size: 22px;">Thank you, ${name}!</h2>
           <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
-            Your order <strong>#${shortId}</strong> has been confirmed and is being prepared for shipment.
+            Thanks for your order <strong>#${shortId}</strong>! We're preparing it now and will email you a tracking number within <strong>3 business days</strong>.
           </p>
 
           <!-- Order Items -->
@@ -221,8 +221,186 @@ export async function sendOrderConfirmationEmail(
           </div>
 
           <p style="color: #888; font-size: 13px; text-align: center;">
-            We'll send you a tracking number once your order ships.
+            📦 You'll receive a separate email with your tracking number within 3 business days.<br/>
             Questions? Email us at <a href="mailto:support@pawllpet.com" style="color: #D4B28C;">support@pawllpet.com</a>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background: #1f2e44; padding: 16px 32px; text-align: center;">
+          <p style="color: #888; font-size: 12px; margin: 0;">
+            PawLL Pet | Premium pet essentials with collectible drop energy
+          </p>
+          <p style="color: #666; font-size: 11px; margin: 6px 0 0;">
+            <a href="${shopUrl}/privacy-policy" style="color: #888; text-decoration: none;">Privacy</a> &nbsp;|&nbsp;
+            <a href="${shopUrl}/terms-conditions" style="color: #888; text-decoration: none;">Terms</a> &nbsp;|&nbsp;
+            <a href="${shopUrl}" style="color: #888; text-decoration: none;">pawllpet.com</a>
+          </p>
+        </div>
+      </div>
+    `,
+  })
+}
+
+export async function sendAdminOrderNotificationEmail(order: {
+  orderId: string
+  customerName: string
+  customerEmail: string
+  items: { name: string; quantity: number; price: number }[]
+  subtotal: number
+  shipping: number
+  tax: number
+  total: number
+  shippingAddress: Record<string, string>
+}): Promise<void> {
+  const client = getResend()
+  if (!client) {
+    console.warn('RESEND_API_KEY is missing; skipping admin order notification.')
+    return
+  }
+  const adminEmail = process.env.ADMIN_EMAIL
+  if (!adminEmail) {
+    console.warn('ADMIN_EMAIL is not set; skipping admin order notification.')
+    return
+  }
+
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shortId = order.orderId.slice(-8).toUpperCase()
+  const addr = order.shippingAddress
+
+  const itemRows = order.items.map(i =>
+    `<tr>
+      <td style="padding: 6px 8px; border-bottom: 1px solid #eee; font-size: 14px;">${i.name}</td>
+      <td style="padding: 6px 8px; border-bottom: 1px solid #eee; font-size: 14px; text-align: center;">${i.quantity}</td>
+      <td style="padding: 6px 8px; border-bottom: 1px solid #eee; font-size: 14px; text-align: right;">$${(i.price * i.quantity).toFixed(2)}</td>
+    </tr>`
+  ).join('')
+
+  await client.emails.send({
+    from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
+    to: adminEmail,
+    subject: `🛒 New Order #${shortId} — $${order.total.toFixed(2)} from ${order.customerName}`,
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 640px; margin: 0 auto; background: #fff;">
+        <div style="background: #1f2e44; padding: 16px 24px;">
+          <h2 style="color: #fff; margin: 0; font-size: 18px;">🛒 New Order — Action Required</h2>
+        </div>
+        <div style="padding: 24px;">
+          <p style="margin: 0 0 16px; font-size: 15px; color: #333;">
+            A new order needs to be fulfilled within <strong>3 business days</strong>.
+          </p>
+
+          <div style="background: #f8f6f2; border-left: 4px solid #D4B28C; padding: 12px 16px; margin-bottom: 20px;">
+            <div style="font-size: 13px; color: #666;">Order ID</div>
+            <div style="font-size: 18px; font-weight: 700; color: #1f2e44; letter-spacing: 1px;">#${shortId}</div>
+            <div style="font-size: 12px; color: #888; margin-top: 4px;">Full ID: ${order.orderId}</div>
+          </div>
+
+          <h3 style="color: #1f2e44; font-size: 14px; margin: 16px 0 6px;">Customer</h3>
+          <p style="margin: 0; font-size: 14px; color: #333;">
+            ${order.customerName}<br/>
+            <a href="mailto:${order.customerEmail}" style="color: #D4B28C;">${order.customerEmail}</a>
+          </p>
+
+          <h3 style="color: #1f2e44; font-size: 14px; margin: 16px 0 6px;">Ship To</h3>
+          <p style="margin: 0; font-size: 14px; color: #333;">
+            ${addr.fullName || order.customerName}<br/>
+            ${addr.street || ''}${addr.street2 ? ', ' + addr.street2 : ''}<br/>
+            ${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}
+          </p>
+
+          <h3 style="color: #1f2e44; font-size: 14px; margin: 16px 0 6px;">Items</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #f8f6f2;">
+                <th style="text-align: left; padding: 6px 8px; font-size: 12px; color: #666;">Item</th>
+                <th style="text-align: center; padding: 6px 8px; font-size: 12px; color: #666;">Qty</th>
+                <th style="text-align: right; padding: 6px 8px; font-size: 12px; color: #666;">Total</th>
+              </tr>
+            </thead>
+            <tbody>${itemRows}</tbody>
+          </table>
+
+          <div style="margin-top: 16px; font-size: 14px; color: #333;">
+            <div>Subtotal: $${order.subtotal.toFixed(2)}</div>
+            <div>Shipping: ${order.shipping === 0 ? 'FREE' : '$' + order.shipping.toFixed(2)}</div>
+            <div>Tax: $${order.tax.toFixed(2)}</div>
+            <div style="font-size: 16px; font-weight: 700; color: #1f2e44; margin-top: 4px;">Total: $${order.total.toFixed(2)}</div>
+          </div>
+
+          <div style="margin-top: 24px; text-align: center;">
+            <a href="${shopUrl}/admin/orders" style="display: inline-block; background: #1f2e44; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px;">
+              Open Admin → Orders
+            </a>
+          </div>
+        </div>
+      </div>
+    `,
+  })
+}
+
+export async function sendOrderShippedEmail(
+  email: string,
+  name: string,
+  order: {
+    orderId: string
+    trackingNumber: string
+    items: { name: string; quantity: number }[]
+  }
+): Promise<void> {
+  const client = getResend()
+  if (!client) {
+    console.warn('RESEND_API_KEY is missing; skipping order shipped email.')
+    return
+  }
+
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shortId = order.orderId.slice(-8).toUpperCase()
+
+  const itemList = order.items.map(i =>
+    `<li style="margin-bottom: 4px;">${i.name} <span style="color: #888;">× ${i.quantity}</span></li>`
+  ).join('')
+
+  await client.emails.send({
+    from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
+    to: email,
+    subject: `Your PawLL order #${shortId} is on the way! 📦`,
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fffdf8;">
+        <!-- Header -->
+        <div style="background: #1f2e44; padding: 24px 32px; text-align: center;">
+          <h1 style="color: #D4B28C; margin: 0; font-size: 24px; letter-spacing: 1px;">PawLL Pet</h1>
+          <p style="color: #e5e7eb; margin: 6px 0 0; font-size: 13px;">Premium Pet Essentials</p>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 32px;">
+          <h2 style="color: #1f2e44; margin: 0 0 8px; font-size: 22px;">Your order is on the way! 📦</h2>
+          <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
+            Hi ${name}, great news — your order <strong>#${shortId}</strong> just shipped! Use the tracking number below to follow it to your door.
+          </p>
+
+          <!-- Tracking Card -->
+          <div style="background: linear-gradient(135deg, #fef3e2, #fde8c8); border: 2px solid #D4B28C; border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
+            <p style="color: #92600a; font-size: 13px; margin: 0 0 8px; letter-spacing: 1px;">YOUR TRACKING NUMBER</p>
+            <p style="font-size: 22px; font-weight: 700; color: #1f2e44; letter-spacing: 2px; margin: 0; word-break: break-all;">${order.trackingNumber}</p>
+          </div>
+
+          <!-- Items shipped -->
+          <h3 style="color: #1f2e44; font-size: 15px; margin: 16px 0 8px;">What's in this shipment</h3>
+          <ul style="color: #555; font-size: 14px; line-height: 1.8; padding-left: 20px; margin: 0 0 24px;">
+            ${itemList}
+          </ul>
+
+          <!-- CTA -->
+          <div style="text-align: center; margin-bottom: 32px;">
+            <a href="${shopUrl}/account" style="display: inline-block; background: #1f2e44; color: #fff; padding: 14px 36px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 16px;">
+              View Order Details
+            </a>
+          </div>
+
+          <p style="color: #888; font-size: 13px; text-align: center;">
+            Questions about your delivery? Email us at <a href="mailto:support@pawllpet.com" style="color: #D4B28C;">support@pawllpet.com</a>
           </p>
         </div>
 
