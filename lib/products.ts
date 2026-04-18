@@ -32,6 +32,16 @@ function toProductDTO(dbProduct: {
       ? Math.min(...dbProduct.variants.map(v => v.price))
       : dbProduct.price
 
+  // Effective stock: if product has variants, sum variant stock (variant stock is the source of truth for variants).
+  // Otherwise use base product stock.
+  const variantStockTotal = dbProduct.variants.reduce(
+    (sum, v) => sum + (typeof v.stock === 'number' ? v.stock : 0),
+    0
+  )
+  const effectiveStock = dbProduct.variants.length > 0
+    ? variantStockTotal
+    : dbProduct.stock
+
   return {
     id: dbProduct.id,
     slug: dbProduct.slug,
@@ -50,7 +60,7 @@ function toProductDTO(dbProduct: {
     description: dbProduct.description,
     images: dbProduct.images.map(img => img.url),
     variants: dbProduct.variants.filter(v => v.id && v.name) as Product['variants'],
-    stock: dbProduct.stock,
+    stock: effectiveStock,
     compareAtPrice: dbProduct.compareAtPrice,
     brand: dbProduct.brand,
     material: dbProduct.material,
@@ -65,11 +75,11 @@ const fullInclude = {
   variants: { orderBy: { sortOrder: 'asc' as const } },
 }
 
-// Light include — for product lists (first image + variant prices)
+// Light include — for product lists (first image + variant price/stock)
 const listInclude = {
   category: { select: { name: true, slug: true } },
   images: { take: 1, orderBy: { sortOrder: 'asc' as const } },
-  variants: { select: { id: true, name: true, price: true }, orderBy: { price: 'asc' as const } },
+  variants: { select: { id: true, name: true, price: true, stock: true }, orderBy: { price: 'asc' as const } },
 }
 
 export async function getProducts(filters?: {
