@@ -6,6 +6,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const slides = [
   {
+    src: '/banner-eco-love.jpg',
+    alt: 'PawLL Pet - Eco love for every paw',
+  },
+  {
     src: '/comingsoon.jpg',
     alt: 'PawLL Pet - Coming Soon',
   },
