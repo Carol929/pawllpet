@@ -13,6 +13,14 @@ export async function POST(request: NextRequest) {
   if (authResult instanceof NextResponse) return authResult
   const { userId } = authResult
 
+  const dbUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  })
+  if (!dbUser?.email) {
+    return NextResponse.json({ error: 'Account email not found. Please sign in again.' }, { status: 401 })
+  }
+
   try {
     const { items, shippingAddress, shippingMethod = 'standard' } = await request.json()
 
@@ -188,6 +196,8 @@ export async function POST(request: NextRequest) {
         success_url: `${siteUrl}/checkout/success?orderId=${order.id}`,
         cancel_url: `${siteUrl}/checkout/cancel?orderId=${order.id}`,
         metadata: { orderId: order.id },
+        customer_email: dbUser.email,
+        allow_promotion_codes: true,
         expires_at: Math.floor(Date.now() / 1000) + 1800, // 30 min expiry
       }, {
         idempotencyKey: `checkout_${order.id}`,

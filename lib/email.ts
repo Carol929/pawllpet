@@ -134,6 +134,8 @@ export async function sendOrderConfirmationEmail(
     subtotal: number
     shipping: number
     tax: number
+    discountAmount?: number
+    discountCode?: string | null
     total: number
     shippingAddress: Record<string, string>
   }
@@ -198,6 +200,11 @@ export async function sendOrderConfirmationEmail(
             <div style="display: flex; justify-content: space-between; font-size: 14px; color: #555; margin-bottom: 6px;">
               <span>Tax</span><span>$${order.tax.toFixed(2)}</span>
             </div>
+            ${order.discountAmount && order.discountAmount > 0 ? `
+            <div style="display: flex; justify-content: space-between; font-size: 14px; color: #2e7d32; margin-bottom: 6px;">
+              <span>Discount${order.discountCode ? ` (${order.discountCode})` : ''}</span><span>-$${order.discountAmount.toFixed(2)}</span>
+            </div>
+            ` : ''}
             <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; color: #1f2e44; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 6px;">
               <span>Total</span><span>$${order.total.toFixed(2)}</span>
             </div>
@@ -250,6 +257,8 @@ export async function sendAdminOrderNotificationEmail(order: {
   subtotal: number
   shipping: number
   tax: number
+  discountAmount?: number
+  discountCode?: string | null
   total: number
   shippingAddress: Record<string, string>
 }): Promise<void> {
@@ -325,6 +334,7 @@ export async function sendAdminOrderNotificationEmail(order: {
             <div>Subtotal: $${order.subtotal.toFixed(2)}</div>
             <div>Shipping: ${order.shipping === 0 ? 'FREE' : '$' + order.shipping.toFixed(2)}</div>
             <div>Tax: $${order.tax.toFixed(2)}</div>
+            ${order.discountAmount && order.discountAmount > 0 ? `<div style="color: #2e7d32;">Discount${order.discountCode ? ` (${order.discountCode})` : ''}: -$${order.discountAmount.toFixed(2)}</div>` : ''}
             <div style="font-size: 16px; font-weight: 700; color: #1f2e44; margin-top: 4px;">Total: $${order.total.toFixed(2)}</div>
           </div>
 

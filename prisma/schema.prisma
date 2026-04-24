@@ -160,6 +160,8 @@ model Order {
   subtotal        Float
   shipping        Float       @default(0)
   tax             Float       @default(0)
+  discountAmount  Float       @default(0)
+  discountCode    String?
   shippingAddress Json
   stripeSessionId String?     @unique
   trackingNumber  String?

@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
 
   // Handle checkout.session.completed — payment successful
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session
-    const orderId = session.metadata?.orderId
+    const eventSession = event.data.object as Stripe.Checkout.Session
+    const orderId = eventSession.metadata?.orderId
 
     if (orderId) {
       console.log(`[Stripe Webhook] checkout.session.completed for order ${orderId}`)
@@ -44,10 +44,33 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true })
       }
 
-      // Update order status to paid + deduct stock
+      // Retrieve full session with expanded discount details (so we can read promo code name)
+      const session = await getStripe().checkout.sessions.retrieve(eventSession.id, {
+        expand: ['total_details.breakdown.discounts.discount.promotion_code'],
+      })
+
+      const amountTotal = (session.amount_total ?? 0) / 100
+      const amountDiscount = (session.total_details?.amount_discount ?? 0) / 100
+      const firstDiscount = session.total_details?.breakdown?.discounts?.[0]
+      const promoCode = firstDiscount?.discount?.promotion_code
+      const discountCode =
+        typeof promoCode === 'object' && promoCode !== null
+          ? (promoCode as Stripe.PromotionCode).code
+          : null
+
+      if (amountDiscount > 0) {
+        console.log(`[Stripe Webhook] Order ${orderId} used promo "${discountCode}" for -$${amountDiscount.toFixed(2)}`)
+      }
+
+      // Update order: overwrite total with actual paid amount, store discount info
       const order = await prisma.order.update({
         where: { id: orderId },
-        data: { status: 'paid' },
+        data: {
+          status: 'paid',
+          total: amountTotal,
+          discountAmount: amountDiscount,
+          discountCode,
+        },
         include: { items: true },
       })
 
@@ -87,6 +110,8 @@ export async function POST(request: NextRequest) {
             subtotal: order.subtotal,
             shipping: order.shipping,
             tax: order.tax,
+            discountAmount: order.discountAmount,
+            discountCode: order.discountCode,
             total: order.total,
             shippingAddress: order.shippingAddress as Record<string, string>,
           })
@@ -106,6 +131,8 @@ export async function POST(request: NextRequest) {
           subtotal: order.subtotal,
           shipping: order.shipping,
           tax: order.tax,
+          discountAmount: order.discountAmount,
+          discountCode: order.discountCode,
           total: order.total,
           shippingAddress: order.shippingAddress as Record<string, string>,
         })
