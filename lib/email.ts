@@ -430,6 +430,168 @@ export async function sendOrderShippedEmail(
   })
 }
 
+export async function sendAdminCancellationRequestEmail(payload: {
+  orderId: string
+  customerName: string
+  customerEmail: string
+  orderStatus: string
+  orderTotal: number
+  reason: string
+}): Promise<void> {
+  const client = getResend()
+  if (!client) {
+    console.warn('RESEND_API_KEY is missing; skipping admin cancellation request email.')
+    return
+  }
+  const adminEmail = process.env.ADMIN_EMAIL
+  if (!adminEmail) {
+    console.warn('ADMIN_EMAIL is not set; skipping admin cancellation request email.')
+    return
+  }
+
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shortId = payload.orderId.slice(-8).toUpperCase()
+
+  await client.emails.send({
+    from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
+    to: adminEmail,
+    subject: `Cancellation Request - Order #${shortId} from ${payload.customerName}`,
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 640px; margin: 0 auto; background: #fff;">
+        <div style="background: #b91c1c; padding: 16px 24px;">
+          <h2 style="color: #fff; margin: 0; font-size: 18px;">Cancellation Request - Action Required</h2>
+        </div>
+        <div style="padding: 24px;">
+          <p style="margin: 0 0 16px; font-size: 15px; color: #333;">
+            A customer has requested to cancel their order. Please review and process below.
+          </p>
+
+          <div style="background: #fef2f2; border-left: 4px solid #b91c1c; padding: 12px 16px; margin-bottom: 20px;">
+            <div style="font-size: 13px; color: #666;">Order ID</div>
+            <div style="font-size: 18px; font-weight: 700; color: #1f2e44; letter-spacing: 1px;">#${shortId}</div>
+            <div style="font-size: 12px; color: #888; margin-top: 4px;">Status when requested: <strong>${payload.orderStatus}</strong> &nbsp;|&nbsp; Total: $${payload.orderTotal.toFixed(2)}</div>
+          </div>
+
+          <h3 style="color: #1f2e44; font-size: 14px; margin: 16px 0 6px;">Customer</h3>
+          <p style="margin: 0; font-size: 14px; color: #333;">
+            ${payload.customerName}<br/>
+            <a href="mailto:${payload.customerEmail}" style="color: #D4B28C;">${payload.customerEmail}</a>
+          </p>
+
+          <h3 style="color: #1f2e44; font-size: 14px; margin: 16px 0 6px;">Reason from customer</h3>
+          <div style="background: #f8f6f2; border-radius: 8px; padding: 14px; font-size: 14px; color: #333; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(payload.reason)}</div>
+
+          <div style="margin-top: 24px; text-align: center;">
+            <a href="${shopUrl}/admin/orders" style="display: inline-block; background: #1f2e44; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px;">
+              Review in Admin Dashboard
+            </a>
+          </div>
+
+          <p style="margin: 20px 0 0; font-size: 12px; color: #888; text-align: center;">
+            Refund (if any) must be issued manually in the Stripe Dashboard, then recorded in admin.
+          </p>
+        </div>
+      </div>
+    `,
+  })
+}
+
+export async function sendOrderCancellationResultEmail(
+  email: string,
+  name: string,
+  payload: {
+    orderId: string
+    resolution: string
+    refundAmount: number
+    adminNote: string | null
+    orderTotal: number
+  }
+): Promise<void> {
+  const client = getResend()
+  if (!client) {
+    console.warn('RESEND_API_KEY is missing; skipping cancellation result email.')
+    return
+  }
+
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shortId = payload.orderId.slice(-8).toUpperCase()
+
+  const resolutionMap: Record<string, { title: string; body: string }> = {
+    full_refund: {
+      title: 'Order Cancelled - Full Refund Issued',
+      body: `We've issued a full refund of <strong>$${payload.refundAmount.toFixed(2)}</strong> to your original payment method. Please allow <strong>5-10 business days</strong> for the refund to appear on your card statement.`,
+    },
+    partial_50: {
+      title: 'Order Cancelled - Partial Refund Issued',
+      body: `We've issued a partial refund of <strong>$${payload.refundAmount.toFixed(2)}</strong> (50% of order total) to your original payment method. Please allow <strong>5-10 business days</strong> for the refund to appear on your card statement.`,
+    },
+    reship: {
+      title: 'Replacement Order on the Way',
+      body: `Instead of a refund, we'll be shipping you a replacement order. You'll receive a separate email with a new tracking number within <strong>3 business days</strong>.`,
+    },
+    no_action: {
+      title: 'Cancellation Request Reviewed',
+      body: `After review, we are unable to process a refund or replacement for this order. Please see the note from our team below for details.`,
+    },
+    other: {
+      title: 'Cancellation Request Processed',
+      body: `Your cancellation request has been reviewed. ${payload.refundAmount > 0 ? `A refund of <strong>$${payload.refundAmount.toFixed(2)}</strong> has been issued — please allow <strong>5-10 business days</strong> to appear on your card.` : 'Please see the note from our team below for details.'}`,
+    },
+  }
+
+  const r = resolutionMap[payload.resolution] || resolutionMap.other
+
+  await client.emails.send({
+    from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
+    to: email,
+    subject: `${r.title} - Order #${shortId}`,
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fffdf8;">
+        <div style="background: #1f2e44; padding: 24px 32px; text-align: center;">
+          <h1 style="color: #D4B28C; margin: 0; font-size: 24px; letter-spacing: 1px;">PawLL Pet</h1>
+          <p style="color: #e5e7eb; margin: 6px 0 0; font-size: 13px;">Premium Pet Essentials</p>
+        </div>
+
+        <div style="padding: 32px;">
+          <h2 style="color: #1f2e44; margin: 0 0 8px; font-size: 22px;">${r.title}</h2>
+          <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
+            Hi ${name}, we've processed your cancellation request for order <strong>#${shortId}</strong>.
+          </p>
+
+          <div style="background: #f8f6f2; border-radius: 10px; padding: 16px; margin-bottom: 20px; font-size: 14px; color: #333; line-height: 1.6;">
+            ${r.body}
+          </div>
+
+          ${payload.adminNote ? `
+          <h3 style="color: #1f2e44; font-size: 14px; margin: 20px 0 6px;">Note from our team</h3>
+          <div style="background: #fffaf0; border-left: 4px solid #D4B28C; padding: 12px 16px; font-size: 14px; color: #333; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(payload.adminNote)}</div>
+          ` : ''}
+
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${shopUrl}/account#orders" style="display: inline-block; background: #1f2e44; color: #fff; padding: 14px 36px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 16px;">
+              View My Orders
+            </a>
+          </div>
+
+          <p style="color: #888; font-size: 13px; text-align: center; margin-top: 24px;">
+            Questions? Email us at <a href="mailto:support@pawllpet.com" style="color: #D4B28C;">support@pawllpet.com</a>
+          </p>
+        </div>
+
+        <div style="background: #1f2e44; padding: 16px 32px; text-align: center;">
+          <p style="color: #888; font-size: 12px; margin: 0;">
+            PawLL Pet | Premium pet essentials with collectible drop energy
+          </p>
+        </div>
+      </div>
+    `,
+  })
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
 export async function sendQuizGiftEmail(email: string, name: string, giftName: string): Promise<void> {
   const client = getResend()
   if (!client) {

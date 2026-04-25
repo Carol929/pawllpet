@@ -10,10 +10,6 @@ const slides = [
     alt: 'PawLL Pet - Eco love for every paw',
   },
   {
-    src: '/comingsoon.jpg',
-    alt: 'PawLL Pet - Coming Soon',
-  },
-  {
     src: '/mainpage.jpg',
     alt: 'PawLL Pet - Premium pet essentials',
   },

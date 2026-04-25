@@ -165,6 +165,13 @@ model Order {
   shippingAddress Json
   stripeSessionId String?     @unique
   trackingNumber  String?
+  cancellationReason       String?
+  cancellationRequestedAt  DateTime?
+  cancelledAt              DateTime?
+  deliveredAt              DateTime?
+  resolution               String?
+  refundAmount             Float?
+  adminNote                String?
   items           OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt

@@ -431,22 +431,74 @@ export default function AccountPage() {
 }
 
 /* ─── Orders Section ─── */
-interface OrderData { id: string; status: string; total: number; createdAt: string; trackingNumber?: string; items: { id: string; name: string; image: string; price: number; quantity: number }[] }
+interface OrderData {
+  id: string
+  status: string
+  total: number
+  createdAt: string
+  trackingNumber?: string
+  deliveredAt?: string | null
+  cancellationReason?: string | null
+  items: { id: string; name: string; image: string; price: number; quantity: number }[]
+}
+
+const DELIVERY_CANCEL_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
 
 function OrdersSection() {
   const { locale } = useLocale()
   const [orders, setOrders] = useState<OrderData[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<OrderData | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelSubmitting, setCancelSubmitting] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
 
-  useEffect(() => {
+  function load() {
     fetch('/api/orders').then(r => r.json()).then(d => { setOrders(d); setLoading(false) }).catch(() => setLoading(false))
-  }, [])
+  }
+  useEffect(load, [])
 
   const statusLabel: Record<string, { en: string; zh: string }> = {
     pending: { en: 'Pending', zh: '待付款' }, paid: { en: 'Paid', zh: '已付款' },
     shipped: { en: 'Shipped', zh: '已发货' }, delivered: { en: 'Delivered', zh: '已送达' },
     cancelled: { en: 'Cancelled', zh: '已取消' },
+    cancellation_requested: { en: 'Cancellation Requested', zh: '取消申请中' },
+  }
+
+  function isCancelable(o: OrderData): boolean {
+    if (o.status === 'cancelled' || o.status === 'cancellation_requested') return false
+    if (o.status === 'delivered') {
+      const deliveredTime = o.deliveredAt ? new Date(o.deliveredAt).getTime() : new Date(o.createdAt).getTime()
+      return Date.now() - deliveredTime <= DELIVERY_CANCEL_WINDOW_MS
+    }
+    return true // pending / paid / shipped
+  }
+
+  async function submitCancel() {
+    if (!cancelTarget) return
+    if (!cancelReason.trim()) {
+      setCancelError(locale === 'zh' ? '请填写取消原因' : 'Please provide a reason')
+      return
+    }
+    setCancelSubmitting(true)
+    setCancelError(null)
+    try {
+      const res = await fetch(`/api/orders/${cancelTarget.id}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: cancelReason.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to submit')
+      setCancelTarget(null)
+      setCancelReason('')
+      load()
+    } catch (err: any) {
+      setCancelError(err.message)
+    } finally {
+      setCancelSubmitting(false)
+    }
   }
 
   if (loading) return <section className="account-section"><p>Loading...</p></section>
@@ -486,11 +538,79 @@ function OrdersSection() {
                   </div>
                 ))}
                 {o.trackingNumber && <p className="order-tracking">{locale === 'zh' ? '追踪号' : 'Tracking'}: {o.trackingNumber}</p>}
+
+                {o.status === 'cancellation_requested' && (
+                  <div style={{ marginTop: '.75rem', padding: '.75rem', background: '#fef9e7', borderLeft: '3px solid #f59e0b', borderRadius: 6, fontSize: '.9rem', color: '#5c4708' }}>
+                    {locale === 'zh' ? '取消申请已提交,我们会尽快处理。' : 'Your cancellation request has been received. Our team will process it shortly.'}
+                  </div>
+                )}
+
+                {isCancelable(o) ? (
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    style={{ marginTop: '.75rem', color: '#b91c1c', borderColor: '#fecaca' }}
+                    onClick={(e) => { e.stopPropagation(); setCancelTarget(o); setCancelReason(''); setCancelError(null) }}
+                  >
+                    {locale === 'zh' ? '申请取消订单' : 'Request Cancellation'}
+                  </button>
+                ) : o.status === 'delivered' ? (
+                  <p style={{ marginTop: '.75rem', fontSize: '.85rem', color: '#888' }}>
+                    {locale === 'zh' ? '已超过 30 天取消窗口' : 'Cancellation window (30 days after delivery) has expired'}
+                  </p>
+                ) : null}
               </div>
             )}
           </div>
         ))}
       </div>
+
+      {cancelTarget && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}
+          onClick={() => !cancelSubmitting && setCancelTarget(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 12, padding: '1.5rem', maxWidth: 480, width: '100%' }}
+          >
+            <h3 style={{ margin: '0 0 .5rem', color: '#1f2e44' }}>
+              {locale === 'zh' ? '申请取消订单' : 'Request Cancellation'} #{cancelTarget.id.slice(-8).toUpperCase()}
+            </h3>
+            <div style={{ background: '#eff6ff', borderLeft: '3px solid #3b82f6', borderRadius: 6, padding: '.75rem', fontSize: '.85rem', color: '#1e40af', margin: '.75rem 0 1rem', lineHeight: 1.5 }}>
+              {locale === 'zh'
+                ? '所有取消申请由我们的团队人工审核。退款(如批准)将在 5-10 个工作日内退回您原支付的银行卡。'
+                : 'All cancellation requests are reviewed by our team. Refunds, if approved, will appear on your original payment card within 5-10 business days.'}
+            </div>
+            <label style={{ display: 'block', fontSize: '.9rem', fontWeight: 600, marginBottom: '.4rem', color: '#333' }}>
+              {locale === 'zh' ? '取消原因 *' : 'Reason for cancellation *'}
+            </label>
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              maxLength={1000}
+              rows={4}
+              placeholder={locale === 'zh' ? '请告诉我们为什么要取消……' : 'Please tell us why you want to cancel...'}
+              style={{ width: '100%', padding: '.6rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '.9rem', fontFamily: 'inherit', resize: 'vertical' }}
+              disabled={cancelSubmitting}
+              autoFocus
+            />
+            {cancelError && (
+              <p style={{ color: '#b91c1c', fontSize: '.85rem', margin: '.5rem 0 0' }}>{cancelError}</p>
+            )}
+            <div style={{ display: 'flex', gap: '.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              <button type="button" className="btn-secondary btn-sm" onClick={() => setCancelTarget(null)} disabled={cancelSubmitting}>
+                {locale === 'zh' ? '关闭' : 'Close'}
+              </button>
+              <button type="button" className="btn-primary btn-sm" style={{ background: '#b91c1c' }} onClick={submitCancel} disabled={cancelSubmitting}>
+                {cancelSubmitting ? (locale === 'zh' ? '提交中...' : 'Submitting...') : (locale === 'zh' ? '提交申请' : 'Submit Request')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
