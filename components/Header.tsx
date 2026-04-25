@@ -51,8 +51,10 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50)
-    handleScroll() // check initial position
+    // Hysteresis prevents oscillation when scrollY hovers near the threshold,
+    // which used to cause the header to flicker on short pages (e.g. /checkout).
+    const handleScroll = () => setScrolled(prev => prev ? window.scrollY > 20 : window.scrollY > 80)
+    handleScroll()
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])

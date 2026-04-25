@@ -436,6 +436,7 @@ interface OrderData {
   status: string
   total: number
   createdAt: string
+  updatedAt: string
   trackingNumber?: string
   deliveredAt?: string | null
   cancellationReason?: string | null
@@ -469,7 +470,9 @@ function OrdersSection() {
   function isCancelable(o: OrderData): boolean {
     if (o.status === 'cancelled' || o.status === 'cancellation_requested') return false
     if (o.status === 'delivered') {
-      const deliveredTime = o.deliveredAt ? new Date(o.deliveredAt).getTime() : new Date(o.createdAt).getTime()
+      // Match server logic in /api/orders/[id]/cancel: deliveredAt with updatedAt fallback for legacy rows
+      const fallback = o.updatedAt || o.createdAt
+      const deliveredTime = new Date(o.deliveredAt || fallback).getTime()
       return Date.now() - deliveredTime <= DELIVERY_CANCEL_WINDOW_MS
     }
     return true // pending / paid / shipped

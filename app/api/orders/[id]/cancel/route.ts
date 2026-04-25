@@ -15,7 +15,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params
 
   const body = await request.json().catch(() => ({}))
-  const reason = (body?.reason as string | undefined)?.trim() || ''
+  const rawReason = body?.reason
+  const reason = typeof rawReason === 'string' ? rawReason.trim() : ''
   if (!reason) {
     return NextResponse.json({ error: 'A reason is required to cancel an order.' }, { status: 400 })
   }

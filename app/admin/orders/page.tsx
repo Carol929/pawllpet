@@ -221,11 +221,20 @@ export default function AdminOrders() {
             </div>
             <div>
               <h3>Status</h3>
-              <select value={selected.status} onChange={e => updateOrder(selected.id, { status: e.target.value })} disabled={updating || selected.status === 'cancellation_requested'}>
-                {statusOptions.filter(s => s !== 'all').map(s => <option key={s} value={s}>{statusLabel(s)}</option>)}
+              <select value={selected.status} onChange={e => updateOrder(selected.id, { status: e.target.value })} disabled={updating || selected.status === 'cancellation_requested' || selected.status === 'cancelled'}>
+                {/* Only fulfillment statuses here. Cancellation must go through the dedicated form below
+                    so that resolution + refund + admin note + customer email are captured atomically. */}
+                {['pending', 'paid', 'shipped', 'delivered'].map(s => <option key={s} value={s}>{statusLabel(s)}</option>)}
+                {/* If the order is already in a terminal/review state, show its label so the select isn't blank */}
+                {(selected.status === 'cancellation_requested' || selected.status === 'cancelled') && (
+                  <option value={selected.status}>{statusLabel(selected.status)}</option>
+                )}
               </select>
               {selected.status === 'cancellation_requested' && (
                 <p style={{ fontSize: '.8rem', color: '#666', marginTop: '.4rem' }}>Use the cancellation form below to finalize.</p>
+              )}
+              {selected.status === 'cancelled' && (
+                <p style={{ fontSize: '.8rem', color: '#666', marginTop: '.4rem' }}>This order has already been cancelled.</p>
               )}
 
               <h3 style={{ marginTop: '1rem' }}>Tracking Number</h3>
