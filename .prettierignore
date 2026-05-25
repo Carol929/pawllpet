@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+build
+coverage
+.vercel
+prisma/migrations
+package-lock.json
+*.lock
+.claude
