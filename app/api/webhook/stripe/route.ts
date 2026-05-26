@@ -4,7 +4,12 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/db'
-import { sendOrderConfirmationEmail, sendAdminOrderNotificationEmail } from '@/lib/email'
+import {
+  sendOrderConfirmationEmail,
+  sendAdminOrderNotificationEmail,
+  sendShippingNotificationEmail,
+} from '@/lib/email'
+import { getCarrierTrackingUrl, purchaseLabel } from '@/lib/shipping'
 import type Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
@@ -140,6 +145,63 @@ export async function POST(request: NextRequest) {
       } catch (adminEmailErr) {
         console.error(`[Stripe Webhook] FAILED to send admin notification for order ${orderId}:`, adminEmailErr)
         // Don't throw — payment is confirmed, admin notification failure is non-critical
+      }
+
+      // --- Shippo label purchase (best-effort, non-blocking) ---
+      // If the checkout used a Shippo rate, the rate ID was forwarded through
+      // Stripe metadata. Buy the label now and persist tracking info on the order.
+      // On any failure we log + email admin but never throw — payment is already
+      // confirmed and admin can buy the label manually from the dashboard.
+      const shippoRateId = eventSession.metadata?.shippoRateId
+      if (shippoRateId) {
+        try {
+          const label = await purchaseLabel(shippoRateId)
+          if (label) {
+            const trackingUrl = getCarrierTrackingUrl(label.carrier || order.carrier || 'usps', label.trackingNumber)
+            await prisma.order.update({
+              where: { id: orderId },
+              data: {
+                trackingNumber: label.trackingNumber,
+                labelUrl: label.labelUrl,
+                shippoTransactionId: label.transactionId,
+                carrier: label.carrier || order.carrier,
+                shippedAt: new Date(),
+                status: 'processing',
+              },
+            })
+            console.log(`[Stripe Webhook] Shippo label purchased for order ${orderId}: tracking=${label.trackingNumber}`)
+
+            // Notify customer with tracking info
+            if (user?.email) {
+              try {
+                await sendShippingNotificationEmail(user.email, user.fullName || 'Customer', {
+                  orderId,
+                  carrier: label.carrier || order.carrier || 'usps',
+                  trackingNumber: label.trackingNumber,
+                  trackingUrl,
+                })
+                console.log(`[Stripe Webhook] Shipping notification email sent for order ${orderId}`)
+              } catch (shipEmailErr) {
+                console.error(`[Stripe Webhook] FAILED to send shipping notification for order ${orderId}:`, shipEmailErr)
+              }
+            }
+          }
+        } catch (labelErr) {
+          const msg = labelErr instanceof Error ? labelErr.message : String(labelErr)
+          console.error(`[Stripe Webhook] Shippo label purchase failed for order ${orderId}: ${msg}`)
+          // Persist the failure context on the order so admin can see it in
+          // the dashboard. The existing admin notification email already fired
+          // a few lines above with the new-order details; admin will see the
+          // missing labelUrl in /admin/orders and can buy a label manually.
+          try {
+            await prisma.order.update({
+              where: { id: orderId },
+              data: { adminNote: `Shippo label purchase failed: ${msg.slice(0, 500)}` },
+            })
+          } catch {
+            // already logged above; nothing more to do
+          }
+        }
       }
     }
   }
