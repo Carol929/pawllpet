@@ -26,8 +26,13 @@ jobs:
           node-version: 20.x
           cache: npm
 
+      # Use `npm install` (not `npm ci`) so the workflow tolerates
+      # platform-specific optional deps (e.g. @emnapi on Linux) that may
+      # not be recorded in package-lock.json when the lockfile is generated
+      # on Windows. Trade-off: slightly slower than `npm ci`, but works
+      # reliably cross-platform for a small team.
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Lint
         run: npm run lint
