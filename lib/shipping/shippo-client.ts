@@ -36,18 +36,38 @@ function getApiKey(): string {
   return key
 }
 
-function getOrigin(): ShippoOrigin {
-  const name = process.env.SHIPPO_ORIGIN_NAME || 'PawLL Pet'
+/**
+ * Build the value to pass to Shippo's `address_from` field.
+ *
+ * Two modes:
+ *   1. If SHIPPO_FROM_ADDRESS_ID is set, return that ID string. Shippo will
+ *      use the address stored in your account (managed via the dashboard).
+ *      This is the recommended path — single source of truth.
+ *   2. Otherwise, build an inline address from SHIPPO_ORIGIN_* env vars.
+ *      Backward-compatible fallback for setups that prefer env vars.
+ */
+function getAddressFromForShipment(): string | ShippoOrigin {
+  const addressId = process.env.SHIPPO_FROM_ADDRESS_ID
+  if (addressId) return addressId
+
   const street1 = process.env.SHIPPO_ORIGIN_STREET
-  const city = process.env.SHIPPO_ORIGIN_CITY || 'Arlington'
-  const state = process.env.SHIPPO_ORIGIN_STATE || 'VA'
-  const zip = process.env.SHIPPO_ORIGIN_ZIP || '22202'
-  const phone = process.env.SHIPPO_ORIGIN_PHONE
-  const email = process.env.SHIPPO_ORIGIN_EMAIL
+  if (!street1) {
+    throw new Error(
+      'Shipping origin is not configured. Set either SHIPPO_FROM_ADDRESS_ID (recommended) ' +
+        'or the SHIPPO_ORIGIN_* env vars (SHIPPO_ORIGIN_STREET at minimum).',
+    )
+  }
 
-  if (!street1) throw new Error('SHIPPO_ORIGIN_STREET is not configured')
-
-  return { name, street1, city, state, zip, country: 'US', phone, email }
+  return {
+    name: process.env.SHIPPO_ORIGIN_NAME || 'PawLL Pet',
+    street1,
+    city: process.env.SHIPPO_ORIGIN_CITY || 'Arlington',
+    state: process.env.SHIPPO_ORIGIN_STATE || 'VA',
+    zip: process.env.SHIPPO_ORIGIN_ZIP || '22202',
+    country: 'US',
+    phone: process.env.SHIPPO_ORIGIN_PHONE,
+    email: process.env.SHIPPO_ORIGIN_EMAIL,
+  }
 }
 
 async function shippoFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -118,21 +138,15 @@ export async function getShippoRates(
   to: ShippingAddress,
   parcel: Parcel,
 ): Promise<ShippingRateOption[]> {
-  const origin = getOrigin()
+  // Either a Shippo address object_id (preferred — set via dashboard) or an
+  // inline address object built from SHIPPO_ORIGIN_* env vars. Shippo's API
+  // accepts both forms for the `address_from` field.
+  const addressFrom = getAddressFromForShipment()
 
   const shipment = await shippoFetch<ShippoShipmentResponse>('/shipments/', {
     method: 'POST',
     body: JSON.stringify({
-      address_from: {
-        name: origin.name,
-        street1: origin.street1,
-        city: origin.city,
-        state: origin.state,
-        zip: origin.zip,
-        country: origin.country,
-        phone: origin.phone,
-        email: origin.email,
-      },
+      address_from: addressFrom,
       address_to: {
         name: to.name,
         street1: to.street1,

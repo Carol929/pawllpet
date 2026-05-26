@@ -31,6 +31,10 @@ afterEach(() => {
   vi.unstubAllGlobals()
   delete process.env.SHIPPO_API_KEY
   delete process.env.SHIPPO_ORIGIN_STREET
+  delete process.env.SHIPPO_ORIGIN_CITY
+  delete process.env.SHIPPO_ORIGIN_STATE
+  delete process.env.SHIPPO_ORIGIN_ZIP
+  delete process.env.SHIPPO_FROM_ADDRESS_ID
 })
 
 function jsonResponse(body: unknown, status = 200) {
@@ -151,6 +155,75 @@ describe('getShippoRates', () => {
         { weightLb: 1, lengthIn: 5, widthIn: 5, heightIn: 5 },
       ),
     ).rejects.toThrow(/SHIPPO_API_KEY/)
+  })
+
+  it('passes SHIPPO_FROM_ADDRESS_ID as a string when set (preferred over inline)', async () => {
+    process.env.SHIPPO_FROM_ADDRESS_ID = 'adr_test_default_sender'
+    // Inline env vars are still set but should be ignored when ID is present
+    fetchMock.mockReturnValueOnce(
+      jsonResponse({
+        object_id: 'shp_789',
+        status: 'SUCCESS',
+        rates: [
+          {
+            object_id: 'rate_x',
+            provider: 'USPS',
+            servicelevel: { name: 'Priority', token: 'usps_priority' },
+            amount: '7.00',
+            currency: 'USD',
+          },
+        ],
+      }),
+    )
+
+    await getShippoRates(
+      { name: 'X', street1: 'Y', city: 'Z', state: 'CA', zip: '90001' },
+      { weightLb: 1, lengthIn: 5, widthIn: 5, heightIn: 5 },
+    )
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string)
+    expect(body.address_from).toBe('adr_test_default_sender')
+    expect(typeof body.address_from).toBe('string')
+  })
+
+  it('falls back to inline address when SHIPPO_FROM_ADDRESS_ID is not set', async () => {
+    delete process.env.SHIPPO_FROM_ADDRESS_ID
+    fetchMock.mockReturnValueOnce(
+      jsonResponse({
+        object_id: 'shp_inline',
+        status: 'SUCCESS',
+        rates: [
+          {
+            object_id: 'rate_x',
+            provider: 'USPS',
+            servicelevel: { name: 'Priority', token: 'usps_priority' },
+            amount: '7.00',
+            currency: 'USD',
+          },
+        ],
+      }),
+    )
+
+    await getShippoRates(
+      { name: 'X', street1: 'Y', city: 'Z', state: 'CA', zip: '90001' },
+      { weightLb: 1, lengthIn: 5, widthIn: 5, heightIn: 5 },
+    )
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string)
+    expect(typeof body.address_from).toBe('object')
+    expect(body.address_from.street1).toBe('1500 Crystal Dr')
+  })
+
+  it('throws when neither SHIPPO_FROM_ADDRESS_ID nor SHIPPO_ORIGIN_STREET is set', async () => {
+    delete process.env.SHIPPO_FROM_ADDRESS_ID
+    delete process.env.SHIPPO_ORIGIN_STREET
+
+    await expect(
+      getShippoRates(
+        { name: 'X', street1: 'Y', city: 'Z', state: 'CA', zip: '90001' },
+        { weightLb: 1, lengthIn: 5, widthIn: 5, heightIn: 5 },
+      ),
+    ).rejects.toThrow(/SHIPPO_FROM_ADDRESS_ID|SHIPPO_ORIGIN_STREET/)
   })
 })
 
