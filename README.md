@@ -2,6 +2,8 @@
 
 PawLL Pet is a Next.js + Prisma ecommerce foundation that preserves the existing PawLL brand style/logo while expanding to modern ecommerce architecture.
 
+> **New here?** Read [CONTRIBUTING.md](./CONTRIBUTING.md) for local setup and branch workflow, and [CLAUDE.md](./CLAUDE.md) for codebase architecture and conventions.
+
 ## What exists now
 - Branded storefront route architecture: home, shop, product, collections, blog, policies, rewards, account, and admin shells.
 - Custom auth APIs (`/api/auth/register`, `/api/auth/login`, `/api/auth/me`, `/api/auth/logout`) with Prisma-backed user auth.
