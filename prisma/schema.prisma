@@ -73,6 +73,9 @@ model Product {
   price          Float    @default(0)
   compareAtPrice Float?
   weight         Float?   // Weight in lbs, used for shipping calculation
+  length         Float?   // Length in inches, used for Shippo rate quotes
+  width          Float?   // Width in inches, used for Shippo rate quotes
+  height         Float?   // Height in inches, used for Shippo rate quotes
   stock          Int      @default(0)
   rating         Float    @default(0)
   status         String   @default("draft") // "draft", "live", "archived"
@@ -165,6 +168,12 @@ model Order {
   shippingAddress Json
   stripeSessionId String?     @unique
   trackingNumber  String?
+  // Shippo integration fields (populated when SHIPPING_PROVIDER=shippo and label is purchased)
+  carrier                  String?     // e.g. 'usps', 'ups', 'fedex'
+  labelUrl                 String?     // PDF download link from Shippo
+  shippoTransactionId      String?     @unique // Shippo transaction ID (for idempotency / refunds)
+  shippoRateId             String?     // Rate ID selected at checkout
+  shippedAt                DateTime?   // When the label was purchased (= shipping started)
   cancellationReason       String?
   cancellationRequestedAt  DateTime?
   cancelledAt              DateTime?
