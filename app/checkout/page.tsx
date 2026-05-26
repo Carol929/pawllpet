@@ -8,7 +8,8 @@ import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { Product } from '@/lib/product-types'
 import { calculateTax } from '@/lib/tax-rates'
-import { calculateShipping, calculateTotalWeight, isShippingEligible, isPOBox, hasUnweighedItems } from '@/lib/shipping-rates'
+import { calculateTotalWeight, isShippingEligible, isPOBox, hasUnweighedItems } from '@/lib/shipping-rates'
+import type { ShippingRateOption } from '@/lib/shipping'
 import { StateSelect, formatPhone } from '@/components/StateSelect'
 import './checkout.css'
 
@@ -39,7 +40,12 @@ export default function CheckoutPage() {
 
   // Two-step flow
   const [addressConfirmed, setAddressConfirmed] = useState(false)
-  const [shippingMethod, setShippingMethod] = useState<'standard' | 'express'>('standard')
+
+  // Shipping options fetched from /api/shipping/rates after address confirmed.
+  // Replaces the previous hardcoded standard/express toggle.
+  const [shippingOptions, setShippingOptions] = useState<ShippingRateOption[]>([])
+  const [selectedRateId, setSelectedRateId] = useState<string | null>(null)
+  const [shippingLoading, setShippingLoading] = useState(false)
 
   // Read selected item keys from cart page
   const [selectedKeys] = useState<Set<string>>(() => {
@@ -89,16 +95,16 @@ export default function CheckoutPage() {
   const subtotal = cartProducts.reduce((sum, p) => sum + p.unitPrice * p.quantity, 0)
   const totalCount = cartProducts.reduce((sum, p) => sum + p.quantity, 0)
 
-  // Calculate weight, shipping, tax only after address confirmed
+  // Calculate weight, tax only after address confirmed.
+  // Shipping cost comes from the selected option fetched from /api/shipping/rates.
   const currentAddr = useNew ? form : savedAddrs[selectedSaved]
   const totalWeight = calculateTotalWeight(cartProducts.map(p => ({ quantity: p.quantity, weight: p.weight || undefined })))
-  const shippingInfo = calculateShipping(totalWeight, shippingMethod, subtotal)
-  const standardInfo = calculateShipping(totalWeight, 'standard', subtotal)
-  const expressInfo = calculateShipping(totalWeight, 'express', subtotal)
+  const selectedOption = shippingOptions.find(o => o.id === selectedRateId) || shippingOptions[0] || null
+  const shippingCost = selectedOption?.amount ?? 0
   const { rate: taxRate, amount: tax, stateAbbr: taxState } = addressConfirmed
     ? calculateTax(subtotal, currentAddr?.state || '')
     : { rate: 0, amount: 0, stateAbbr: '' }
-  const total = subtotal + shippingInfo.cost + tax
+  const total = subtotal + shippingCost + tax
 
   function setField(field: keyof Addr, val: string) {
     setForm(f => ({ ...f, [field]: val.trimStart() }))
@@ -131,7 +137,68 @@ export default function CheckoutPage() {
 
   function handleEditAddress() {
     setAddressConfirmed(false)
+    setShippingOptions([])
+    setSelectedRateId(null)
   }
+
+  // Fetch live shipping rates after address is confirmed.
+  // Routes through /api/shipping/rates which uses Shippo or legacy based on
+  // SHIPPING_PROVIDER. On Shippo failure the server falls back to legacy
+  // automatically — frontend doesn't need to know which path ran.
+  useEffect(() => {
+    if (!addressConfirmed) return
+    const addr = useNew ? form : savedAddrs[selectedSaved]
+    if (!addr) return
+    if (checkoutItems.length === 0) return
+
+    let cancelled = false
+    setShippingLoading(true)
+    setShippingOptions([])
+    setSelectedRateId(null)
+
+    fetch('/api/shipping/rates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: {
+          name: addr.fullName.trim(),
+          street1: addr.street.trim(),
+          street2: addr.street2?.trim() || undefined,
+          city: addr.city.trim(),
+          state: addr.state.trim(),
+          zip: addr.zip.trim(),
+          phone: addr.phone?.trim() || undefined,
+        },
+        items: checkoutItems.map(item => ({
+          productId: item.productId,
+          variantId: undefined,
+          quantity: item.quantity,
+        })),
+        subtotal,
+      }),
+    })
+      .then(async r => {
+        if (!r.ok) throw new Error((await r.json()).error || 'Could not load shipping rates')
+        return r.json()
+      })
+      .then((data: { options: ShippingRateOption[]; provider: string }) => {
+        if (cancelled) return
+        setShippingOptions(data.options)
+        // Pre-select cheapest (options come back sorted cheapest-first from server)
+        setSelectedRateId(data.options[0]?.id ?? null)
+      })
+      .catch(err => {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : 'Could not load shipping rates')
+      })
+      .finally(() => {
+        if (!cancelled) setShippingLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [addressConfirmed, useNew, selectedSaved, savedAddrs, form, checkoutItems, subtotal])
 
   async function handlePay() {
     const addr = useNew ? form : savedAddrs[selectedSaved]
@@ -162,7 +229,9 @@ export default function CheckoutPage() {
             return { productId: item.productId, quantity: item.quantity, variantId }
           }),
           shippingAddress: trimmed,
-          shippingMethod,
+          // Send the selected rate ID — the server will re-validate the price
+          // against Shippo (or legacy) so the user can't tamper with it.
+          shippingRateId: selectedRateId,
         }),
       })
       const data = await res.json()
@@ -245,31 +314,42 @@ export default function CheckoutPage() {
                 <button className="checkout-edit-addr" onClick={handleEditAddress}>Edit Address</button>
               </div>
 
-              {/* Shipping Method Selection */}
+              {/* Shipping Method Selection — populated from /api/shipping/rates */}
               <h2 style={{ marginTop: '1.5rem' }}>Shipping Method</h2>
               <div className="checkout-shipping-options">
-                <label className={`checkout-shipping-option ${shippingMethod === 'standard' ? 'checkout-shipping-option--active' : ''}`}>
-                  <input type="radio" name="shipping" checked={shippingMethod === 'standard'} onChange={() => setShippingMethod('standard')} />
-                  <div className="checkout-shipping-info">
-                    <Package size={18} />
-                    <div>
-                      <strong>{standardInfo.label}</strong>
-                      <span>{standardInfo.estimate}</span>
-                    </div>
-                  </div>
-                  <span className="checkout-shipping-price">{standardInfo.needsReview ? 'TBD' : standardInfo.cost === 0 ? 'FREE' : `$${standardInfo.cost.toFixed(2)}`}</span>
-                </label>
-                <label className={`checkout-shipping-option ${shippingMethod === 'express' ? 'checkout-shipping-option--active' : ''}`}>
-                  <input type="radio" name="shipping" checked={shippingMethod === 'express'} onChange={() => setShippingMethod('express')} />
-                  <div className="checkout-shipping-info">
-                    <Truck size={18} />
-                    <div>
-                      <strong>{expressInfo.label}</strong>
-                      <span>{expressInfo.estimate}</span>
-                    </div>
-                  </div>
-                  <span className="checkout-shipping-price">{expressInfo.needsReview ? 'TBD' : `$${expressInfo.cost.toFixed(2)}`}</span>
-                </label>
+                {shippingLoading && <p style={{ padding: '.75rem', color: '#666' }}>Loading shipping rates...</p>}
+                {!shippingLoading && shippingOptions.length === 0 && !error && (
+                  <p style={{ padding: '.75rem', color: '#666' }}>No shipping options available for this address.</p>
+                )}
+                {!shippingLoading && shippingOptions.map(opt => {
+                  const isExpress = opt.estimatedDays && opt.estimatedDays.max <= 3
+                  const estimate = opt.estimatedDays
+                    ? `${opt.estimatedDays.min}-${opt.estimatedDays.max} business days`
+                    : ''
+                  return (
+                    <label
+                      key={opt.id}
+                      className={`checkout-shipping-option ${selectedRateId === opt.id ? 'checkout-shipping-option--active' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="shipping"
+                        checked={selectedRateId === opt.id}
+                        onChange={() => setSelectedRateId(opt.id)}
+                      />
+                      <div className="checkout-shipping-info">
+                        {isExpress ? <Truck size={18} /> : <Package size={18} />}
+                        <div>
+                          <strong>{opt.displayName}</strong>
+                          <span>{estimate}</span>
+                        </div>
+                      </div>
+                      <span className="checkout-shipping-price">
+                        {opt.amount === 0 ? 'FREE' : `$${opt.amount.toFixed(2)}`}
+                      </span>
+                    </label>
+                  )
+                })}
               </div>
 
               {error && <p className="checkout-error">{error}</p>}
@@ -279,7 +359,12 @@ export default function CheckoutPage() {
           {/* Trust signals */}
           <div className="checkout-trust">
             <div className="checkout-trust-item"><ShieldCheck size={16} /> Secure checkout</div>
-            <div className="checkout-trust-item"><Truck size={16} /> {shippingInfo.estimate}</div>
+            <div className="checkout-trust-item">
+              <Truck size={16} />
+              {selectedOption?.estimatedDays
+                ? `${selectedOption.estimatedDays.min}-${selectedOption.estimatedDays.max} business days`
+                : '5-7 business days'}
+            </div>
             <div className="checkout-trust-item"><RotateCcw size={16} /> 30-day returns</div>
           </div>
         </div>
@@ -305,7 +390,7 @@ export default function CheckoutPage() {
             <div className="checkout-row"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
             <div className="checkout-row">
               <span>Shipping</span>
-              <span>{addressConfirmed ? (shippingInfo.needsReview ? 'TBD' : shippingInfo.cost === 0 ? 'FREE' : `$${shippingInfo.cost.toFixed(2)}`) : '—'}</span>
+              <span>{addressConfirmed && selectedOption ? (shippingCost === 0 ? 'FREE' : `$${shippingCost.toFixed(2)}`) : '—'}</span>
             </div>
             <div className="checkout-row">
               <span>Tax{addressConfirmed && taxRate > 0 ? ` (${taxState} ${(taxRate * 100).toFixed(1)}%)` : ''}</span>
@@ -317,22 +402,26 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {addressConfirmed ? (
-            shippingInfo.needsReview ? (
-              <div className="checkout-pay-placeholder" style={{ background: '#fff8e1', color: '#8b6914' }}>
-                Your order exceeds our standard shipping weight limit. We&apos;ll contact you with a custom shipping quote after you place your order — or email us at support@pawllpet.com.
-              </div>
-            ) : missingWeights ? (
-              <div className="checkout-pay-placeholder" style={{ background: '#fff8e1', color: '#8b6914' }}>
-                Some items are missing weight info. Shipping will be calculated after order review. You can still proceed — we&apos;ll confirm the final total by email.
-              </div>
-            ) : null
+          {addressConfirmed && missingWeights ? (
+            <div className="checkout-pay-placeholder" style={{ background: '#fff8e1', color: '#8b6914' }}>
+              Some items are missing weight info. Please contact support@pawllpet.com — we can&apos;t calculate shipping without weights.
+            </div>
           ) : null}
 
           {addressConfirmed ? (
-            <button className="checkout-pay-btn" onClick={handlePay} disabled={paying || shippingInfo.needsReview}>
+            <button
+              className="checkout-pay-btn"
+              onClick={handlePay}
+              disabled={paying || !selectedOption || shippingLoading}
+            >
               <Lock size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-              {paying ? 'REDIRECTING TO PAYMENT...' : shippingInfo.needsReview ? 'SHIPPING QUOTE REQUIRED' : `PAY $${total.toFixed(2)}`}
+              {paying
+                ? 'REDIRECTING TO PAYMENT...'
+                : shippingLoading
+                  ? 'LOADING SHIPPING...'
+                  : !selectedOption
+                    ? 'SHIPPING UNAVAILABLE'
+                    : `PAY $${total.toFixed(2)}`}
             </button>
           ) : (
             <div className="checkout-pay-placeholder">

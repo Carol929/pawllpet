@@ -20,6 +20,7 @@ import {
 } from '../shipping-rates'
 import {
   getCarrierTrackingUrl,
+  getShippoRateById,
   getShippoRates,
   purchaseShippoLabel,
 } from './shippo-client'
@@ -80,6 +81,37 @@ export async function getShippingOptions(args: {
   }
 
   return { options: computeLegacyOptions(items, subtotal), usedProvider: 'legacy' }
+}
+
+/**
+ * Re-validate a rate ID against the provider and return its current price.
+ *
+ * Called from /api/checkout — we never trust the client's `amount`.
+ * For legacy IDs, recomputes via the legacy table from cart weight + subtotal.
+ * For Shippo IDs, re-fetches from Shippo.
+ *
+ * Returns null if the ID is unrecognised or the rate has expired.
+ */
+export async function validateRateId(args: {
+  rateId: string
+  items: CartItemForShipping[]
+  subtotal: number
+}): Promise<ShippingRateOption | null> {
+  const { rateId, items, subtotal } = args
+  if (!rateId) return null
+
+  if (rateId.startsWith(LEGACY_RATE_PREFIX)) {
+    const legacy = computeLegacyOptions(items, subtotal)
+    return legacy.find((o) => o.id === rateId) || null
+  }
+
+  try {
+    return await getShippoRateById(rateId)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.warn(`[shipping] validateRateId(${rateId}) failed: ${msg}`)
+    return null
+  }
 }
 
 /**

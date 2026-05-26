@@ -11,6 +11,7 @@ export {
   getCarrierTrackingUrl,
   getShippingOptions,
   purchaseLabel,
+  validateRateId,
 } from './provider'
 
 export type {

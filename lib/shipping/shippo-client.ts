@@ -87,6 +87,15 @@ interface ShippoShipmentResponse {
   messages?: { source: string; code: string; text: string }[]
 }
 
+interface ShippoRateDetail {
+  object_id: string
+  provider: string
+  servicelevel: { name: string; token: string }
+  amount: string
+  currency: string
+  estimated_days?: number
+}
+
 interface ShippoTransactionResponse {
   object_id: string
   status: 'SUCCESS' | 'ERROR' | 'WAITING' | 'QUEUED'
@@ -173,6 +182,30 @@ export async function getShippoRates(
           : undefined,
     }
   })
+}
+
+/**
+ * Re-fetch a Shippo rate by its object_id.
+ *
+ * Used by /api/checkout to validate the price the client sent — we never
+ * trust the client's `amount` field, we re-fetch from Shippo and use that.
+ */
+export async function getShippoRateById(rateId: string): Promise<ShippingRateOption> {
+  const r = await shippoFetch<ShippoRateDetail>(`/rates/${encodeURIComponent(rateId)}/`)
+  const serviceName = r.servicelevel?.name || r.servicelevel?.token || 'Standard'
+  return {
+    id: r.object_id,
+    provider: 'shippo',
+    carrier: r.provider.toLowerCase(),
+    service: serviceName,
+    displayName: `${r.provider} ${serviceName}`,
+    amount: parseFloat(r.amount),
+    currency: 'USD',
+    estimatedDays:
+      typeof r.estimated_days === 'number' && r.estimated_days > 0
+        ? { min: r.estimated_days, max: r.estimated_days + 1 }
+        : undefined,
+  }
 }
 
 /**
