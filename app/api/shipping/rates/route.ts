@@ -1,5 +1,9 @@
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+// Shippo's synchronous rate call queries every enabled carrier and can take
+// well over the 10s Vercel default. Allow up to 30s so the request completes
+// instead of the connection being dropped ("Failed to fetch" on the client).
+export const maxDuration = 30
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'

@@ -1,9 +1,11 @@
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+export const maxDuration = 30
 
 import { NextResponse } from 'next/server'
 import { getActiveProvider } from '@/lib/shipping'
 import { getShippoRates } from '@/lib/shipping/shippo-client'
+import { prisma } from '@/lib/db'
 
 /**
  * GET /api/shipping/diagnostic
@@ -45,9 +47,12 @@ export async function GET() {
     providerReason = 'Provider resolves to Shippo. Running a live test rate call below.'
   }
 
-  // Live test: only attempt if the provider would actually use Shippo
+  // Live test: only attempt if the provider would actually use Shippo.
+  // We time the call so we can tell whether Vercel's function timeout is the
+  // culprit behind "Failed to fetch" on the real checkout.
   let liveTest: Record<string, unknown> = { skipped: true, reason: 'provider is not shippo' }
   if (activeProvider === 'shippo') {
+    const startedAt = performance.now()
     try {
       const rates = await getShippoRates(
         {
@@ -61,6 +66,7 @@ export async function GET() {
       )
       liveTest = {
         ok: true,
+        elapsedMs: Math.round(performance.now() - startedAt),
         ratesReturned: rates.length,
         sample: rates.slice(0, 5).map((r) => ({
           carrier: r.carrier,
@@ -71,8 +77,68 @@ export async function GET() {
     } catch (err) {
       liveTest = {
         ok: false,
+        elapsedMs: Math.round(performance.now() - startedAt),
         error: err instanceof Error ? err.message : String(err),
       }
+    }
+  }
+
+  // Real-path test: replicate exactly what /api/shipping/rates does for a real
+  // product — load a live product from the DB, then quote Shippo with its real
+  // weight/dimensions. This catches DB issues and slow real-product quotes that
+  // the hardcoded liveTest above wouldn't surface.
+  let realPathTest: Record<string, unknown> = { skipped: true }
+  try {
+    const dbStart = performance.now()
+    const product = await prisma.product.findFirst({
+      where: { status: 'live' },
+      select: { id: true, name: true, weight: true, length: true, width: true, height: true },
+    })
+    const dbMs = Math.round(performance.now() - dbStart)
+
+    if (!product) {
+      realPathTest = { skipped: true, reason: 'no live product found' }
+    } else if (!product.weight || product.weight <= 0) {
+      realPathTest = {
+        ok: false,
+        reason: 'product is missing weight — /api/shipping/rates returns a 400 for this',
+        product: { name: product.name, weight: product.weight },
+        dbMs,
+      }
+    } else if (activeProvider === 'shippo') {
+      const quoteStart = performance.now()
+      try {
+        const rates = await getShippoRates(
+          { name: 'Diagnostic Test', street1: '1600 Amphitheatre Pkwy', city: 'Mountain View', state: 'CA', zip: '94043' },
+          {
+            weightLb: product.weight,
+            lengthIn: product.length ?? 6,
+            widthIn: product.width ?? 4,
+            heightIn: product.height ?? 2,
+          },
+        )
+        realPathTest = {
+          ok: true,
+          product: { name: product.name, weight: product.weight, length: product.length, width: product.width, height: product.height },
+          dbMs,
+          quoteMs: Math.round(performance.now() - quoteStart),
+          ratesReturned: rates.length,
+        }
+      } catch (err) {
+        realPathTest = {
+          ok: false,
+          product: { name: product.name, weight: product.weight },
+          dbMs,
+          quoteMs: Math.round(performance.now() - quoteStart),
+          error: err instanceof Error ? err.message : String(err),
+        }
+      }
+    }
+  } catch (err) {
+    realPathTest = {
+      ok: false,
+      stage: 'db',
+      error: err instanceof Error ? err.message : String(err),
     }
   }
 
@@ -82,6 +148,7 @@ export async function GET() {
       providerReason,
       env,
       liveTest,
+      realPathTest,
       note: 'This is a temporary POC diagnostic. It does not expose the API key value.',
     },
     { status: 200 },

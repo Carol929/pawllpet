@@ -1,5 +1,9 @@
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+// The webhook buys a Shippo label synchronously (another network round-trip)
+// on top of DB writes and emails. Allow headroom over the 10s default so the
+// label purchase isn't cut off mid-flight.
+export const maxDuration = 30
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'

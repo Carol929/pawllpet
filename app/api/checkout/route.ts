@@ -1,5 +1,8 @@
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+// Checkout re-validates the selected Shippo rate (a network call to Shippo)
+// before creating the Stripe session. Allow headroom over the 10s default.
+export const maxDuration = 30
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
