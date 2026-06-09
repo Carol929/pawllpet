@@ -108,6 +108,19 @@ interface ShippoTransactionResponse {
 /* ---------- Public API ---------- */
 
 /**
+ * Format a measurement (weight/length) for Shippo's API.
+ *
+ * Shippo rejects numbers with more than 10 total digits. Product weights in
+ * our DB can carry long floating-point tails (e.g. 1.000899486763435), so we
+ * round to 2 decimals and strip trailing zeros: "10" stays "10", 2.5 stays
+ * "2.5", and 1.000899… becomes "1". 0.01 lb / 0.01 in resolution is far finer
+ * than any carrier needs.
+ */
+function fmtMeasure(n: number): string {
+  return Number(n.toFixed(2)).toString()
+}
+
+/**
  * Fetch live rates from Shippo for a given destination + parcel.
  *
  * Throws on configuration errors, network errors, or Shippo API errors.
@@ -146,11 +159,11 @@ export async function getShippoRates(
       },
       parcels: [
         {
-          length: parcel.lengthIn.toString(),
-          width: parcel.widthIn.toString(),
-          height: parcel.heightIn.toString(),
+          length: fmtMeasure(parcel.lengthIn),
+          width: fmtMeasure(parcel.widthIn),
+          height: fmtMeasure(parcel.heightIn),
           distance_unit: 'in',
-          weight: parcel.weightLb.toString(),
+          weight: fmtMeasure(parcel.weightLb),
           mass_unit: 'lb',
         },
       ],
