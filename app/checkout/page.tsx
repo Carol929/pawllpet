@@ -106,6 +106,18 @@ export default function CheckoutPage() {
     : { rate: 0, amount: 0, stateAbbr: '' }
   const total = subtotal + shippingCost + tax
 
+  // Stable, value-based dependency keys for the shipping-rates effect below.
+  // checkoutItems is a fresh array on every render (items.filter), and
+  // form/savedAddrs are objects — depending on them directly re-ran the effect
+  // every render, causing an infinite /api/shipping/rates refetch loop (which
+  // exhausted the DB connection pool and tripped Shippo's 429 rate limit).
+  // Serializing to strings makes the effect re-run only when the address or
+  // item set actually changes.
+  const ratesAddrKey = currentAddr
+    ? [currentAddr.fullName, currentAddr.street, currentAddr.street2, currentAddr.city, currentAddr.state, currentAddr.zip].join('|')
+    : ''
+  const ratesItemsKey = checkoutItems.map(i => `${i.productId}:${i.quantity}`).join(',')
+
   function setField(field: keyof Addr, val: string) {
     setForm(f => ({ ...f, [field]: val.trimStart() }))
   }
@@ -198,7 +210,10 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true
     }
-  }, [addressConfirmed, useNew, selectedSaved, savedAddrs, form, checkoutItems, subtotal])
+    // Depend on serialized keys (not the array/object references) so this runs
+    // only when the address or items actually change — see ratesAddrKey above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addressConfirmed, ratesAddrKey, ratesItemsKey, subtotal])
 
   async function handlePay() {
     const addr = useNew ? form : savedAddrs[selectedSaved]
