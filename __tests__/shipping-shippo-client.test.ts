@@ -113,6 +113,43 @@ describe('getShippoRates', () => {
     expect(rates[1].carrier).toBe('ups')
   })
 
+  it('rounds long floating-point weights/dimensions to satisfy Shippo 10-digit limit', async () => {
+    // Regression: DB product weights can carry long float tails like
+    // 1.000899486763435, which Shippo rejects with
+    // "Ensure that there are no more than 10 digits in total." We round to 2dp.
+    fetchMock.mockReturnValueOnce(
+      jsonResponse({
+        object_id: 'shp_round',
+        status: 'SUCCESS',
+        rates: [
+          {
+            object_id: 'r1',
+            provider: 'USPS',
+            servicelevel: { name: 'Ground Advantage', token: 'usps_ga' },
+            amount: '5.20',
+            currency: 'USD',
+          },
+        ],
+      }),
+    )
+
+    await getShippoRates(
+      { name: 'X', street1: 'Y', city: 'Z', state: 'CA', zip: '90001' },
+      { weightLb: 1.000899486763435, lengthIn: 8.333333333, widthIn: 6, heightIn: 4.5 },
+    )
+
+    const parcel = JSON.parse(fetchMock.mock.calls[0][1].body as string).parcels[0]
+    expect(parcel.weight).toBe('1')
+    expect(parcel.length).toBe('8.33')
+    expect(parcel.width).toBe('6')
+    expect(parcel.height).toBe('4.5')
+    // No field may exceed 10 total digits
+    for (const field of ['weight', 'length', 'width', 'height'] as const) {
+      const digits = parcel[field].replace(/[^0-9]/g, '').length
+      expect(digits).toBeLessThanOrEqual(10)
+    }
+  })
+
   it('throws when Shippo returns 0 rates', async () => {
     fetchMock.mockReturnValueOnce(
       jsonResponse({
