@@ -79,16 +79,27 @@ export async function POST(request: NextRequest) {
 
   // Load product weights + dimensions
   const productIds = Array.from(new Set(items.map((i) => i.productId)))
-  const products = await prisma.product.findMany({
-    where: { id: { in: productIds }, status: 'live' },
-    select: {
-      id: true,
-      weight: true,
-      length: true,
-      width: true,
-      height: true,
-    },
-  })
+  let products
+  try {
+    products = await prisma.product.findMany({
+      where: { id: { in: productIds }, status: 'live' },
+      select: {
+        id: true,
+        weight: true,
+        length: true,
+        width: true,
+        height: true,
+      },
+    })
+  } catch (err) {
+    // Transient DB issues (e.g. connection pool exhaustion) shouldn't crash
+    // the route with an unhandled 500 — return a clean retryable error.
+    console.error('[shipping/rates] DB error loading products:', err)
+    return NextResponse.json(
+      { error: 'Unable to calculate shipping right now. Please try again in a moment.' },
+      { status: 503 },
+    )
+  }
   const productMap = new Map(products.map((p) => [p.id, p]))
 
   const enrichedItems = items.map((item) => {
