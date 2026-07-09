@@ -46,7 +46,7 @@ export default function Header() {
   const router = useRouter()
   const { locale, setLocale, t } = useLocale()
   const { user, loading: authLoading, logout } = useAuth()
-  const { totalItems, clearCart } = useCart()
+  const { totalItems } = useCart()
   const { wishlistIds } = useWishlist()
   const [scrolled, setScrolled] = useState(false)
 
@@ -107,8 +107,10 @@ export default function Header() {
   }
 
   function handleLogout() {
+    // Don't clear the cart here: it's namespaced per user and should survive a
+    // logout so it's still there next time this user signs in. The cart context
+    // resets the in-memory view to empty when the user becomes null.
     logout()
-    clearCart()
     setUserMenuOpen(false)
     setMobileMenuOpen(false)
     router.push('/')
@@ -233,7 +235,9 @@ export default function Header() {
             </button>
             {langMenuOpen && (
               <div className="lang-dropdown">
-                {([['en', 'English'], ['es', 'Español'], ['fr', 'Français'], ['zh', '中文'], ['ja', '日本語'], ['ko', '한국어']] as const).map(([code, name]) => (
+                {/* Only locales with actual translations. es/fr/ja/ko were
+                    listed but had no strings and fell back to other languages. */}
+                {([['en', 'English'], ['zh', '中文']] as const).map(([code, name]) => (
                   <button key={code} className={`lang-option ${locale === code ? 'lang-option--active' : ''}`} onClick={() => { setLocale(code as any); setLangMenuOpen(false) }}>
                     {name}
                   </button>
@@ -319,10 +323,6 @@ export default function Header() {
             <select className="mobile-lang-select" value={locale} onChange={e => setLocale(e.target.value as any)}>
               <option value="en">English</option>
               <option value="zh">中文</option>
-              <option value="es">Español</option>
-              <option value="fr">Français</option>
-              <option value="ja">日本語</option>
-              <option value="ko">한국어</option>
             </select>
           </div>
         </div>
