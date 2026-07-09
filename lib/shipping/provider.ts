@@ -17,10 +17,10 @@ import {
   calculateShipping,
   calculateTotalWeight,
   isShippingEligible,
+  FREE_STANDARD_THRESHOLD,
 } from '../shipping-rates'
 import {
   getCarrierTrackingUrl,
-  getShippoRateById,
   getShippoRates,
   purchaseShippoLabel,
 } from './shippo-client'
@@ -71,6 +71,11 @@ export async function getShippingOptions(args: {
       const rates = await getShippoRates(to, parcel)
       // Sort cheapest first
       rates.sort((a, b) => a.amount - b.amount)
+      // Honor the same free-standard-shipping promise the legacy table (and the
+      // storefront UI) make: at/above the threshold the cheapest option ships
+      // free. Without this, a customer who crossed $80 because the site told
+      // them to would still be quoted paid Shippo rates.
+      applyFreeStandardShipping(rates, subtotal)
       return { options: rates, usedProvider: 'shippo' }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -84,20 +89,30 @@ export async function getShippingOptions(args: {
 }
 
 /**
- * Re-validate a rate ID against the provider and return its current price.
+ * Re-validate a selected rate against the provider and return its authoritative
+ * price. Called from /api/checkout — we never trust the client's `amount`.
  *
- * Called from /api/checkout — we never trust the client's `amount`.
- * For legacy IDs, recomputes via the legacy table from cart weight + subtotal.
- * For Shippo IDs, re-fetches from Shippo.
+ * For legacy IDs, recomputes via the legacy table from the server's cart weight
+ * + subtotal.
  *
- * Returns null if the ID is unrecognised or the rate has expired.
+ * For Shippo IDs, we do NOT simply re-fetch the rate by id: that id may have
+ * been minted (via the public /api/shipping/rates) for a lighter parcel or a
+ * different destination, then replayed here to underpay. Instead we re-quote
+ * Shippo for THIS cart + destination and match the client's selection by
+ * carrier + service, using the freshly-quoted amount and id. A rate that
+ * doesn't correspond to a current option for the real shipment is rejected.
+ *
+ * Returns null if the selection can't be matched to a current option.
  */
 export async function validateRateId(args: {
   rateId: string
   items: CartItemForShipping[]
   subtotal: number
+  to?: ShippingAddress
+  carrier?: string
+  service?: string
 }): Promise<ShippingRateOption | null> {
-  const { rateId, items, subtotal } = args
+  const { rateId, items, subtotal, to, carrier, service } = args
   if (!rateId) return null
 
   if (rateId.startsWith(LEGACY_RATE_PREFIX)) {
@@ -105,8 +120,24 @@ export async function validateRateId(args: {
     return legacy.find((o) => o.id === rateId) || null
   }
 
+  // Shippo path — re-quote for the true shipment and match the selection.
+  if (!to) return null
   try {
-    return await getShippoRateById(rateId)
+    const { options } = await getShippingOptions({ to, items, subtotal })
+    // Exact id match wins (same shipment quote); otherwise fall back to matching
+    // the selected carrier + service among the freshly-quoted options.
+    const byId = options.find((o) => o.id === rateId)
+    if (byId) return byId
+    if (carrier && service) {
+      const match = options.find(
+        (o) =>
+          o.provider === 'shippo' &&
+          o.carrier.toLowerCase() === carrier.toLowerCase() &&
+          o.service.toLowerCase() === service.toLowerCase(),
+      )
+      if (match) return match
+    }
+    return null
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.warn(`[shipping] validateRateId(${rateId}) failed: ${msg}`)
@@ -161,6 +192,22 @@ function buildParcel(items: CartItemForShipping[]) {
     lengthIn: Math.max(maxLength, 6),
     widthIn: Math.max(maxWidth, 4),
     heightIn: Math.max(maxHeight, 2),
+  }
+}
+
+/**
+ * Apply the free-standard-shipping promotion to a set of Shippo options.
+ *
+ * At/above the threshold the cheapest option (already sorted first) is set to
+ * $0 and relabelled. The merchant still buys the real label after payment — the
+ * free shipping is absorbed, exactly like the legacy table's free tier.
+ */
+function applyFreeStandardShipping(rates: ShippingRateOption[], subtotal: number) {
+  if (subtotal < FREE_STANDARD_THRESHOLD || rates.length === 0) return
+  const cheapest = rates[0]
+  cheapest.amount = 0
+  if (!/free/i.test(cheapest.displayName)) {
+    cheapest.displayName = `${cheapest.displayName} (Free)`
   }
 }
 

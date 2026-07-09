@@ -117,6 +117,8 @@ describe('getShippoRates', () => {
     // Regression: DB product weights can carry long float tails like
     // 1.000899486763435, which Shippo rejects with
     // "Ensure that there are no more than 10 digits in total." We round to 2dp.
+    // Weight rounds UP (never under-declare shipping weight); dimensions round
+    // to nearest.
     fetchMock.mockReturnValueOnce(
       jsonResponse({
         object_id: 'shp_round',
@@ -139,7 +141,7 @@ describe('getShippoRates', () => {
     )
 
     const parcel = JSON.parse(fetchMock.mock.calls[0][1].body as string).parcels[0]
-    expect(parcel.weight).toBe('1')
+    expect(parcel.weight).toBe('1.01') // rounded UP from 1.0009 so we never under-declare
     expect(parcel.length).toBe('8.33')
     expect(parcel.width).toBe('6')
     expect(parcel.height).toBe('4.5')
@@ -148,6 +150,24 @@ describe('getShippoRates', () => {
       const digits = parcel[field].replace(/[^0-9]/g, '').length
       expect(digits).toBeLessThanOrEqual(10)
     }
+  })
+
+  it('rounds weight UP to the next 0.01 lb (carrier tiers bill rounded-up weight)', async () => {
+    fetchMock.mockReturnValueOnce(
+      jsonResponse({
+        object_id: 'shp_ceil',
+        status: 'SUCCESS',
+        rates: [{ object_id: 'r1', provider: 'USPS', servicelevel: { name: 'GA', token: 'ga' }, amount: '5.20', currency: 'USD' }],
+      }),
+    )
+
+    await getShippoRates(
+      { name: 'X', street1: 'Y', city: 'Z', state: 'CA', zip: '90001' },
+      { weightLb: 0.501, lengthIn: 6, widthIn: 4, heightIn: 2 },
+    )
+
+    const parcel = JSON.parse(fetchMock.mock.calls[0][1].body as string).parcels[0]
+    expect(parcel.weight).toBe('0.51') // 0.501 → up to 0.51, never down to 0.5
   })
 
   it('throws when Shippo returns 0 rates', async () => {

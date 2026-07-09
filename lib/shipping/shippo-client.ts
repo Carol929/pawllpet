@@ -50,15 +50,30 @@ function getOrigin(): ShippoOrigin {
   return { name, street1, city, state, zip, country: 'US', phone, email }
 }
 
+// Cap Shippo calls so a hung connection becomes a catchable error well within
+// the route's 30s budget — otherwise the provider's legacy fallback (which only
+// runs when Shippo *throws*) never fires and the whole request is killed by
+// Vercel instead.
+const SHIPPO_TIMEOUT_MS = 20000
+
 async function shippoFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${SHIPPO_API_BASE}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `ShippoToken ${getApiKey()}`,
-      'Content-Type': 'application/json',
-      ...(init?.headers || {}),
-    },
-  })
+  let res: Response
+  try {
+    res = await fetch(`${SHIPPO_API_BASE}${path}`, {
+      ...init,
+      headers: {
+        Authorization: `ShippoToken ${getApiKey()}`,
+        'Content-Type': 'application/json',
+        ...(init?.headers || {}),
+      },
+      signal: AbortSignal.timeout(SHIPPO_TIMEOUT_MS),
+    })
+  } catch (err) {
+    if (err instanceof Error && err.name === 'TimeoutError') {
+      throw new Error(`Shippo ${path} timed out after ${SHIPPO_TIMEOUT_MS}ms`)
+    }
+    throw err
+  }
 
   if (!res.ok) {
     const body = await res.text().catch(() => '')
@@ -108,16 +123,27 @@ interface ShippoTransactionResponse {
 /* ---------- Public API ---------- */
 
 /**
- * Format a measurement (weight/length) for Shippo's API.
+ * Format a dimension (length/width/height) for Shippo's API.
  *
- * Shippo rejects numbers with more than 10 total digits. Product weights in
- * our DB can carry long floating-point tails (e.g. 1.000899486763435), so we
+ * Shippo rejects numbers with more than 10 total digits. Product dimensions in
+ * our DB can carry long floating-point tails (e.g. 6.000899486763435), so we
  * round to 2 decimals and strip trailing zeros: "10" stays "10", 2.5 stays
- * "2.5", and 1.000899… becomes "1". 0.01 lb / 0.01 in resolution is far finer
- * than any carrier needs.
+ * "2.5", and 6.000899… becomes "6". 0.01 in resolution is far finer than any
+ * carrier needs. Nearest rounding is fine for dimensions.
  */
 function fmtMeasure(n: number): string {
   return Number(n.toFixed(2)).toString()
+}
+
+/**
+ * Format a WEIGHT for Shippo's API — same digit-limit handling as fmtMeasure,
+ * but rounds UP to the next 0.01 lb. Carriers bill on rounded-up weight tiers,
+ * so declaring even 0.005 lb less than actual risks quoting the parcel in a
+ * lower tier than it ships in, leaving the merchant to eat the carrier's
+ * weight-adjustment fee. Rounding up is the safe direction.
+ */
+function fmtWeight(n: number): string {
+  return (Math.ceil(n * 100) / 100).toString()
 }
 
 /**
@@ -163,7 +189,7 @@ export async function getShippoRates(
           width: fmtMeasure(parcel.widthIn),
           height: fmtMeasure(parcel.heightIn),
           distance_unit: 'in',
-          weight: fmtMeasure(parcel.weightLb),
+          weight: fmtWeight(parcel.weightLb),
           mass_unit: 'lb',
         },
       ],
