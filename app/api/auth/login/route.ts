@@ -10,6 +10,7 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { SignJWT } from 'jose'
 import { getJwtSecret } from '@/lib/jwt'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 // 登录表单验证schema
 const loginSchema = z.object({
@@ -34,6 +35,17 @@ export async function POST(request: NextRequest) {
 
     // 验证输入数据
     const validatedData = loginSchema.parse(body)
+
+    // 限流：防止密码暴力破解
+    const ip = clientIp(request)
+    const byId = rateLimit(`login:id:${validatedData.usernameOrEmail.toLowerCase()}`, 10, 15 * 60 * 1000)
+    const byIp = rateLimit(`login:ip:${ip}`, 50, 15 * 60 * 1000)
+    if (!byId.ok || !byIp.ok) {
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.max(byId.retryAfterSeconds, byIp.retryAfterSeconds)) } }
+      )
+    }
 
     // 查找用户（通过username或email）
     const user = await prisma.user.findFirst({

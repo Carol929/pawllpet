@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs'
 import { SignJWT } from 'jose'
 import { z } from 'zod'
 import { getJwtSecret } from '@/lib/jwt'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 const schema = z.object({
   email: z.string().email(),
@@ -25,9 +26,21 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { email, code, newPassword } = schema.parse(body)
 
+    // Throttle brute force of the 6-digit code.
+    const ip = clientIp(request)
+    const byEmail = rateLimit(`verify-and-login:email:${email}`, 5, 15 * 60 * 1000)
+    const byIp = rateLimit(`verify-and-login:ip:${ip}`, 30, 15 * 60 * 1000)
+    if (!byEmail.ok || !byIp.ok) {
+      return NextResponse.json({ error: 'Too many attempts. Please request a new code and try again later.' }, {
+        status: 429,
+        headers: { 'Retry-After': String(Math.max(byEmail.retryAfterSeconds, byIp.retryAfterSeconds)) },
+      })
+    }
+
     const user = await prisma.user.findUnique({ where: { email } })
+    // Generic error for unknown email and wrong code alike, to avoid enumeration.
     if (!user) {
-      return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Invalid or expired verification code' }, { status: 400 })
     }
     if (user.isBlocked) {
       return NextResponse.json({ error: 'Account is blocked' }, { status: 403 })
@@ -35,14 +48,14 @@ export async function POST(request: NextRequest) {
 
     const token = await prisma.emailVerificationToken.findUnique({ where: { userId: user.id } })
     if (!token) {
-      return NextResponse.json({ error: 'No verification code found' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid or expired verification code' }, { status: 400 })
     }
     if (token.expires < new Date()) {
       await prisma.emailVerificationToken.delete({ where: { userId: user.id } })
-      return NextResponse.json({ error: 'Code expired. Please request a new one.' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid or expired verification code' }, { status: 400 })
     }
     if (token.token !== code) {
-      return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid or expired verification code' }, { status: 400 })
     }
 
     const updateData: Record<string, unknown> = { lastLoginAt: new Date() }
