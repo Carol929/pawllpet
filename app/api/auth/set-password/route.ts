@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import { z } from 'zod'
 import { getJwtSecret } from '@/lib/jwt'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 const passwordSchema = z.string()
   .min(8, 'Password must be at least 8 characters')
@@ -17,6 +18,7 @@ const passwordSchema = z.string()
 
 const emailSchema = z.object({
   email: z.string().email(),
+  code: z.string().length(6, 'Code must be 6 digits'),
   password: passwordSchema,
 })
 
@@ -25,12 +27,10 @@ const authSchema = z.object({
 })
 
 async function getUserIdFromToken(request: NextRequest): Promise<string | null> {
-  const cookieHeader = request.headers.get('cookie')
-  if (!cookieHeader) return null
-  const match = cookieHeader.match(/auth-token=([^;]+)/)
-  if (!match) return null
+  const token = request.cookies.get('auth-token')?.value
+  if (!token) return null
   try {
-    const { payload } = await jwtVerify(match[1], getJwtSecret())
+    const { payload } = await jwtVerify(token, getJwtSecret())
     return payload.userId as string
   } catch {
     return null
@@ -42,8 +42,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     let user
+    let consumeTokenUserId: string | null = null
 
-    // Try JWT auth first (logged-in user from account page)
+    // Try JWT auth first (logged-in user setting a password for the first time,
+    // e.g. a Google account adding email/password login from their account page).
     const userId = await getUserIdFromToken(request)
     if (userId) {
       const { password } = authSchema.parse(body)
@@ -56,23 +58,60 @@ export async function POST(request: NextRequest) {
       }
       body._password = password
     } else {
-      // Fall back to email-based flow (post-registration)
-      const { email, password } = emailSchema.parse(body)
+      // Unauthenticated post-registration flow. This must prove ownership of the
+      // email — an emailVerified flag alone is NOT proof, since it is true for
+      // every Google/code-verified account. Require the single-use verification
+      // code so an attacker who only knows the victim's email cannot set a
+      // password and take over the account.
+      const { email, code, password } = emailSchema.parse(body)
+
+      // Throttle brute force of the 6-digit code.
+      const ip = clientIp(request)
+      const byEmail = rateLimit(`set-password:email:${email}`, 5, 15 * 60 * 1000)
+      const byIp = rateLimit(`set-password:ip:${ip}`, 20, 15 * 60 * 1000)
+      if (!byEmail.ok || !byIp.ok) {
+        return NextResponse.json({ error: 'Too many attempts. Please request a new code and try again later.' }, {
+          status: 429,
+          headers: { 'Retry-After': String(Math.max(byEmail.retryAfterSeconds, byIp.retryAfterSeconds)) },
+        })
+      }
+
       user = await prisma.user.findUnique({ where: { email } })
       if (!user) {
-        return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+        return NextResponse.json({ error: 'Invalid or expired verification code' }, { status: 400 })
       }
       if (!user.emailVerified) {
         return NextResponse.json({ error: 'Please verify your email first' }, { status: 403 })
       }
+      if (user.password) {
+        // First-time set only; password resets go through forgot-password.
+        return NextResponse.json({ error: 'Password already set. Use forgot password instead.' }, { status: 400 })
+      }
+
+      const token = await prisma.emailVerificationToken.findUnique({ where: { userId: user.id } })
+      if (!token || token.expires < new Date() || token.token !== code) {
+        return NextResponse.json({ error: 'Invalid or expired verification code' }, { status: 400 })
+      }
+
+      consumeTokenUserId = user.id
       body._password = password
     }
 
     const hashedPassword = await bcrypt.hash(body._password, 10)
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { password: hashedPassword, lastLoginAt: new Date() },
-    })
+    if (consumeTokenUserId) {
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: user.id },
+          data: { password: hashedPassword, lastLoginAt: new Date() },
+        }),
+        prisma.emailVerificationToken.delete({ where: { userId: consumeTokenUserId } }),
+      ])
+    } else {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword, lastLoginAt: new Date() },
+      })
+    }
 
     const token = await new SignJWT({ userId: user.id, role: user.role })
       .setProtectedHeader({ alg: 'HS256' })

@@ -12,6 +12,7 @@ export default function SetPasswordPage() {
   const { t } = useLocale()
   const { login: setAuthUser } = useAuth()
   const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -21,6 +22,8 @@ export default function SetPasswordPage() {
     const params = new URLSearchParams(window.location.search)
     const emailParam = params.get('email')
     if (emailParam) setEmail(emailParam)
+    const codeParam = params.get('code')
+    if (codeParam) setCode(codeParam)
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -32,12 +35,17 @@ export default function SetPasswordPage() {
       return
     }
 
+    if (!code) {
+      setError('Missing verification code. Please verify your email again.')
+      return
+    }
+
     setLoading(true)
     try {
       const res = await fetch('/api/auth/set-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, code, password }),
       })
 
       const data = await res.json()
