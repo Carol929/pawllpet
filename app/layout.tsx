@@ -5,6 +5,7 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { Providers } from '@/components/Providers'
 import { AdminRouteGuard } from '@/components/AdminRouteGuard'
+import { ScrollProgress } from '@/components/ScrollProgress'
 
 // The site names "Inter" in CSS but never bundled it, so it silently rendered
 // in system-ui. next/font self-hosts it (no external request, no layout shift).
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {/* Skip to content — accessibility */}
         <a href="#main-content" className="skip-to-content">Skip to main content</a>
+        <ScrollProgress />
         <Providers>
           <AdminRouteGuard
             header={<Header />}
