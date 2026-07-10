@@ -1,19 +1,20 @@
 'use client'
 
-import { useState, memo } from 'react'
+import { useState, useCallback, memo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { ShoppingCart, Check, Heart } from 'lucide-react'
+import { ShoppingCart, Check, Heart, Eye } from 'lucide-react'
 import { Product } from '@/lib/product-types'
 import { useLocale } from '@/lib/i18n'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { useWishlist } from '@/lib/wishlist-context'
 import { useReveal } from '@/lib/use-reveal'
+import { QuickView } from '@/components/QuickView'
 
-const ProductCard = memo(function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
-  const { t } = useLocale()
+const ProductCard = memo(function ProductCard({ product, index = 0, onQuickView }: { product: Product; index?: number; onQuickView: (p: Product) => void }) {
+  const { t, locale } = useLocale()
   const { addItem } = useCart()
   const { user } = useAuth()
   const { toggle, isWished } = useWishlist()
@@ -56,6 +57,13 @@ const ProductCard = memo(function ProductCard({ product, index = 0 }: { product:
         <Link href={`/products/${product.slug}`} className="product-image-link" aria-label={product.name}>
           <Image src={product.image} alt={product.name} width={320} height={320} sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, 25vw" className="product-image" />
         </Link>
+        <button
+          className="product-quickview-btn"
+          onClick={() => onQuickView(product)}
+          aria-label={`Quick view ${product.name}`}
+        >
+          <Eye size={15} /> {locale === 'zh' ? '快速查看' : 'Quick View'}
+        </button>
         {user && (
           <button
             className={`product-wishlist-btn ${isWished(product.id) ? 'product-wishlist-btn--active' : ''}`}
@@ -92,14 +100,20 @@ const ProductCard = memo(function ProductCard({ product, index = 0 }: { product:
 
 export function ProductGrid({ items }: { items: Product[] }) {
   const { t } = useLocale()
+  const [quickView, setQuickView] = useState<Product | null>(null)
+  const openQuickView = useCallback((p: Product) => setQuickView(p), [])
+
   if (items.length === 0) {
     return <p style={{ textAlign: 'center', color: '#888', padding: '2rem 0' }}>{t('home', 'noProductsFound')}</p>
   }
   return (
-    <div className="products-grid">
-      {items.map((product, i) => (
-        <ProductCard key={product.id} product={product} index={i} />
-      ))}
-    </div>
+    <>
+      <div className="products-grid">
+        {items.map((product, i) => (
+          <ProductCard key={product.id} product={product} index={i} onQuickView={openQuickView} />
+        ))}
+      </div>
+      {quickView && <QuickView product={quickView} onClose={() => setQuickView(null)} />}
+    </>
   )
 }
