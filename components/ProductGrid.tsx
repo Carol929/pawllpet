@@ -10,16 +10,21 @@ import { useLocale } from '@/lib/i18n'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { useWishlist } from '@/lib/wishlist-context'
+import { useReveal } from '@/lib/use-reveal'
 
-const ProductCard = memo(function ProductCard({ product }: { product: Product }) {
+const ProductCard = memo(function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const { t } = useLocale()
   const { addItem } = useCart()
   const { user } = useAuth()
   const { toggle, isWished } = useWishlist()
   const router = useRouter()
   const [added, setAdded] = useState(false)
+  const { ref, visible } = useReveal<HTMLElement>()
 
   const inStock = product.stock === undefined || product.stock > 0
+  const lowStock = typeof product.stock === 'number' && product.stock > 0 && product.stock <= 5
+  const onSale = !!product.compareAtPrice && product.compareAtPrice > product.price
+  const salePct = onSale ? Math.round((1 - product.price / (product.compareAtPrice as number)) * 100) : 0
 
   function handleQuickAdd(e: React.MouseEvent) {
     e.preventDefault()
@@ -35,14 +40,27 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
   }
 
   return (
-    <article className="product-card" key={product.id}>
-      <Link href={`/products/${product.slug}`} className="product-image-wrapper product-image-link">
-        <Image src={product.image} alt={product.name} width={320} height={320} sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, 25vw" className="product-image" />
+    <article
+      ref={ref}
+      className={`product-card reveal ${visible ? 'reveal--visible' : ''}`}
+      style={{ transitionDelay: `${(index % 4) * 70}ms` }}
+    >
+      {/* Positioned container; the image link and the action buttons are
+          siblings so interactive buttons aren't nested inside the <a>. */}
+      <div className="product-image-wrapper">
+        <div className="product-badges">
+          {product.isNew && <span className="product-badge product-badge--new">NEW</span>}
+          {product.isBestSeller && <span className="product-badge product-badge--best">BESTSELLER</span>}
+          {onSale && salePct > 0 && <span className="product-badge product-badge--sale">-{salePct}%</span>}
+        </div>
+        <Link href={`/products/${product.slug}`} className="product-image-link" aria-label={product.name}>
+          <Image src={product.image} alt={product.name} width={320} height={320} sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, 25vw" className="product-image" />
+        </Link>
         {user && (
           <button
             className={`product-wishlist-btn ${isWished(product.id) ? 'product-wishlist-btn--active' : ''}`}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(product.id) }}
-            aria-label="Add to wishlist"
+            onClick={() => toggle(product.id)}
+            aria-label={isWished(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
           >
             <Heart size={16} fill={isWished(product.id) ? '#e74c3c' : 'none'} />
           </button>
@@ -56,13 +74,17 @@ const ProductCard = memo(function ProductCard({ product }: { product: Product })
             {added ? <Check size={16} /> : <ShoppingCart size={16} />}
           </button>
         )}
-      </Link>
+      </div>
       <h3>{product.name}</h3>
       {product.subtitle && <p className="product-subtitle">{product.subtitle}</p>}
       <div className="product-meta">
-        <span>${product.price.toFixed(2)}</span>
+        <span>
+          ${product.price.toFixed(2)}
+          {onSale && <span className="pdp-compare-price" style={{ marginLeft: 6, fontSize: '.8rem' }}>${(product.compareAtPrice as number).toFixed(2)}</span>}
+        </span>
         {product.rating > 0 && <span className="product-rating">★ {product.rating.toFixed(1)}</span>}
       </div>
+      {lowStock && <p className="product-lowstock">Only {product.stock} left</p>}
       <Link href={`/products/${product.slug}`} className="btn-secondary">{t('home', 'viewDetails')}</Link>
     </article>
   )
@@ -75,8 +97,8 @@ export function ProductGrid({ items }: { items: Product[] }) {
   }
   return (
     <div className="products-grid">
-      {items.map((product) => (
-        <ProductCard key={product.id} product={product} />
+      {items.map((product, i) => (
+        <ProductCard key={product.id} product={product} index={i} />
       ))}
     </div>
   )

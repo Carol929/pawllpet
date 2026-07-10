@@ -188,8 +188,13 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as Locale | null
-    if (saved && ['en', 'zh', 'es', 'fr', 'ja', 'ko'].includes(saved)) {
+    // Only en/zh are actually implemented; normalize any legacy persisted
+    // locale (es/fr/ja/ko) to English so the switcher and UI stay consistent.
+    if (saved === 'en' || saved === 'zh') {
       setLocaleState(saved)
+    } else if (saved) {
+      setLocaleState('en')
+      try { localStorage.setItem(STORAGE_KEY, 'en') } catch {}
     }
   }, [])
 
