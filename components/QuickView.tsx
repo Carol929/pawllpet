@@ -31,32 +31,47 @@ export function QuickView({ product, onClose }: { product: Product; onClose: () 
   const [added, setAdded] = useState(false)
 
   const panelRef = useRef<HTMLDivElement>(null)
+  const overlayMouseDown = useRef(false)
   const price = hasVariants && variantIdx !== null ? product.variants![variantIdx].price : product.price
   const onSale = !!product.compareAtPrice && product.compareAtPrice > price
-  const inStock = product.stock === undefined || product.stock > 0
+  // Availability mirrors the PDP: for variant products, check the selected
+  // variant's stock (or any in-stock variant before selection).
+  const inStock = hasVariants
+    ? (variantIdx !== null
+        ? (product.variants![variantIdx].stock ?? 0) > 0
+        : product.variants!.some((v) => (v.stock ?? 0) > 0))
+    : (product.stock === undefined || product.stock > 0)
 
   // Lock body scroll, focus the panel, ESC to close, and trap Tab within.
   useEffect(() => {
     const prevOverflow = document.body.style.overflow
+    const prevFocused = document.activeElement as HTMLElement | null
     document.body.style.overflow = 'hidden'
-    panelRef.current?.focus()
+
+    const focusablesSelector = 'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])'
+    // Focus the first real control (the close button), not the tabIndex=-1 panel,
+    // so Shift+Tab wraps correctly instead of leaking to the page behind.
+    const initial = panelRef.current?.querySelector<HTMLElement>(focusablesSelector)
+    ;(initial ?? panelRef.current)?.focus()
 
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') { onClose(); return }
       if (e.key !== 'Tab') return
-      const focusables = panelRef.current?.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])',
-      )
+      const focusables = panelRef.current?.querySelectorAll<HTMLElement>(focusablesSelector)
       if (!focusables || focusables.length === 0) return
       const first = focusables[0]
       const last = focusables[focusables.length - 1]
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+      const active = document.activeElement
+      // Treat the panel container itself as a boundary so focus can't escape.
+      if (e.shiftKey && (active === first || active === panelRef.current)) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && (active === last || active === panelRef.current)) { e.preventDefault(); first.focus() }
     }
     document.addEventListener('keydown', onKey)
     return () => {
       document.body.style.overflow = prevOverflow
       document.removeEventListener('keydown', onKey)
+      // Return focus to whatever opened the modal (the quick-view trigger).
+      prevFocused?.focus?.()
     }
   }, [onClose])
 
@@ -77,7 +92,11 @@ export function QuickView({ product, onClose }: { product: Product; onClose: () 
   const needsVariant = hasVariants && variantIdx === null
 
   return (
-    <div className="qv-overlay" onClick={onClose}>
+    <div
+      className="qv-overlay"
+      onMouseDown={(e) => { overlayMouseDown.current = e.target === e.currentTarget }}
+      onClick={(e) => { if (e.target === e.currentTarget && overlayMouseDown.current) onClose() }}
+    >
       <div
         className="qv-panel"
         ref={panelRef}
@@ -85,7 +104,6 @@ export function QuickView({ product, onClose }: { product: Product; onClose: () 
         role="dialog"
         aria-modal="true"
         aria-label={product.name}
-        onClick={(e) => e.stopPropagation()}
       >
         <button className="qv-close" onClick={onClose} aria-label={zh ? '关闭' : 'Close'}><X size={20} /></button>
 
@@ -115,15 +133,19 @@ export function QuickView({ product, onClose }: { product: Product; onClose: () 
 
           {hasVariants && (
             <div className="qv-variants">
-              {product.variants!.map((v, i) => (
-                <button
-                  key={v.id ?? i}
-                  className={`pdp-variant-btn ${variantIdx === i ? 'pdp-variant-btn--active' : ''}`}
-                  onClick={() => { setVariantIdx(i); if (v.imageIndex != null) setImgIdx(v.imageIndex) }}
-                >
-                  {v.name} - ${v.price.toFixed(2)}
-                </button>
-              ))}
+              {product.variants!.map((v, i) => {
+                const soldOut = (v.stock ?? 0) === 0
+                return (
+                  <button
+                    key={v.id ?? i}
+                    className={`pdp-variant-btn ${variantIdx === i ? 'pdp-variant-btn--active' : ''}`}
+                    onClick={() => { setVariantIdx(i); if (v.imageIndex != null && v.imageIndex < images.length) setImgIdx(v.imageIndex) }}
+                    disabled={soldOut}
+                  >
+                    {v.name} - ${v.price.toFixed(2)}{soldOut ? (zh ? '（缺货）' : ' (Sold out)') : ''}
+                  </button>
+                )
+              })}
             </div>
           )}
 

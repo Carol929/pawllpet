@@ -102,6 +102,7 @@ export function ProductGrid({ items }: { items: Product[] }) {
   const { t } = useLocale()
   const [quickView, setQuickView] = useState<Product | null>(null)
   const openQuickView = useCallback((p: Product) => setQuickView(p), [])
+  const closeQuickView = useCallback(() => setQuickView(null), [])
 
   if (items.length === 0) {
     return <p style={{ textAlign: 'center', color: '#888', padding: '2rem 0' }}>{t('home', 'noProductsFound')}</p>
@@ -113,7 +114,7 @@ export function ProductGrid({ items }: { items: Product[] }) {
           <ProductCard key={product.id} product={product} index={i} onQuickView={openQuickView} />
         ))}
       </div>
-      {quickView && <QuickView product={quickView} onClose={() => setQuickView(null)} />}
+      {quickView && <QuickView product={quickView} onClose={closeQuickView} />}
     </>
   )
 }
