@@ -12,15 +12,12 @@ export default function RewardsPage() {
   return (
     <main className="container page-stack">
       <h1 className="page-title">{locale === 'zh' ? '爪印积分奖励' : 'Paw Points Rewards'}</h1>
-      <p className="page-subtitle">{locale === 'zh' ? '购物赚积分，兑换专属奖励' : 'Earn points with every purchase, redeem for exclusive rewards'}</p>
+      <p className="page-subtitle">{locale === 'zh' ? '即将上线，敬请期待' : 'Coming soon — here’s a preview of what’s on the way'}</p>
 
-      {user && (
-        <div className="rewards-balance">
-          <Star size={32} />
-          <div className="rewards-points-big">0</div>
-          <div>{locale === 'zh' ? '当前积分' : 'Current Points'}</div>
-        </div>
-      )}
+      <div className="rewards-balance">
+        <Star size={32} />
+        <div>{locale === 'zh' ? '积分计划即将上线' : 'Paw Points is launching soon'}</div>
+      </div>
 
       <div className="info-cards">
         <div className="info-card">

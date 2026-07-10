@@ -9,30 +9,50 @@ import { CheckCircle, Package, AlertTriangle } from 'lucide-react'
 
 function SuccessContent() {
   const { locale } = useLocale()
-  const { clearCart } = useCart()
+  const { clearCart, removeItemsByKey } = useCart()
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
   const [verified, setVerified] = useState<'loading' | 'paid' | 'pending' | 'error'>('loading')
 
   useEffect(() => {
     if (!orderId) { setVerified('error'); return }
-    // Verify order status from server
+
+    // Clear only the items that were actually purchased (the checkout page saved
+    // the selected keys), so a partial checkout doesn't wipe the rest of the bag.
+    const clearPurchased = () => {
+      try {
+        const raw = sessionStorage.getItem('checkout-selected')
+        const keys = raw ? (JSON.parse(raw) as string[]) : []
+        if (Array.isArray(keys) && keys.length > 0) {
+          removeItemsByKey(keys)
+        } else {
+          clearCart()
+        }
+        sessionStorage.removeItem('checkout-selected')
+      } catch {
+        clearCart()
+      }
+    }
+
+    // Verify order status from server. A Shippo label purchase flips the order to
+    // 'processing', and admin may already have shipped it — all of these mean the
+    // payment succeeded and should show the confirmation, not an error.
     fetch(`/api/orders/${orderId}/status`)
       .then(r => r.json())
       .then(data => {
-        if (data.status === 'paid') {
+        if (['paid', 'processing', 'shipped', 'delivered'].includes(data.status)) {
           setVerified('paid')
-          clearCart()
+          clearPurchased()
         } else if (data.status === 'pending') {
           // Payment may still be processing
           setVerified('pending')
-          clearCart()
+          clearPurchased()
         } else {
           setVerified('error')
         }
       })
       .catch(() => setVerified('error'))
-  }, [orderId, clearCart])
+  }, [orderId, clearCart, removeItemsByKey])
 
   if (verified === 'loading') {
     return (

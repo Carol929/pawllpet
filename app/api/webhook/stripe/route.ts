@@ -46,12 +46,28 @@ export async function POST(request: NextRequest) {
     if (orderId) {
       console.log(`[Stripe Webhook] checkout.session.completed for order ${orderId}`)
 
-      // Idempotency: only process if order is still pending
-      const existing = await prisma.order.findUnique({ where: { id: orderId }, select: { status: true } })
-      if (!existing || existing.status !== 'pending') {
-        console.log(`[Stripe Webhook] Order ${orderId} already processed (status: ${existing?.status}), skipping`)
+      // Only fulfill fully-paid sessions. If a delayed-notification method (e.g.
+      // ACH) is ever enabled in Stripe, the session completes as 'unpaid' and
+      // settles later — we must not mark it paid, destock, or email yet.
+      if (eventSession.payment_status !== 'paid') {
+        console.log(`[Stripe Webhook] Order ${orderId} payment_status=${eventSession.payment_status}, not fulfilling yet`)
         return NextResponse.json({ received: true })
       }
+
+      // Atomic idempotency: claim the pending→paid transition. updateMany with a
+      // status guard is a single conditional write, so concurrent duplicate
+      // deliveries can't both pass a check-then-act race and double-process.
+      const claim = await prisma.order.updateMany({
+        where: { id: orderId, status: 'pending' },
+        data: { status: 'paid' },
+      })
+      if (claim.count === 0) {
+        console.log(`[Stripe Webhook] Order ${orderId} already processed or not pending, skipping`)
+        return NextResponse.json({ received: true })
+      }
+
+      // We now exclusively own fulfillment for this order.
+      const adminNotes: string[] = []
 
       // Retrieve full session with expanded discount details (so we can read promo code name)
       const session = await getStripe().checkout.sessions.retrieve(eventSession.id, {
@@ -71,11 +87,10 @@ export async function POST(request: NextRequest) {
         console.log(`[Stripe Webhook] Order ${orderId} used promo "${discountCode}" for -$${amountDiscount.toFixed(2)}`)
       }
 
-      // Update order: overwrite total with actual paid amount, store discount info
+      // Record the actual paid amount + discount info (status already claimed above)
       const order = await prisma.order.update({
         where: { id: orderId },
         data: {
-          status: 'paid',
           total: amountTotal,
           discountAmount: amountDiscount,
           discountCode,
@@ -87,20 +102,24 @@ export async function POST(request: NextRequest) {
 
       for (const item of order.items) {
         try {
-          if (item.variantId) {
-            // Decrement variant stock
-            await prisma.productVariant.update({
-              where: { id: item.variantId },
-              data: { stock: { decrement: item.quantity } },
-            })
-            console.log(`[Stripe Webhook] Decremented variant stock for ${item.variantId} by ${item.quantity}`)
+          // Conditional decrement (stock >= quantity) so concurrent paid orders
+          // can't drive stock negative. count === 0 means it would have oversold.
+          const result = item.variantId
+            ? await prisma.productVariant.updateMany({
+                where: { id: item.variantId, stock: { gte: item.quantity } },
+                data: { stock: { decrement: item.quantity } },
+              })
+            : await prisma.product.updateMany({
+                where: { id: item.productId, stock: { gte: item.quantity } },
+                data: { stock: { decrement: item.quantity } },
+              })
+
+          if (result.count === 0) {
+            const ref = item.variantId ? `variant ${item.variantId}` : `product ${item.productId}`
+            console.error(`[Stripe Webhook] OVERSOLD: not enough stock to fulfill ${item.quantity}× "${item.name}" (${ref}) for order ${orderId}`)
+            adminNotes.push(`Oversold: "${item.name}" ×${item.quantity} — insufficient stock at payment, needs manual restock/refund.`)
           } else {
-            // Decrement base product stock
-            await prisma.product.update({
-              where: { id: item.productId },
-              data: { stock: { decrement: item.quantity } },
-            })
-            console.log(`[Stripe Webhook] Decremented product stock for ${item.productId} by ${item.quantity}`)
+            console.log(`[Stripe Webhook] Decremented stock for ${item.variantId || item.productId} by ${item.quantity}`)
           }
         } catch (err) {
           console.error(`[Stripe Webhook] FAILED to decrement stock for ${item.variantId || item.productId}:`, err)
@@ -193,18 +212,22 @@ export async function POST(request: NextRequest) {
         } catch (labelErr) {
           const msg = labelErr instanceof Error ? labelErr.message : String(labelErr)
           console.error(`[Stripe Webhook] Shippo label purchase failed for order ${orderId}: ${msg}`)
-          // Persist the failure context on the order so admin can see it in
-          // the dashboard. The existing admin notification email already fired
-          // a few lines above with the new-order details; admin will see the
-          // missing labelUrl in /admin/orders and can buy a label manually.
-          try {
-            await prisma.order.update({
-              where: { id: orderId },
-              data: { adminNote: `Shippo label purchase failed: ${msg.slice(0, 500)}` },
-            })
-          } catch {
-            // already logged above; nothing more to do
-          }
+          // Record the failure context; admin will see the missing labelUrl in
+          // /admin/orders and can buy a label manually.
+          adminNotes.push(`Shippo label purchase failed: ${msg.slice(0, 400)}`)
+        }
+      }
+
+      // Flush any accumulated admin notes (oversell warnings, label failures) in
+      // a single write so they don't clobber each other.
+      if (adminNotes.length > 0) {
+        try {
+          await prisma.order.update({
+            where: { id: orderId },
+            data: { adminNote: adminNotes.join(' | ').slice(0, 900) },
+          })
+        } catch (noteErr) {
+          console.error(`[Stripe Webhook] FAILED to persist admin notes for order ${orderId}:`, noteErr)
         }
       }
     }

@@ -75,11 +75,16 @@ const fullInclude = {
   variants: { orderBy: { sortOrder: 'asc' as const } },
 }
 
-// Light include — for product lists (first image + variant price/stock)
+// Light include — for product lists (first image + variant price/stock).
+// Variants MUST be ordered by sortOrder here too: cart items store a positional
+// `variantIndex` chosen against the detail page (which orders by sortOrder), and
+// the cart/checkout pages resolve that index against this list response. Ordering
+// by price here instead would map the index to the wrong variant — charging and
+// shipping a different option than the customer picked.
 const listInclude = {
   category: { select: { name: true, slug: true } },
   images: { take: 1, orderBy: { sortOrder: 'asc' as const } },
-  variants: { select: { id: true, name: true, price: true, stock: true }, orderBy: { price: 'asc' as const } },
+  variants: { select: { id: true, name: true, price: true, stock: true }, orderBy: { sortOrder: 'asc' as const } },
 }
 
 export async function getProducts(filters?: {

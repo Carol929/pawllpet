@@ -2,9 +2,10 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getActiveProvider } from '@/lib/shipping'
 import { getShippoRates } from '@/lib/shipping/shippo-client'
+import { requireAdmin } from '@/lib/admin-auth'
 import { prisma } from '@/lib/db'
 
 /**
@@ -14,11 +15,14 @@ import { prisma } from '@/lib/db'
  * shipping provider resolves the way it does, and runs a live Shippo test
  * rate call so we can see the exact error if Shippo is failing.
  *
- * Safe to expose: it NEVER returns the API key value, only whether it's
- * present and its non-secret prefix (e.g. "shippo_test"). Delete this route
- * before promoting Shippo to production.
+ * Admin-only: it echoes the origin address and fires live Shippo quotes, so it
+ * must not be publicly reachable. It NEVER returns the API key value, only
+ * whether it's present and its non-secret prefix (e.g. "shippo_test").
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const authResult = await requireAdmin(request)
+  if (authResult instanceof NextResponse) return authResult
+
   const apiKey = process.env.SHIPPO_API_KEY
 
   const env = {
@@ -112,9 +116,11 @@ export async function GET() {
           { name: 'Diagnostic Test', street1: '1600 Amphitheatre Pkwy', city: 'Mountain View', state: 'CA', zip: '94043' },
           {
             weightLb: product.weight,
-            lengthIn: product.length ?? 6,
-            widthIn: product.width ?? 4,
-            heightIn: product.height ?? 2,
+            // Use `||` not `??` so a stored 0 falls back to the default instead
+            // of being sent to Shippo (which rejects a 0 dimension).
+            lengthIn: product.length || 6,
+            widthIn: product.width || 4,
+            heightIn: product.height || 2,
           },
         )
         realPathTest = {

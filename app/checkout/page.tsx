@@ -25,7 +25,7 @@ function itemKey(productId: string, variantIndex?: number) {
 }
 
 export default function CheckoutPage() {
-  const { items } = useCart()
+  const { items, loaded: cartLoaded } = useCart()
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
@@ -59,13 +59,19 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!authLoading && !user) { router.push('/auth?tab=login'); return }
-    if (!authLoading && items.length === 0) { router.push('/cart'); return }
-  }, [authLoading, user, items, router])
+    // Only redirect to /cart once the cart has actually hydrated — otherwise a
+    // hard refresh on /checkout bounces to /cart before localStorage loads,
+    // losing the confirmed address and selected rate.
+    if (!authLoading && cartLoaded && items.length === 0) { router.push('/cart'); return }
+  }, [authLoading, user, items, router, cartLoaded])
 
   useEffect(() => {
     if (items.length === 0) return
     Promise.all([
-      fetch(`/api/products?ids=${items.map(i => i.productId).join(',')}`).then(r => r.json()),
+      fetch(`/api/products?ids=${items.map(i => i.productId).join(',')}`).then(r => {
+        if (!r.ok) throw new Error('products fetch failed')
+        return r.json()
+      }),
       fetch('/api/addresses').then(r => r.json()).catch(() => []),
     ]).then(([prodData, addrs]) => {
       const products = prodData.products || prodData || []
@@ -74,6 +80,10 @@ export default function CheckoutPage() {
       setProductMap(map)
       setSavedAddrs(addrs)
       if (!addrs.length) setUseNew(true)
+      setLoading(false)
+    }).catch(() => {
+      // Don't leave the page stuck on "Loading..." forever if products fail.
+      setError('We could not load your cart. Please refresh and try again.')
       setLoading(false)
     })
   }, [items])
@@ -87,8 +97,13 @@ export default function CheckoutPage() {
     .map(item => {
       const p = productMap[item.productId]
       if (!p) return null
-      const unitPrice = item.variantPrice ?? p.price
-      return { ...p, quantity: item.quantity, unitPrice, variantName: item.variantName, variantIndex: item.variantIndex }
+      // Prefer the current variant price/name from the DB over the values frozen
+      // into the cart at add-time, so the displayed total matches what the
+      // server will actually charge (which always re-prices from the DB).
+      const liveVariant = p.variants && item.variantIndex !== undefined ? p.variants[item.variantIndex] : undefined
+      const unitPrice = liveVariant?.price ?? item.variantPrice ?? p.price
+      const variantName = liveVariant?.name ?? item.variantName
+      return { ...p, quantity: item.quantity, unitPrice, variantName, variantIndex: item.variantIndex }
     })
     .filter(Boolean) as (Product & { quantity: number; unitPrice: number; variantName?: string; variantIndex?: number })[]
 
@@ -244,9 +259,13 @@ export default function CheckoutPage() {
             return { productId: item.productId, quantity: item.quantity, variantId }
           }),
           shippingAddress: trimmed,
-          // Send the selected rate ID — the server will re-validate the price
-          // against Shippo (or legacy) so the user can't tamper with it.
+          // Send the selected rate ID plus its carrier/service. The server
+          // re-quotes for the real cart + destination and matches on these, so
+          // the price can't be tampered with and a cheap rate id can't be
+          // replayed for a heavier parcel.
           shippingRateId: selectedRateId,
+          shippingCarrier: selectedOption?.carrier,
+          shippingService: selectedOption?.service,
         }),
       })
       const data = await res.json()
@@ -427,16 +446,18 @@ export default function CheckoutPage() {
             <button
               className="checkout-pay-btn"
               onClick={handlePay}
-              disabled={paying || !selectedOption || shippingLoading}
+              disabled={paying || !selectedOption || shippingLoading || missingWeights}
             >
               <Lock size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />
               {paying
                 ? 'REDIRECTING TO PAYMENT...'
                 : shippingLoading
                   ? 'LOADING SHIPPING...'
-                  : !selectedOption
+                  : missingWeights
                     ? 'SHIPPING UNAVAILABLE'
-                    : `PAY $${total.toFixed(2)}`}
+                    : !selectedOption
+                      ? 'SHIPPING UNAVAILABLE'
+                      : `PAY $${total.toFixed(2)}`}
             </button>
           ) : (
             <div className="checkout-pay-placeholder">

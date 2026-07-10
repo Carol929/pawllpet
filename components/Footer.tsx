@@ -14,13 +14,32 @@ function TikTokIcon() {
 
 export default function Footer() {
   const { locale } = useLocale()
-  const en = locale === 'en'
+  // English is the default for every locale except Chinese — previously any
+  // non-'en' locale (es/fr/ja/ko) fell through to the Chinese copy.
+  const en = locale !== 'zh'
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
-  function handleSubscribe(e: React.FormEvent) {
+  async function handleSubscribe(e: React.FormEvent) {
     e.preventDefault()
-    if (email) { setSubscribed(true); setEmail('') }
+    if (!email || submitting) return
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      })
+      if (res.ok) {
+        setSubscribed(true)
+        setEmail('')
+      }
+    } catch {
+      // leave the form in place so the user can retry
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -47,7 +66,7 @@ export default function Footer() {
           ) : (
             <form className="footer-subscribe" onSubmit={handleSubscribe}>
               <input type="email" placeholder={en ? 'Your email address' : '输入邮箱地址'} value={email} onChange={e => setEmail(e.target.value)} required />
-              <button type="submit">{en ? 'Sign Me Up' : '订阅'}</button>
+              <button type="submit" disabled={submitting}>{submitting ? (en ? 'Signing up…' : '订阅中…') : (en ? 'Sign Me Up' : '订阅')}</button>
             </form>
           )}
 

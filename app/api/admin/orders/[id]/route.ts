@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/admin-auth'
 import { sendOrderShippedEmail, sendOrderCancellationResultEmail } from '@/lib/email'
+import { getStripe } from '@/lib/stripe'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const authResult = await requireAdmin(request)
@@ -24,7 +25,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   if (authResult instanceof NextResponse) return authResult
 
   const data = await request.json()
-  const validStatuses = ['pending', 'paid', 'shipped', 'delivered', 'cancelled', 'cancellation_requested']
+  const validStatuses = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'cancellation_requested']
   const validResolutions = ['full_refund', 'partial_50', 'reship', 'no_action', 'other']
   const allowed: Record<string, unknown> = {}
 
@@ -38,7 +39,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     where: { id: params.id },
     select: {
       trackingNumber: true, status: true, total: true, deliveredAt: true,
-      cancellationReason: true,
+      cancellationReason: true, stripeSessionId: true, refundAmount: true,
       user: { select: { fullName: true, email: true } },
       items: { select: { name: true, quantity: true } },
     },
@@ -101,6 +102,37 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (existing.status !== 'cancelled') {
       allowed.cancelledAt = new Date()
       shouldSendCancellationEmail = true
+    }
+  }
+
+  // Issue the actual Stripe refund BEFORE writing the DB / emailing the customer.
+  // Previously the order was marked refunded and the customer was emailed "we've
+  // issued a refund" while no money ever moved. Only refund on the transition
+  // into cancelled, only if the order was actually paid, and only once.
+  const refundAmt = typeof allowed.refundAmount === 'number' ? allowed.refundAmount : undefined
+  const isNewCancellation = allowed.status === 'cancelled' && existing.status !== 'cancelled'
+  const wasPaid = !['pending', 'cancelled'].includes(existing.status)
+  if (isNewCancellation && wasPaid && refundAmt && refundAmt > 0) {
+    if (!existing.stripeSessionId) {
+      return NextResponse.json({ error: 'Cannot refund: no Stripe session on this order. Refund manually in the Stripe dashboard.' }, { status: 422 })
+    }
+    if (existing.refundAmount && existing.refundAmount > 0) {
+      return NextResponse.json({ error: 'This order already has a recorded refund. Refund again manually in Stripe if needed.' }, { status: 409 })
+    }
+    try {
+      const session = await getStripe().checkout.sessions.retrieve(existing.stripeSessionId)
+      const pi = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id
+      if (!pi) {
+        return NextResponse.json({ error: 'Cannot refund: no payment found for this order. Refund manually in Stripe.' }, { status: 422 })
+      }
+      await getStripe().refunds.create({
+        payment_intent: pi,
+        amount: Math.round(refundAmt * 100),
+      })
+      console.log(`[Admin Orders] Refunded $${refundAmt.toFixed(2)} for order ${params.id}`)
+    } catch (err) {
+      console.error(`[Admin Orders] Stripe refund FAILED for order ${params.id}:`, err)
+      return NextResponse.json({ error: 'Stripe refund failed. The order was not modified. Please retry or refund in the Stripe dashboard.' }, { status: 502 })
     }
   }
 

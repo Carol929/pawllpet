@@ -42,7 +42,7 @@ const faqData: FaqSection[] = [
   {
     title: { en: 'Account & Rewards', zh: '账户与积分' },
     items: [
-      { q: { en: 'How do Paw Points work?', zh: '爪印积分怎么用？' }, a: { en: 'Earn 1 Paw Point per dollar spent. Accumulate points and redeem them for discounts on future orders.', zh: '每消费1美元获得1爪印积分。累积积分可兑换未来订单折扣。' } },
+      { q: { en: 'How do Paw Points work?', zh: '爪印积分怎么用？' }, a: { en: 'Paw Points is our upcoming rewards program — it hasn’t launched yet. Create an account now and we’ll let you know the moment it goes live.', zh: '爪印积分是我们即将推出的奖励计划，目前尚未上线。现在注册账户，上线后我们会第一时间通知您。' } },
       { q: { en: 'How do I reset my password?', zh: '如何重置密码？' }, a: { en: 'Click "Forgot password?" on the login page. Enter your email and follow the instructions sent to your inbox.', zh: '在登录页面点击"忘记密码？"，输入邮箱后按照收到的邮件指示操作。' } },
     ],
   },

@@ -217,32 +217,69 @@ describe('validateRateId', () => {
     expect(r).toBeNull()
   })
 
-  it('fetches from Shippo for non-legacy IDs', async () => {
-    mockGetShippoRateById.mockResolvedValue({
-      id: 'rate_xyz',
-      provider: 'shippo',
+  it('re-quotes Shippo for the real cart+destination and matches the selection', async () => {
+    process.env.SHIPPING_PROVIDER = 'shippo'
+    process.env.SHIPPO_API_KEY = 'shippo_test_key'
+    // Fresh quote returns a DIFFERENT rate id than the client sent (Shippo ids
+    // are per-shipment). We must still match on carrier+service and use the
+    // fresh amount — never the client's number.
+    mockGetShippoRates.mockResolvedValue([
+      { id: 'rate_fresh', provider: 'shippo', carrier: 'usps', service: 'Priority', displayName: 'USPS Priority', amount: 8.5, currency: 'USD' },
+    ])
+
+    const r = await validateRateId({
+      rateId: 'rate_stale_from_client',
+      to: baseAddress,
       carrier: 'usps',
       service: 'Priority',
-      displayName: 'USPS Priority',
-      amount: 8.5,
-      currency: 'USD',
+      items: [{ productId: 'p1', quantity: 1, weight: 1 }],
+      subtotal: 30,
     })
 
+    expect(mockGetShippoRates).toHaveBeenCalledTimes(1)
+    expect(mockGetShippoRateById).not.toHaveBeenCalled()
+    expect(r?.id).toBe('rate_fresh')
+    expect(r?.amount).toBe(8.5)
+  })
+
+  it('returns null when the selected carrier/service is not in the fresh quote', async () => {
+    process.env.SHIPPING_PROVIDER = 'shippo'
+    process.env.SHIPPO_API_KEY = 'shippo_test_key'
+    mockGetShippoRates.mockResolvedValue([
+      { id: 'rate_fresh', provider: 'shippo', carrier: 'usps', service: 'Ground Advantage', displayName: 'USPS GA', amount: 6.0, currency: 'USD' },
+    ])
+
+    const r = await validateRateId({
+      rateId: 'rate_stale',
+      to: baseAddress,
+      carrier: 'fedex',
+      service: 'Priority Overnight',
+      items: [{ productId: 'p1', quantity: 1, weight: 1 }],
+      subtotal: 30,
+    })
+    expect(r).toBeNull()
+  })
+
+  it('returns null for a Shippo rate id when no destination is supplied', async () => {
+    // Without the destination we can't re-quote, so we cannot safely price it.
     const r = await validateRateId({
       rateId: 'rate_xyz',
       items: [{ productId: 'p1', quantity: 1, weight: 1 }],
       subtotal: 30,
     })
-
-    expect(mockGetShippoRateById).toHaveBeenCalledWith('rate_xyz')
-    expect(r?.amount).toBe(8.5)
+    expect(r).toBeNull()
   })
 
-  it('returns null when Shippo lookup fails (expired rate, network error)', async () => {
-    mockGetShippoRateById.mockRejectedValue(new Error('rate expired'))
+  it('returns null when the Shippo re-quote fails (fallback options do not match)', async () => {
+    process.env.SHIPPING_PROVIDER = 'shippo'
+    process.env.SHIPPO_API_KEY = 'shippo_test_key'
+    mockGetShippoRates.mockRejectedValue(new Error('rate expired'))
 
     const r = await validateRateId({
       rateId: 'rate_expired',
+      to: baseAddress,
+      carrier: 'usps',
+      service: 'Priority',
       items: [{ productId: 'p1', quantity: 1, weight: 1 }],
       subtotal: 30,
     })
@@ -257,5 +294,43 @@ describe('validateRateId', () => {
         subtotal: 30,
       }),
     ).toBeNull()
+  })
+})
+
+describe('getShippingOptions — free shipping under Shippo', () => {
+  beforeEach(() => {
+    process.env.SHIPPING_PROVIDER = 'shippo'
+    process.env.SHIPPO_API_KEY = 'shippo_test_key'
+  })
+
+  it('zeroes the cheapest option at/above the $80 threshold', async () => {
+    mockGetShippoRates.mockResolvedValue([
+      { id: 'r_usps', provider: 'shippo', carrier: 'usps', service: 'Priority', displayName: 'USPS Priority', amount: 7.25, currency: 'USD' },
+      { id: 'r_ups', provider: 'shippo', carrier: 'ups', service: 'Ground', displayName: 'UPS Ground', amount: 12.5, currency: 'USD' },
+    ])
+
+    const result = await getShippingOptions({
+      to: baseAddress,
+      items: [{ productId: 'p1', quantity: 1, weight: 1, length: 8, width: 6, height: 4 }],
+      subtotal: 100,
+    })
+
+    // cheapest is free, the pricier option is unchanged
+    expect(result.options[0].amount).toBe(0)
+    expect(result.options[0].displayName).toMatch(/free/i)
+    expect(result.options[1].amount).toBe(12.5)
+  })
+
+  it('leaves all options paid below the threshold', async () => {
+    mockGetShippoRates.mockResolvedValue([
+      { id: 'r_usps', provider: 'shippo', carrier: 'usps', service: 'Priority', displayName: 'USPS Priority', amount: 7.25, currency: 'USD' },
+    ])
+
+    const result = await getShippingOptions({
+      to: baseAddress,
+      items: [{ productId: 'p1', quantity: 1, weight: 1 }],
+      subtotal: 50,
+    })
+    expect(result.options[0].amount).toBe(7.25)
   })
 })

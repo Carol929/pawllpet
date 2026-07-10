@@ -7,7 +7,7 @@ export const maxDuration = 30
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { calculateTax } from '@/lib/tax-rates'
-import { calculateShipping, calculateTotalWeight, isShippingEligible, isPOBox } from '@/lib/shipping-rates'
+import { calculateShipping, calculateTotalWeight, isShippingEligible, isPOBox, hasUnweighedItems } from '@/lib/shipping-rates'
 import { validateRateId } from '@/lib/shipping'
 import { prisma } from '@/lib/db'
 import { requireUser } from '@/lib/user-auth'
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { items, shippingAddress, shippingMethod = 'standard', shippingRateId } = await request.json()
+    const { items, shippingAddress, shippingMethod = 'standard', shippingRateId, shippingCarrier, shippingService } = await request.json()
 
     if (!items?.length || !shippingAddress) {
       return NextResponse.json({ error: 'Missing items or shipping address' }, { status: 400 })
@@ -70,26 +70,42 @@ export async function POST(request: NextRequest) {
 
     for (const item of items) {
       const product = productMap.get(item.productId)
-      if (!product) continue
-
-      // Resolve variant price if specified
-      let price = product.price
-      let itemName = product.name
-      if (item.variantId && product.variants?.length) {
-        const variant = product.variants.find((v: { id: string }) => v.id === item.variantId)
-        if (variant) {
-          price = variant.price
-          itemName = `${product.name} - ${variant.name}`
-          // Stock validation for variant
-          if (variant.stock < item.quantity) {
-            return NextResponse.json({ error: `${itemName} only has ${variant.stock} in stock` }, { status: 400 })
-          }
-        }
+      // Reject rather than silently drop: a product going non-live/deleted after
+      // it was added to the cart must not silently reduce what the customer is
+      // charged vs. what they saw.
+      if (!product) {
+        return NextResponse.json({ error: 'Some items in your cart are no longer available. Please review your cart and try again.' }, { status: 400 })
       }
 
-      // Stock validation — prevent overselling (base product)
-      if (!item.variantId && product.price > 0 && product.stock < item.quantity) {
-        return NextResponse.json({ error: `${product.name} only has ${product.stock} in stock` }, { status: 400 })
+      let price = product.price
+      let itemName = product.name
+
+      if (product.variants?.length) {
+        // Variant products are priced per-variant (base price is 0 by convention).
+        // A missing or unknown variantId must be rejected, otherwise the order
+        // falls back to the $0 base price and skips stock checks entirely.
+        if (!item.variantId) {
+          return NextResponse.json({ error: `Please select an option for ${product.name}.` }, { status: 400 })
+        }
+        const variant = product.variants.find((v: { id: string }) => v.id === item.variantId)
+        if (!variant) {
+          return NextResponse.json({ error: `The selected option for ${product.name} is no longer available. Please refresh your cart.` }, { status: 400 })
+        }
+        price = variant.price
+        itemName = `${product.name} - ${variant.name}`
+        if (variant.stock < item.quantity) {
+          return NextResponse.json({ error: `${itemName} only has ${variant.stock} in stock` }, { status: 400 })
+        }
+      } else {
+        // Non-variant product: a variantId here is bogus.
+        if (item.variantId) {
+          return NextResponse.json({ error: `Invalid option selected for ${product.name}. Please refresh your cart.` }, { status: 400 })
+        }
+        // Stock check applies to every non-variant item, including $0 gifts,
+        // to prevent overselling.
+        if (product.stock < item.quantity) {
+          return NextResponse.json({ error: `${product.name} only has ${product.stock} in stock` }, { status: 400 })
+        }
       }
       subtotal += price * item.quantity
 
@@ -126,8 +142,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Spend $10 or more to redeem your free gift' }, { status: 400 })
     }
 
+    // Enforce the "no shipping without weight" invariant server-side (the client
+    // and /api/shipping/rates both check this, but a direct API call must not be
+    // able to ship an unweighed cart at the tier-1 rate).
+    if (hasUnweighedItems(orderItems.map(i => ({ weight: productMap.get(i.productId)?.weight ?? undefined })))) {
+      return NextResponse.json({ error: 'Some items are missing shipping weight. Please contact support@pawllpet.com.' }, { status: 400 })
+    }
+
     const totalWeight = calculateTotalWeight(orderItems.map(i => ({ quantity: i.quantity, weight: productMap.get(i.productId)?.weight ?? undefined })))
-    const method = shippingMethod === 'express' ? 'express' : 'standard' as const
+    // Derive the legacy method from the selected rate id so an "express"
+    // selection isn't silently charged as standard (the client sends the rate
+    // id, not the method).
+    let method: 'standard' | 'express' = shippingMethod === 'express' ? 'express' : 'standard'
+    if (shippingRateId === 'legacy:express') method = 'express'
+    else if (shippingRateId === 'legacy:standard') method = 'standard'
 
     // Resolve shipping cost. Two paths:
     //  1. If client sent a shippingRateId (Shippo path), re-validate it server-side
@@ -141,9 +169,24 @@ export async function POST(request: NextRequest) {
     let resolvedCarrier: string | null = null
 
     if (shippingRateId && !shippingRateId.startsWith('legacy:')) {
-      // Shippo path: re-fetch the rate from Shippo to validate price.
+      // Shippo path: re-quote against Shippo for THIS cart + destination and
+      // match the selection. We never trust the client's amount, and by
+      // re-quoting for the real parcel/address a rate id minted for a lighter
+      // or different-destination shipment cannot be replayed to underpay.
       const validated = await validateRateId({
         rateId: shippingRateId,
+        to: {
+          name: shippingAddress.fullName,
+          street1: shippingAddress.street,
+          street2: shippingAddress.street2 || undefined,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          zip: shippingAddress.zip,
+          country: 'US',
+          phone: shippingAddress.phone || undefined,
+        },
+        carrier: typeof shippingCarrier === 'string' ? shippingCarrier : undefined,
+        service: typeof shippingService === 'string' ? shippingService : undefined,
         items: orderItems.map(i => {
           const p = productMap.get(i.productId)
           return {
@@ -239,7 +282,13 @@ export async function POST(request: NextRequest) {
           ...(resolvedShippoRateId ? { shippoRateId: resolvedShippoRateId } : {}),
         },
         customer_email: dbUser.email,
-        allow_promotion_codes: true,
+        // Customer promotion codes are disabled: sales tax is passed as its own
+        // line item, and Stripe applies percentage coupons proportionally across
+        // ALL line items — including tax — which under-collects sales tax and
+        // makes Order.tax disagree with what was actually charged. Re-enabling
+        // coupons requires moving tax to Stripe Tax (automatic_tax) so the tax
+        // is computed on the post-discount amount and never itself discounted.
+        allow_promotion_codes: false,
         expires_at: Math.floor(Date.now() / 1000) + 1800, // 30 min expiry
       }, {
         idempotencyKey: `checkout_${order.id}`,
