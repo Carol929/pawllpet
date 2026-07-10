@@ -7,6 +7,7 @@ import { ShoppingCart, Trash2 } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { Product } from '@/lib/product-types'
+import { FreeShipBar } from '@/components/FreeShipBar'
 import './cart.css'
 
 function itemKey(productId: string, variantIndex?: number) {
@@ -219,10 +220,10 @@ export default function CartPage() {
           {hasOutOfStock && (
             <div className="cart-gift-warning">Remove out-of-stock items before checking out.</div>
           )}
+          {selectedCount > 0 && <FreeShipBar subtotal={subtotal} />}
           <button className="cart-checkout-btn" onClick={handleCheckout} disabled={giftBlocked || hasOutOfStock || selectedCount === 0}>
             {selectedCount === 0 ? 'SELECT ITEMS TO CHECK OUT' : 'CHECK OUT'}
           </button>
-          {selectedCount > 0 && !freeShipping && <div className="cart-free-shipping">Add <strong>${(80 - subtotal).toFixed(2)}</strong> more for free shipping!</div>}
         </div>
       </div>
     </main>
