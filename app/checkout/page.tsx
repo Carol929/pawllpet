@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowLeft, Lock, ShieldCheck, Truck, RotateCcw, Package } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
@@ -409,7 +410,7 @@ export default function CheckoutPage() {
           <div className="checkout-items">
             {cartProducts.map((p, idx) => (
               <div key={`${p.id}-${idx}`} className="checkout-item">
-                <img src={p.image} alt={p.name} className="checkout-item-img" />
+                <Image src={p.image} alt={p.name} width={56} height={56} sizes="56px" className="checkout-item-img" />
                 <div className="checkout-item-info">
                   <span className="checkout-item-name">{p.name}</span>
                   {p.variantName && <span className="checkout-item-variant">{p.variantName}</span>}

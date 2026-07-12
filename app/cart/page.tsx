@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ShoppingCart, Trash2 } from 'lucide-react'
@@ -185,7 +186,7 @@ export default function CartPage() {
                   disabled={p.outOfStock}
                   className="cart-checkbox"
                 />
-                <Link href={`/products/${p.slug}`}><img src={p.image} alt={p.name} className="cart-item-image" /></Link>
+                <Link href={`/products/${p.slug}`}><Image src={p.image} alt={p.name} width={100} height={100} sizes="100px" className="cart-item-image" /></Link>
                 <div className="cart-item-info">
                   <Link href={`/products/${p.slug}`} className="cart-item-name cart-item-link">{p.name}</Link>
                   {p.variantName && <div className="cart-item-variant">{p.variantName}</div>}

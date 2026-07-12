@@ -53,6 +53,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </noscript>
       </head>
       <body>
+        {/* Ambient aurora — decorative, behind everything */}
+        <div className="aurora" aria-hidden="true" />
         {/* Skip to content — accessibility */}
         <a href="#main-content" className="skip-to-content">Skip to main content</a>
         <ScrollProgress />
