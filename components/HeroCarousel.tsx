@@ -28,9 +28,19 @@ export function HeroCarousel() {
   const [pos, setPos] = useState(1) // Start at real first slide (index 1)
   const [transitioning, setTransitioning] = useState(true)
   const [paused, setPaused] = useState(false)
+  const [reduced, setReduced] = useState(false)
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Respect prefers-reduced-motion: no autoplay, no sliding transition.
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReduced(mq.matches)
+    const onChange = () => setReduced(mq.matches)
+    mq.addEventListener?.('change', onChange)
+    return () => mq.removeEventListener?.('change', onChange)
+  }, [])
 
   const realIndex = ((pos - 1) % slides.length + slides.length) % slides.length
 
@@ -63,15 +73,15 @@ export function HeroCarousel() {
     }
   }, [transitioning])
 
-  // Autoplay
+  // Autoplay (disabled under reduced-motion)
   useEffect(() => {
-    if (paused) return
+    if (paused || reduced) return
     autoplayRef.current = setInterval(() => {
       setTransitioning(true)
       setPos(p => p + 1)
     }, 5000)
     return () => { if (autoplayRef.current) clearInterval(autoplayRef.current) }
-  }, [paused])
+  }, [paused, reduced])
 
   function handleTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX
@@ -98,7 +108,7 @@ export function HeroCarousel() {
         className="hero-carousel-track"
         style={{
           transform: `translateX(-${pos * 100}%)`,
-          transition: transitioning ? 'transform 0.5s ease' : 'none',
+          transition: transitioning && !reduced ? 'transform 0.5s ease' : 'none',
         }}
         onTransitionEnd={handleTransitionEnd}
       >
@@ -108,6 +118,11 @@ export function HeroCarousel() {
           </div>
         ))}
       </div>
+
+      {/* Living-hero light: a slow breathing glow + a one-shot sheen that replays
+          on each slide change (keyed by realIndex). Decorative, over the frame. */}
+      <div className="hero-glow" aria-hidden="true" />
+      <div className="hero-sheen" key={realIndex} aria-hidden="true" />
 
       <button className="hero-carousel-arrow hero-carousel-arrow--left" onClick={prev} aria-label="Previous slide">
         <ChevronLeft size={22} />
