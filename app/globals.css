@@ -18,6 +18,14 @@
   --r-pill: 999px;
   --shadow-soft: 0 8px 24px rgba(31,46,68,.06);
   --shadow-warm: 0 18px 40px -12px rgba(60,40,20,.18);
+  /* Motion system — one decelerate curve for ~everything, one spring for a few
+     accent moments, three duration tiers. Keep new motion on these tokens. */
+  --ease-out-soft: cubic-bezier(.16,.84,.44,1);
+  --ease-spring: cubic-bezier(.34,1.56,.64,1);
+  --dur-1: 160ms; /* response: hover / tap / focus */
+  --dur-2: 300ms; /* reveals: cards / modal / dropdown */
+  --dur-3: 640ms; /* arrival: scroll reveal / hero / route */
+  --stagger: 70ms;
 }
 
 * { box-sizing: border-box; }

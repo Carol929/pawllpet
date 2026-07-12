@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
@@ -167,9 +168,12 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
         {/* Image Gallery */}
         <div className="pdp-gallery">
           <div className="pdp-main-image-wrapper">
-            <img
+            <Image
               src={images[selectedImage]}
               alt={item.name}
+              fill
+              sizes="(max-width: 900px) 100vw, 45vw"
+              priority
               className="pdp-main-image"
             />
             {images.length > 1 && (
@@ -191,7 +195,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
                   className={`pdp-thumb ${selectedImage === i ? 'pdp-thumb--active' : ''}`}
                   onClick={() => setSelectedImage(i)}
                 >
-                  <img src={img} alt="" />
+                  <Image src={img} alt="" width={64} height={64} sizes="64px" />
                 </button>
               ))}
             </div>
@@ -468,7 +472,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
 
       {/* Sticky mobile add-to-cart — reuses the same add handler */}
       <div className={`pdp-sticky-cta ${showSticky ? 'pdp-sticky-cta--show' : ''}`}>
-        <img src={images[selectedImage]} alt="" className="pdp-sticky-thumb" />
+        <Image src={images[selectedImage]} alt="" width={42} height={42} sizes="42px" className="pdp-sticky-thumb" />
         <div className="pdp-sticky-info">
           <span className="pdp-sticky-name">{item.name}</span>
           <span className="pdp-sticky-price">${displayPrice.toFixed(2)}</span>

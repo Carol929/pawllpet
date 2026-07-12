@@ -197,7 +197,7 @@ export default function Header() {
               <div className="search-autocomplete">
                 {suggestions.map(s => (
                   <Link key={s.slug} href={`/products/${s.slug}`} className="search-suggestion" onClick={() => { setShowSuggestions(false); setQuery('') }}>
-                    <img src={s.image} alt="" className="search-suggestion-img" />
+                    <Image src={s.image} alt="" width={36} height={36} sizes="36px" className="search-suggestion-img" />
                     <span className="search-suggestion-name">{s.name}</span>
                     <span className="search-suggestion-price">${s.price.toFixed(2)}</span>
                   </Link>

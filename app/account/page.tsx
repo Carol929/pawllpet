@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useLocale } from '@/lib/i18n'
@@ -533,7 +534,7 @@ function OrdersSection() {
               <div className="order-card-body">
                 {o.items.map(item => (
                   <div key={item.id} className="order-item">
-                    <img src={item.image} alt={item.name} className="order-item-img" />
+                    <Image src={item.image} alt={item.name} width={40} height={40} sizes="40px" className="order-item-img" />
                     <span className="order-item-name">{item.name}</span>
                     <span className="order-item-qty">x{item.quantity}</span>
                     <span className="order-item-price">${(item.price * item.quantity).toFixed(2)}</span>
