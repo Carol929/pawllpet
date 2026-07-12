@@ -44,7 +44,7 @@ const ProductCard = memo(function ProductCard({ product, index = 0, onQuickView 
     <article
       ref={ref}
       className={`product-card reveal ${visible ? 'reveal--visible' : ''}`}
-      style={{ transitionDelay: `${(index % 4) * 70}ms` }}
+      style={{ ['--i' as string]: index % 4 } as React.CSSProperties}
     >
       {/* Positioned container; the image link and the action buttons are
           siblings so interactive buttons aren't nested inside the <a>. */}

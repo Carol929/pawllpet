@@ -109,6 +109,11 @@ export function HeroCarousel() {
         ))}
       </div>
 
+      {/* Living-hero light: a slow breathing glow + a one-shot sheen that replays
+          on each slide change (keyed by realIndex). Decorative, over the frame. */}
+      <div className="hero-glow" aria-hidden="true" />
+      <div className="hero-sheen" key={realIndex} aria-hidden="true" />
+
       <button className="hero-carousel-arrow hero-carousel-arrow--left" onClick={prev} aria-label="Previous slide">
         <ChevronLeft size={22} />
       </button>

@@ -65,7 +65,7 @@ export default function Header() {
     }
     if (totalItems > prevTotal.current) {
       setCartBump(true)
-      const t = setTimeout(() => setCartBump(false), 400)
+      const t = setTimeout(() => setCartBump(false), 520)
       prevTotal.current = totalItems
       return () => clearTimeout(t)
     }
@@ -273,7 +273,7 @@ export default function Header() {
             {wishlistIds.size > 0 && <span className="wishlist-badge">{wishlistIds.size > 99 ? '99+' : wishlistIds.size}</span>}
           </Link>
 
-          <Link href="/cart" className="header-cart-btn" aria-label={t('header', 'cartLabel')}>
+          <Link href="/cart" className={`header-cart-btn ${cartBump ? 'header-cart-btn--pulse' : ''}`} aria-label={t('header', 'cartLabel')}>
             <ShoppingCart size={22} strokeWidth={1.8} />
             {totalItems > 0 && <span className={`cart-badge ${cartBump ? 'cart-badge--bump' : ''}`}>{totalItems > 99 ? '99+' : totalItems}</span>}
           </Link>
