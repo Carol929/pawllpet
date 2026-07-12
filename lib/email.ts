@@ -672,3 +672,73 @@ export async function sendQuizGiftEmail(email: string, name: string, giftName: s
     `,
   })
 }
+
+/**
+ * Notify the customer that their order has shipped, with tracking info.
+ * Triggered from the Stripe webhook after a Shippo label is purchased.
+ */
+export async function sendShippingNotificationEmail(
+  email: string,
+  name: string,
+  data: {
+    orderId: string
+    carrier: string
+    trackingNumber: string
+    trackingUrl: string
+    estimatedDelivery?: string
+  },
+): Promise<void> {
+  const client = getResend()
+  if (!client) {
+    console.warn('RESEND_API_KEY is missing; skipping shipping notification email.')
+    return
+  }
+
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shortId = data.orderId.slice(-8).toUpperCase()
+  const carrierUpper = data.carrier.toUpperCase()
+
+  await client.emails.send({
+    from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
+    to: email,
+    subject: `Your PawLL order #${shortId} is on the way`,
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fffdf8;">
+        <div style="background: #1f2e44; padding: 24px 32px; text-align: center;">
+          <h1 style="color: #D4B28C; margin: 0; font-size: 24px; letter-spacing: 1px;">PawLL Pet</h1>
+          <p style="color: #e5e7eb; margin: 6px 0 0; font-size: 13px;">Your order is on the way</p>
+        </div>
+        <div style="padding: 32px;">
+          <h2 style="color: #1f2e44; margin: 0 0 8px; font-size: 22px;">Hi ${name},</h2>
+          <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
+            Good news — order <strong>#${shortId}</strong> has shipped via <strong>${carrierUpper}</strong>.
+          </p>
+
+          <div style="background: #f8f6f2; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
+            <div style="font-size: 13px; color: #888; margin-bottom: 6px;">Tracking number</div>
+            <div style="font-size: 18px; color: #1f2e44; font-weight: 600; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+              ${data.trackingNumber}
+            </div>
+            ${data.estimatedDelivery ? `<div style="font-size: 13px; color: #555; margin-top: 10px;">Estimated delivery: <strong>${data.estimatedDelivery}</strong></div>` : ''}
+          </div>
+
+          <div style="text-align: center; margin-bottom: 24px;">
+            <a href="${data.trackingUrl}" style="display: inline-block; background: #D4B28C; color: #1f2e44; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+              Track Package →
+            </a>
+          </div>
+
+          <p style="color: #888; font-size: 13px; line-height: 1.6; text-align: center;">
+            Questions? Reply to this email or contact <a href="mailto:support@pawllpet.com" style="color: #1f2e44;">support@pawllpet.com</a>.
+          </p>
+        </div>
+        <div style="background: #1f2e44; padding: 16px 32px; text-align: center;">
+          <p style="color: #888; font-size: 12px; margin: 0;">PawLL Pet | Premium pet essentials</p>
+          <p style="color: #666; font-size: 11px; margin: 6px 0 0;">
+            <a href="${shopUrl}" style="color: #888; text-decoration: none;">pawllpet.com</a>
+          </p>
+        </div>
+      </div>
+    `,
+  })
+}

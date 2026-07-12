@@ -34,7 +34,7 @@ const translations = {
     searchPlaceholder: { en: 'Search products', zh: '搜索商品', es: 'Buscar productos', fr: 'Rechercher des produits', ja: '商品を検索', ko: '상품 검색' },
     logIn: { en: 'Log In', zh: '登录', es: 'Iniciar sesión', fr: 'Se connecter', ja: 'ログイン', ko: '로그인' },
     signUp: { en: 'Sign Up', zh: '注册', es: 'Registrarse', fr: "S'inscrire", ja: '新規登録', ko: '회원가입' },
-    topBanner: { en: 'Free shipping over $80 • Earn Paw Points on every order', zh: '满$80免运费 · 每笔订单赚取爪印积分', es: 'Envío gratis en pedidos de más de $80 • Gana Paw Points', fr: 'Livraison gratuite dès 80 $ • Gagnez des Paw Points', ja: '$80以上で送料無料 • Paw Points獲得', ko: '$80 이상 무료 배송 • Paw Points 적립' },
+    topBanner: { en: 'Free shipping on orders over $80', zh: '满$80免运费', es: 'Envío gratis en pedidos de más de $80', fr: 'Livraison gratuite dès 80 $', ja: '$80以上で送料無料', ko: '$80 이상 무료 배송' },
     cartLabel: { en: 'Shopping cart', zh: '购物车', es: 'Carrito', fr: 'Panier', ja: 'カート', ko: '장바구니' },
     openMenu: { en: 'Open menu', zh: '打开菜单', es: 'Abrir menú', fr: 'Ouvrir le menu', ja: 'メニューを開く', ko: '메뉴 열기' },
     closeMenu: { en: 'Close menu', zh: '关闭菜单', es: 'Cerrar menú', fr: 'Fermer le menu', ja: 'メニューを閉じる', ko: '메뉴 닫기' },
@@ -129,7 +129,7 @@ const translations = {
     noOrders: { en: 'No orders yet', zh: '暂无订单', es: 'Aún no hay pedidos', fr: 'Aucune commande', ja: 'まだ注文がありません', ko: '아직 주문이 없습니다' },
     noAddresses: { en: 'No saved addresses', zh: '暂无收货地址', es: 'No hay direcciones', fr: 'Aucune adresse', ja: '保存された住所なし', ko: '저장된 주소 없음' },
     pawPoints: { en: 'Paw Points', zh: '爪印积分', es: 'Paw Points', fr: 'Paw Points', ja: 'Paw Points', ko: 'Paw Points' },
-    pawPointsDesc: { en: 'Earn points on every order and redeem for rewards!', zh: '每笔订单都可赚取积分，兑换奖励！', es: '¡Gana puntos en cada pedido y canjéalos!', fr: 'Gagnez des points à chaque commande !', ja: '毎回の注文でポイント獲得！', ko: '모든 주문에서 포인트 적립!' },
+    pawPointsDesc: { en: 'Our rewards program is coming soon — stay tuned!', zh: '积分奖励计划即将上线，敬请期待！', es: 'Nuestro programa de recompensas llegará pronto.', fr: 'Notre programme de fidélité arrive bientôt.', ja: 'リワードプログラムは近日公開予定です。', ko: '리워드 프로그램이 곧 출시됩니다.' },
   },
   pages: {
     shopByPet: { en: 'Shop by Pet', zh: '按宠物分类', es: 'Comprar por mascota', fr: 'Acheter par animal', ja: 'ペットで探す', ko: '반려동물별' },
@@ -188,8 +188,13 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as Locale | null
-    if (saved && ['en', 'zh', 'es', 'fr', 'ja', 'ko'].includes(saved)) {
+    // Only en/zh are actually implemented; normalize any legacy persisted
+    // locale (es/fr/ja/ko) to English so the switcher and UI stay consistent.
+    if (saved === 'en' || saved === 'zh') {
       setLocaleState(saved)
+    } else if (saved) {
+      setLocaleState('en')
+      try { localStorage.setItem(STORAGE_KEY, 'en') } catch {}
     }
   }, [])
 

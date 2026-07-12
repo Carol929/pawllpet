@@ -7,6 +7,11 @@ interface OrderItem { id: string; name: string; image: string; price: number; qu
 interface Order {
   id: string; status: string; total: number; subtotal: number; shipping: number; createdAt: string
   trackingNumber?: string
+  // Shippo fields — populated when SHIPPING_PROVIDER=shippo bought a label
+  carrier?: string | null
+  labelUrl?: string | null
+  shippoTransactionId?: string | null
+  shippedAt?: string | null
   cancellationReason?: string | null
   cancellationRequestedAt?: string | null
   cancelledAt?: string | null
@@ -237,9 +242,36 @@ export default function AdminOrders() {
                 <p style={{ fontSize: '.8rem', color: '#666', marginTop: '.4rem' }}>This order has already been cancelled.</p>
               )}
 
-              <h3 style={{ marginTop: '1rem' }}>Tracking Number</h3>
+              <h3 style={{ marginTop: '1rem' }}>Shipping & Tracking</h3>
+              {(selected.carrier || selected.labelUrl || selected.shippedAt) && (
+                <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '.75rem', marginBottom: '.5rem', fontSize: '.85rem' }}>
+                  {selected.carrier && (
+                    <div><strong>Carrier:</strong> {selected.carrier.toUpperCase()}</div>
+                  )}
+                  {selected.shippedAt && (
+                    <div><strong>Shipped:</strong> {new Date(selected.shippedAt).toLocaleString()}</div>
+                  )}
+                  {selected.labelUrl && (
+                    <div style={{ marginTop: '.4rem' }}>
+                      <a
+                        href={selected.labelUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '.3rem', background: '#1f2e44', color: '#fff', padding: '.4rem .8rem', borderRadius: 6, textDecoration: 'none', fontSize: '.8rem' }}
+                      >
+                        <Package size={12} /> Download Shipping Label (PDF)
+                      </a>
+                    </div>
+                  )}
+                  {selected.shippoTransactionId && (
+                    <div style={{ marginTop: '.4rem', fontSize: '.75rem', color: '#666' }}>
+                      Shippo TX: <code>{selected.shippoTransactionId}</code>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="admin-tracking-input">
-                <input value={trackingInput} onChange={e => setTrackingInput(e.target.value)} placeholder="Enter tracking #" />
+                <input value={trackingInput} onChange={e => setTrackingInput(e.target.value)} placeholder="Enter tracking # (auto-populated by Shippo if used)" />
                 <button className="btn-primary btn-sm" onClick={() => updateOrder(selected.id, { trackingNumber: trackingInput })} disabled={updating}>
                   <Truck size={14} /> Save
                 </button>

@@ -7,6 +7,7 @@ import { ShoppingCart, Trash2 } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { Product } from '@/lib/product-types'
+import { FreeShipBar } from '@/components/FreeShipBar'
 import './cart.css'
 
 function itemKey(productId: string, variantIndex?: number) {
@@ -14,28 +15,34 @@ function itemKey(productId: string, variantIndex?: number) {
 }
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem } = useCart()
+  const { items, updateQuantity, removeItem, loaded } = useCart()
   const { user } = useAuth()
   const router = useRouter()
   const [productMap, setProductMap] = useState<Record<string, Product>>({})
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
+    if (!loaded) return // wait for the cart to hydrate before deciding anything
     if (items.length === 0) { setLoading(false); return }
     const ids = items.map(i => i.productId).join(',')
     fetch(`/api/products?ids=${ids}`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('products fetch failed')
+        return r.json()
+      })
       .then((data) => {
         const products: Product[] = data.products || data || []
         const map: Record<string, Product> = {}
         products.forEach(p => { map[p.id] = p })
         setProductMap(map)
+        setFetchError(false)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
-  }, [items])
+      .catch(() => { setFetchError(true); setLoading(false) })
+  }, [items, loaded])
 
   // Default: select all non-out-of-stock items
   useEffect(() => {
@@ -71,16 +78,22 @@ export default function CartPage() {
     }
   }
 
-  // Find items whose products are no longer available
-  const unavailableItems = !loading ? items.filter(item => !productMap[item.productId]) : []
+  // Items whose products are genuinely gone (only trust this when the fetch
+  // actually succeeded — a transient network failure must NOT be reported as
+  // "no longer available", which previously let one tap erase the whole cart).
+  const unavailableItems = !loading && !fetchError ? items.filter(item => !productMap[item.productId]) : []
 
   const cartProducts = items
     .map(item => {
       const p = productMap[item.productId]
       if (!p) return null
-      const unitPrice = item.variantPrice ?? p.price
+      // Prefer the live variant price/name so the cart reflects the current DB
+      // price (which is what checkout will charge), not a stale add-time value.
+      const liveVariant = p.variants && item.variantIndex !== undefined ? p.variants[item.variantIndex] : undefined
+      const unitPrice = liveVariant?.price ?? item.variantPrice ?? p.price
+      const variantName = liveVariant?.name ?? item.variantName
       const outOfStock = p.stock !== undefined && p.stock === 0
-      return { ...p, quantity: item.quantity, unitPrice, variantName: item.variantName, variantIndex: item.variantIndex, outOfStock }
+      return { ...p, quantity: item.quantity, unitPrice, variantName, variantIndex: item.variantIndex, outOfStock }
     })
     .filter(Boolean) as (Product & { quantity: number; unitPrice: number; variantName?: string; variantIndex?: number; outOfStock: boolean })[]
 
@@ -107,7 +120,23 @@ export default function CartPage() {
     router.push('/checkout')
   }
 
-  if (loading) return <main className="container page-stack"><h1 className="cart-title">Shopping Bag</h1><p>Loading...</p></main>
+  if (!loaded || loading) return <main className="container page-stack"><h1 className="cart-title">Shopping Bag</h1><p>Loading...</p></main>
+
+  // Products failed to load but the cart isn't empty — offer a retry instead of
+  // falsely showing an empty bag / "no longer available".
+  if (fetchError && items.length > 0) {
+    return (
+      <main className="container page-stack">
+        <h1 className="cart-title">Shopping Bag</h1>
+        <div className="cart-empty">
+          <ShoppingCart size={56} strokeWidth={1} className="cart-empty-icon" />
+          <h2>We couldn&apos;t load your bag</h2>
+          <p>Please check your connection and try again — nothing has been removed.</p>
+          <button className="cart-empty-link" onClick={() => window.location.reload()}>RETRY</button>
+        </div>
+      </main>
+    )
+  }
 
   if (cartProducts.length === 0) {
     return (
@@ -127,8 +156,8 @@ export default function CartPage() {
       <h1 className="cart-title">Shopping Bag ({totalCount})</h1>
       {unavailableItems.length > 0 && (
         <div className="cart-unavailable-notice">
-          {unavailableItems.length} {unavailableItems.length === 1 ? 'item is' : 'items are'} no longer available and {unavailableItems.length === 1 ? 'has' : 'have'} been removed.
-          <button onClick={() => unavailableItems.forEach(i => removeItem(i.productId, i.variantIndex))}>Dismiss</button>
+          {unavailableItems.length} {unavailableItems.length === 1 ? 'item is' : 'items are'} no longer available.
+          <button onClick={() => unavailableItems.forEach(i => removeItem(i.productId, i.variantIndex))}>Remove {unavailableItems.length === 1 ? 'it' : 'them'}</button>
         </div>
       )}
       <div className="cart-layout">
@@ -191,10 +220,10 @@ export default function CartPage() {
           {hasOutOfStock && (
             <div className="cart-gift-warning">Remove out-of-stock items before checking out.</div>
           )}
+          {selectedCount > 0 && <FreeShipBar subtotal={subtotal} />}
           <button className="cart-checkout-btn" onClick={handleCheckout} disabled={giftBlocked || hasOutOfStock || selectedCount === 0}>
             {selectedCount === 0 ? 'SELECT ITEMS TO CHECK OUT' : 'CHECK OUT'}
           </button>
-          {selectedCount > 0 && !freeShipping && <div className="cart-free-shipping">Add <strong>${(80 - subtotal).toFixed(2)}</strong> more for free shipping!</div>}
         </div>
       </div>
     </main>

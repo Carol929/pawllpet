@@ -5,6 +5,15 @@ import { X, PawPrint } from 'lucide-react'
 
 const STORAGE_KEY = 'pawll-newsletter-dismissed'
 
+// Promotion end date (end of day, local time). Once this passes, the popup
+// stops showing automatically — update this single value for the next promo,
+// or set it to a past date to disable the popup entirely.
+const OFFER_EXPIRES = new Date('2026-05-31T23:59:59')
+
+function offerExpired() {
+  return Date.now() > OFFER_EXPIRES.getTime()
+}
+
 export function NewsletterPopup() {
   const [show, setShow] = useState(false)
   const [email, setEmail] = useState('')
@@ -13,6 +22,7 @@ export function NewsletterPopup() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (offerExpired()) return // promotion is over — don't pop the modal
     if (localStorage.getItem(STORAGE_KEY)) return
     const timer = setTimeout(() => setShow(true), 3000)
     return () => clearTimeout(timer)
@@ -63,7 +73,7 @@ export function NewsletterPopup() {
           <h2 className="nl-title">Get 25% OFF</h2>
           <p className="nl-subtitle">Grand Opening Special</p>
           <p className="nl-desc">Celebrate our grand opening! Subscribe for your exclusive 25% discount, plus new drops and pet care tips.</p>
-          <p className="nl-expire">Offer expires 5/31/2026</p>
+          <p className="nl-expire">Offer expires {OFFER_EXPIRES.toLocaleDateString('en-US')}</p>
 
           {!submitted ? (
             <form className="nl-form" onSubmit={handleSubmit}>

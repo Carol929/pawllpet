@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendVerificationEmail } from '@/lib/email'
 import { generateUniqueUsername } from '@/lib/utils'
+import { generateVerificationCode } from '@/lib/verification-code'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const registerSchema = z.object({
@@ -19,6 +21,15 @@ const registerSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = clientIp(request)
+    const limit = rateLimit(`register:ip:${ip}`, 10, 60 * 60 * 1000)
+    if (!limit.ok) {
+      return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, {
+        status: 429,
+        headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+      })
+    }
+
     const body = await request.json()
     const data = registerSchema.parse(body)
 
@@ -56,7 +67,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const code = String(Math.floor(100000 + Math.random() * 900000))
+    const code = generateVerificationCode()
     const expires = new Date(Date.now() + 1000 * 60 * 15)
 
     await prisma.emailVerificationToken.create({

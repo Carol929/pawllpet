@@ -39,7 +39,7 @@ export default function VerifyEmailPage() {
     } else {
       setMessage(t('auth', 'emailVerified'))
       setTimeout(() => {
-        router.push(`/set-password?email=${encodeURIComponent(email)}`)
+        router.push(`/set-password?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`)
       }, 1000)
     }
 

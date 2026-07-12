@@ -367,7 +367,6 @@ export default function AccountPage() {
               <h2>{t('account', 'rewards')}</h2>
               <div className="rewards-card">
                 <Star size={32} />
-                <div className="rewards-points">0</div>
                 <div className="rewards-label">{t('account', 'pawPoints')}</div>
                 <p className="rewards-desc">{t('account', 'pawPointsDesc')}</p>
               </div>

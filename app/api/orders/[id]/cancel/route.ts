@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireUser } from '@/lib/user-auth'
 import { sendAdminCancellationRequestEmail } from '@/lib/email'
+import { getStripe } from '@/lib/stripe'
 
 const DELIVERY_CANCEL_WINDOW_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
 
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     where: { id },
     select: {
       status: true, userId: true, total: true, deliveredAt: true, updatedAt: true,
+      stripeSessionId: true,
       user: { select: { fullName: true, email: true } },
     },
   })
@@ -50,14 +52,34 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   // Pending (unpaid) orders: cancel directly — no payment to refund, no admin review needed
   if (order.status === 'pending') {
-    await prisma.order.update({
-      where: { id },
+    // Expire the open Stripe Checkout session first, otherwise the customer
+    // could still complete payment in an open tab AFTER cancelling — the
+    // webhook's idempotency guard would then drop that payment, leaving them
+    // charged with a cancelled order and no fulfillment.
+    if (order.stripeSessionId) {
+      try {
+        await getStripe().checkout.sessions.expire(order.stripeSessionId)
+      } catch (err) {
+        // Already expired/completed, or Stripe unavailable. If it already
+        // completed, the order would no longer be 'pending' on the next read;
+        // proceed to mark cancelled based on current state.
+        console.error(`[Orders] Could not expire Stripe session for order ${id}:`, err)
+      }
+    }
+
+    // Only cancel if still pending (guards the race where payment completed
+    // between our read and the expire call).
+    const result = await prisma.order.updateMany({
+      where: { id, status: 'pending' },
       data: {
         status: 'cancelled',
         cancellationReason: reason,
         cancelledAt: new Date(),
       },
     })
+    if (result.count === 0) {
+      return NextResponse.json({ error: 'This order was just paid and can no longer be cancelled directly. Please request a cancellation.' }, { status: 409 })
+    }
     console.log(`[Orders] Pending order ${id} cancelled by user ${userId}: ${reason}`)
     return NextResponse.json({ status: 'cancelled' })
   }
