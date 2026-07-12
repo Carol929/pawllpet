@@ -6,6 +6,7 @@ import { ProductGrid } from '@/components/ProductGrid'
 import { HeroCarousel } from '@/components/HeroCarousel'
 import { TrustBar, ValueMarquee, WhyPawll, ShopByPet } from '@/components/HomeSections'
 import { RecentlyViewed } from '@/components/RecentlyViewed'
+import { CustomerLove } from '@/components/CustomerLove'
 import { Reveal } from '@/components/Reveal'
 import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth-context'
@@ -104,6 +105,8 @@ export default function HomePage() {
       )}
 
       <WhyPawll />
+
+      <CustomerLove />
 
       <section className="section-oval">
         <h2>{t('home', 'allProducts')}</h2>
