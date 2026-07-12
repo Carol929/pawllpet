@@ -10,7 +10,9 @@ import { Check, ChevronLeft, ChevronRight, Share2, Truck, ShieldCheck, RotateCcw
 import { Product } from '@/lib/product-types'
 import { useProducts } from '@/lib/use-products'
 import { ProductGrid } from '@/components/ProductGrid'
+import { RecentlyViewed } from '@/components/RecentlyViewed'
 import { useWishlist } from '@/lib/wishlist-context'
+import { recordView } from '@/lib/recently-viewed'
 
 function parseDescription(desc: string) {
   // Split by • bullet points and filter empty
@@ -32,7 +34,15 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState<'description' | 'details' | 'shipping' | 'reviews'>('description')
+  const [showSticky, setShowSticky] = useState(false)
   const { toggle, isWished } = useWishlist()
+
+  // Reveal the mobile sticky add-to-cart once the buy box scrolls out of view.
+  useEffect(() => {
+    const onScroll = () => setShowSticky(window.scrollY > 460)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   // Reviews
   interface ReviewData { id: string; rating: number; title?: string; body?: string; createdAt: string; user: { name: string; avatar?: string } }
@@ -64,6 +74,7 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
       .then(data => {
         setItem(data)
         setLoading(false)
+        if (data?.id) recordView(data.id)
       })
       .catch(() => setLoading(false))
     fetch(`/api/products/${slug}/reviews`).then(r => r.json()).then(setReviews).catch(() => {})
@@ -142,12 +153,13 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
 
   return (
     <main className="container page-stack">
-      {/* Breadcrumb */}
-      <nav className="pdp-breadcrumb">
-        <Link href="/">
-          <ChevronLeft size={16} />
-          <span>Explore More Products</span>
-        </Link>
+      {/* Breadcrumb trail */}
+      <nav className="pdp-breadcrumb" aria-label="Breadcrumb">
+        <Link href="/">{locale === 'zh' ? '首页' : 'Home'}</Link>
+        <span className="pdp-breadcrumb-sep" aria-hidden="true">/</span>
+        <Link href={`/shop?category=${encodeURIComponent(item.category)}`}>{item.category.replace(/-/g, ' ')}</Link>
+        <span className="pdp-breadcrumb-sep" aria-hidden="true">/</span>
+        <span className="pdp-breadcrumb-current" aria-current="page">{item.name}</span>
       </nav>
 
       {/* Product Layout */}
@@ -201,6 +213,23 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
               </button>
             </div>
           </div>
+
+          {(item.rating > 0 || reviews.length > 0) && (
+            <button
+              className="pdp-rating-row"
+              onClick={() => { setActiveTab('reviews'); document.querySelector('.pdp-tabs-section')?.scrollIntoView({ behavior: 'smooth' }) }}
+              aria-label={`${item.rating > 0 ? `Rated ${item.rating.toFixed(1)} out of 5, ` : ''}${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'} — read reviews`}
+            >
+              <span className="pdp-rating-stars" aria-hidden="true">
+                {[1, 2, 3, 4, 5].map(n => (
+                  <Star key={n} size={15} fill={n <= Math.round(item.rating) ? '#D4B28C' : 'none'} color="#D4B28C" />
+                ))}
+              </span>
+              <span className="pdp-rating-text">
+                {item.rating > 0 ? `${item.rating.toFixed(1)} · ` : ''}{reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+              </span>
+            </button>
+          )}
 
           {petMatch && (
             <div className="pdp-pet-match">
@@ -433,6 +462,25 @@ export default function ProductDetail({ params }: { params: { slug: string } }) 
           <ProductGrid items={related} />
         </section>
       )}
+
+      {/* Recently viewed (excludes the current product) */}
+      <RecentlyViewed excludeId={item.id} />
+
+      {/* Sticky mobile add-to-cart — reuses the same add handler */}
+      <div className={`pdp-sticky-cta ${showSticky ? 'pdp-sticky-cta--show' : ''}`}>
+        <img src={images[selectedImage]} alt="" className="pdp-sticky-thumb" />
+        <div className="pdp-sticky-info">
+          <span className="pdp-sticky-name">{item.name}</span>
+          <span className="pdp-sticky-price">${displayPrice.toFixed(2)}</span>
+        </div>
+        <button
+          className={`pdp-sticky-btn ${added ? 'pdp-sticky-btn--added' : ''}`}
+          onClick={handleAdd}
+          disabled={effectiveStock === 0}
+        >
+          {added ? <><Check size={16} /> {locale === 'zh' ? '已加入' : 'Added'}</> : effectiveStock === 0 ? (locale === 'zh' ? '缺货' : 'Out') : (locale === 'zh' ? '加入购物车' : 'Add to Cart')}
+        </button>
+      </div>
     </main>
   )
 }
