@@ -4,6 +4,11 @@ import { notFound } from 'next/navigation'
 import { getProductBySlug } from '@/lib/products'
 import { ProductDetailClient } from './ProductDetailClient'
 
+// Prisma reads aren't fetch, so Next can't detect this route as dynamic and would
+// cache it indefinitely (frozen price/stock/JSON-LD until redeploy). Force it
+// dynamic so product data + structured data always reflect the live DB.
+export const dynamic = 'force-dynamic'
+
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
 const absolute = (u: string) => (u.startsWith('http') ? u : `${siteUrl}${u}`)
 
@@ -46,13 +51,17 @@ export default async function ProductPage({ params }: { params: { slug: string }
     sku: product.id,
     ...(product.brand ? { brand: { '@type': 'Brand', name: product.brand } } : {}),
     ...(product.material ? { material: product.material } : {}),
-    offers: {
-      '@type': 'Offer',
-      priceCurrency: 'USD',
-      price: product.price.toFixed(2),
-      availability: (product.stock ?? 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      url: `${siteUrl}/products/${product.slug}`,
-    },
+    ...(product.price > 0
+      ? {
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: 'USD',
+            price: product.price.toFixed(2),
+            availability: (product.stock ?? 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            url: `${siteUrl}/products/${product.slug}`,
+          },
+        }
+      : {}),
   }
 
   return (
