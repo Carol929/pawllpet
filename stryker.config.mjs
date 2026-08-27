@@ -1,5 +1,5 @@
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
-export default {
+const config = {
   testRunner: 'vitest',
   checkers: ['typescript'],
   tsconfigFile: 'tsconfig.json',
@@ -16,3 +16,5 @@ export default {
     configFile: 'vitest.config.ts',
   },
 }
+
+export default config

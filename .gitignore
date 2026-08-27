@@ -36,3 +36,11 @@ next-env.d.ts
 # prisma
 /prisma/migrations
 
+# stryker mutation-testing output
+/reports
+.stryker-tmp
+
+# claude code (worktrees, local session files) — launch.json is shared dev-server config
+.claude/*
+!.claude/launch.json
+
