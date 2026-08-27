@@ -328,3 +328,42 @@
   }
 }
 
+/* Password field with show/hide eye toggle */
+.password-field {
+  position: relative;
+  display: flex;
+}
+.password-field input {
+  flex: 1;
+  width: 100%;
+  /* room for the eye button; keeps the 12px top/bottom/left from .form-group input */
+  padding-right: 44px;
+}
+.password-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.2s, background-color 0.2s;
+}
+.password-toggle:hover {
+  color: #333;
+  background: #f3f4f6;
+}
+.password-toggle:focus-visible {
+  outline: 2px solid #D4B28C;
+  outline-offset: 1px;
+  color: #333;
+}
+

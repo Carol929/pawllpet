@@ -124,6 +124,7 @@ export default function AdminProducts() {
           </div>
         ) : (
           <>
+            <div className="admin-table-wrapper--scroll">
             <table className="admin-table">
               <thead>
                 <tr>
@@ -131,9 +132,9 @@ export default function AdminProducts() {
                   <th>Product</th>
                   <th>Status</th>
                   <th>Category</th>
-                  <th>Price</th>
-                  <th>Stock</th>
-                  <th>Variants</th>
+                  <th className="num">Price</th>
+                  <th className="num">Stock</th>
+                  <th className="num">Variants</th>
                   <th style={{ width: 100 }}>Actions</th>
                 </tr>
               </thead>
@@ -155,9 +156,15 @@ export default function AdminProducts() {
                       {isIncomplete(p) && <span className="badge badge-incomplete" title="Missing required fields">Incomplete</span>}
                     </td>
                     <td>{p.categories?.length > 0 ? p.categories.map(c => c.name).join(', ') : p.category?.name}</td>
-                    <td>${displayPrice(p).toFixed(2)}{p.price === 0 && p.variants.length > 0 && <span style={{ fontSize: '.75rem', color: '#6b7280' }}> (variant)</span>}</td>
-                    <td>{displayStock(p)}</td>
-                    <td>{p._count.variants}</td>
+                    <td className="num">${displayPrice(p).toFixed(2)}{p.price === 0 && p.variants.length > 0 && <span style={{ fontSize: '.75rem', color: '#6b7280' }}> (variant)</span>}</td>
+                    <td className="num">
+                      {(() => {
+                        const s = displayStock(p)
+                        const label = s === 0 ? 'Out of stock' : s <= 5 ? `Low stock: ${s}` : undefined
+                        return <span className={s === 0 ? 'admin-stock-out' : s <= 5 ? 'admin-stock-low' : ''} aria-label={label} title={label}>{s}</span>
+                      })()}
+                    </td>
+                    <td className="num">{p._count.variants}</td>
                     <td>
                       <div style={{ display: 'flex', gap: 4 }}>
                         <Link href={`/admin/products/${p.id}/edit`} className="admin-btn admin-btn-sm">
@@ -172,6 +179,7 @@ export default function AdminProducts() {
                 ))}
               </tbody>
             </table>
+            </div>
 
             {totalPages > 1 && (
               <div className="admin-pagination">

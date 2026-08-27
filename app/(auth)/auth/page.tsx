@@ -9,6 +9,7 @@ import { signIn } from 'next-auth/react'
 import { useLocale } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth-context'
 import PasswordRequirements, { passwordMeetsAllRules } from '@/components/PasswordRequirements'
+import PasswordInput from '@/components/PasswordInput'
 import './auth.css'
 
 type Tab = 'login' | 'signup' | 'forgot'
@@ -216,8 +217,8 @@ function AuthPageInner() {
               </div>
               <div className="form-group">
                 <label htmlFor="loginPassword">{t('auth', 'password')}</label>
-                <input
-                  type="password" id="loginPassword"
+                <PasswordInput
+                  id="loginPassword"
                   value={loginData.password}
                   onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                   required placeholder={t('auth', 'passwordPlaceholder')}
@@ -423,8 +424,8 @@ function AuthPageInner() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="forgotNewPw">{t('auth', 'newPasswordOptional')}</label>
-                  <input
-                    type="password" id="forgotNewPw"
+                  <PasswordInput
+                    id="forgotNewPw"
                     value={forgotNewPassword}
                     onChange={(e) => setForgotNewPassword(e.target.value)}
                     minLength={8}
