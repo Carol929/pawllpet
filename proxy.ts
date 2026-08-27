@@ -10,13 +10,13 @@ async function checkCustomToken(request: NextRequest): Promise<string | null> {
 
   try {
     const { payload } = await jwtVerify(token, getJwtSecret())
-    return payload.role as string || null
+    return (payload.role as string) || null
   } catch {
     return null
   }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Method 1: Check custom JWT token (email/password login)
   const customRole = await checkCustomToken(request)
   if (customRole === 'admin') {

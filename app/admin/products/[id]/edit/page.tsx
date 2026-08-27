@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, X, Plus, GripVertical, Crop } from 'lucide-react'
 import Link from 'next/link'
@@ -13,7 +13,8 @@ function slugify(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 }
 
-export default function EditProduct({ params }: { params: { id: string } }) {
+export default function EditProduct(props: { params: Promise<{ id: string }> }) {
+  const params = use(props.params)
   const { id } = params
   const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])

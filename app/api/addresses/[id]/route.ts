@@ -20,7 +20,8 @@ const updateSchema = z.object({
   isDefault: z.boolean().optional(),
 })
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const authResult = await requireUser(request)
   if (authResult instanceof NextResponse) return authResult
 
@@ -51,7 +52,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   return NextResponse.json(address)
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const authResult = await requireUser(request)
   if (authResult instanceof NextResponse) return authResult
 

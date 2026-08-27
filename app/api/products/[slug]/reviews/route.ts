@@ -5,7 +5,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireUser } from '@/lib/user-auth'
 
-export async function GET(_request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(_request: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params
   const product = await prisma.product.findFirst({ where: { slug: params.slug }, select: { id: true } })
   if (!product) return NextResponse.json([], { status: 404 })
 
@@ -25,7 +26,8 @@ export async function GET(_request: NextRequest, { params }: { params: { slug: s
   })))
 }
 
-export async function POST(request: NextRequest, { params }: { params: { slug: string } }) {
+export async function POST(request: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params
   const authResult = await requireUser(request)
   if (authResult instanceof NextResponse) return authResult
   const { userId } = authResult
