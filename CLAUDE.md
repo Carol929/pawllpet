@@ -6,7 +6,7 @@ Context for AI agents (and humans) working on this repo. Read this before making
 
 PawLL is a US-domestic ecommerce site for pet products (toys, apparel, leashes). The brand is `pawllpet.com`. Origin warehouse: Arlington, VA 22202.
 
-- **Framework**: Next.js 14 (App Router, Server Components by default)
+- **Framework**: Next.js 16 (App Router, Server Components by default, Turbopack builds)
 - **Database**: Postgres on Supabase, accessed via Prisma
 - **Auth**: NextAuth v5 beta + custom email/password routes
 - **Payments**: Stripe Checkout (US only, USD)

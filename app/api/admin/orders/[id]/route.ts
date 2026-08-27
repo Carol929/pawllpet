@@ -7,7 +7,8 @@ import { requireAdmin } from '@/lib/admin-auth'
 import { sendOrderShippedEmail, sendOrderCancellationResultEmail } from '@/lib/email'
 import { getStripe } from '@/lib/stripe'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const authResult = await requireAdmin(request)
   if (authResult instanceof NextResponse) return authResult
 
@@ -20,7 +21,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   return NextResponse.json(order)
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const authResult = await requireAdmin(request)
   if (authResult instanceof NextResponse) return authResult
 

@@ -5,7 +5,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireUser } from '@/lib/user-auth'
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const authResult = await requireUser(request)
   if (authResult instanceof NextResponse) return authResult
 
@@ -27,7 +28,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   return NextResponse.json(updated)
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const authResult = await requireUser(request)
   if (authResult instanceof NextResponse) return authResult
 

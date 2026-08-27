@@ -4,7 +4,8 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getProductBySlug } from '@/lib/products'
 
-export async function GET(_request: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(_request: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params
   try {
     const { slug } = params
     const product = await getProductBySlug(slug)

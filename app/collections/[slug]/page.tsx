@@ -1,11 +1,13 @@
 'use client'
 
+import { use } from 'react'
 import { collections } from '@/lib/static-data'
 import { ProductGrid } from '@/components/ProductGrid'
 import { useProducts } from '@/lib/use-products'
 import { useLocale } from '@/lib/i18n'
 
-export default function CollectionDetail({ params }: { params: { slug: string } }) {
+export default function CollectionDetail(props: { params: Promise<{ slug: string }> }) {
+  const params = use(props.params)
   const { slug } = params
   const { products, loading } = useProducts({ limit: '8' })
   const { locale } = useLocale()
