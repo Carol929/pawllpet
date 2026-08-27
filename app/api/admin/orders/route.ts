@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   if (status && status !== 'all') where.status = status
   if (search) where.id = { contains: search }
 
-  const [orders, total] = await Promise.all([
+  const [orders, total, revenueAgg] = await Promise.all([
     prisma.order.findMany({
       where,
       include: { user: { select: { fullName: true, email: true } }, items: true },
@@ -28,7 +28,15 @@ export async function GET(request: NextRequest) {
       take: limit,
     }),
     prisma.order.count({ where }),
+    // All-time revenue across non-cancelled orders — independent of the current
+    // page/status filter so the dashboard KPI isn't derived from one page.
+    prisma.order.aggregate({ _sum: { total: true }, where: { status: { not: 'cancelled' } } }),
   ])
 
-  return NextResponse.json({ orders, total, pages: Math.ceil(total / limit) })
+  return NextResponse.json({
+    orders,
+    total,
+    pages: Math.ceil(total / limit),
+    revenue: revenueAgg._sum.total || 0,
+  })
 }

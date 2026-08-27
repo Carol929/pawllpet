@@ -24,14 +24,6 @@ interface Order {
 }
 
 const statusOptions = ['all', 'pending', 'paid', 'shipped', 'delivered', 'cancellation_requested', 'cancelled']
-const statusColors: Record<string, string> = {
-  pending: '#f59e0b',
-  paid: '#3b82f6',
-  shipped: '#8b5cf6',
-  delivered: '#16a34a',
-  cancellation_requested: '#ea580c',
-  cancelled: '#dc2626',
-}
 
 const resolutionOptions = [
   { value: 'full_refund', label: 'Full refund (100%)' },
@@ -141,8 +133,11 @@ export default function AdminOrders() {
 
   return (
     <div>
-      <div className="admin-page-header">
-        <h1><Package size={22} /> Orders ({total})</h1>
+      <div className="admin-header">
+        <div>
+          <h1>Orders</h1>
+          <p className="admin-subtitle">{total} order{total === 1 ? '' : 's'} total</p>
+        </div>
       </div>
 
       <div className="admin-toolbar">
@@ -152,7 +147,7 @@ export default function AdminOrders() {
         </div>
         <div className="admin-tabs">
           {statusOptions.map(s => (
-            <button key={s} className={`admin-tab ${status === s ? 'admin-tab--active' : ''}`} onClick={() => { setStatus(s); setPage(1) }}>
+            <button key={s} className={`admin-tab ${status === s ? 'active' : ''}`} onClick={() => { setStatus(s); setPage(1) }}>
               {s === 'all' ? 'All' : statusLabel(s)}
             </button>
           ))}
@@ -355,24 +350,34 @@ export default function AdminOrders() {
         </div>
       ) : (
         <>
+          <div className="admin-table-wrapper admin-table-wrapper--scroll">
           <table className="admin-table">
-            <thead><tr><th>Order</th><th>Customer</th><th>Status</th><th>Total</th><th>Date</th></tr></thead>
+            <thead><tr><th>Order</th><th>Customer</th><th>Status</th><th className="num">Total</th><th>Date</th></tr></thead>
             <tbody>
               {orders.map(o => (
-                <tr key={o.id} onClick={() => openOrder(o)} className="admin-table-row--clickable">
+                <tr
+                  key={o.id}
+                  onClick={() => openOrder(o)}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openOrder(o) } }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open order #${o.id.slice(-8).toUpperCase()}`}
+                  className={`admin-table-row--clickable ${o.status === 'cancellation_requested' ? 'admin-row-attn' : ''}`}
+                >
                   <td>#{o.id.slice(-8).toUpperCase()}</td>
                   <td>{o.user.fullName}</td>
                   <td>
-                    <span className="admin-badge" style={{ background: statusColors[o.status] || '#888' }}>{statusLabel(o.status)}</span>
+                    <span className={`admin-badge admin-badge--${o.status}`}>{statusLabel(o.status)}</span>
                     {o.status === 'cancellation_requested' && <AlertTriangle size={14} color="#b91c1c" style={{ marginLeft: 6, verticalAlign: 'middle' }} />}
                   </td>
-                  <td>${o.total.toFixed(2)}</td>
+                  <td className="num">${o.total.toFixed(2)}</td>
                   <td>{new Date(o.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))}
-              {!orders.length && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>No orders found</td></tr>}
+              {!orders.length && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>No orders found</td></tr>}
             </tbody>
           </table>
+          </div>
           {pages > 1 && (
             <div className="admin-pagination">
               <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</button>
