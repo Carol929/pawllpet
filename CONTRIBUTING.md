@@ -14,7 +14,7 @@ npm run db:seed            # optional: seed admin + sample data
 npm run dev                # http://localhost:3000
 ```
 
-You should be running on Node 20.x (pinned in `package.json` `engines.node`).
+You should be running on Node 22.x (pinned in `package.json` `engines.node` — Node 20 reached end-of-life in April 2026).
 
 ## Branch Workflow
 
