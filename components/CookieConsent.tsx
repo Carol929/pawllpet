@@ -26,6 +26,9 @@ export function CookieConsent() {
 
   function save(p: CookiePrefs) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(p))
+    // Same-tab listeners (e.g. Analytics) don't get 'storage' events — tell
+    // them directly so consent applies without a reload.
+    window.dispatchEvent(new Event('pawll-consent-changed'))
     setShow(false)
   }
 

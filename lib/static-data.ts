@@ -8,7 +8,7 @@ export const collections = [
 ]
 
 export const blogPosts = [
-  { slug: 'building-a-pet-routine', title: 'Build a Better Pet Routine in 15 Minutes', excerpt: 'Simple rituals to improve calm, health, and joy.' },
-  { slug: 'choosing-safe-materials', title: 'How We Vet Pet-Safe Materials', excerpt: 'Our sourcing checklist for modern pet homes.' },
-  { slug: 'cat-enrichment-playbook', title: 'Cat Enrichment Playbook', excerpt: 'A practical guide to daily feline stimulation.' },
+  { slug: 'building-a-pet-routine', title: 'Build a Better Pet Routine in 15 Minutes', excerpt: 'The 5-5-5 framework: three small daily rituals that lower stress, curb destructive habits, and fit inside a busy schedule.', date: '2026-08-12' },
+  { slug: 'choosing-safe-materials', title: 'How We Vet Pet-Safe Materials', excerpt: 'Pet toys are less regulated than children’s toys. The exact sourcing checklist we run before a product earns a PawLL listing.', date: '2026-07-28' },
+  { slug: 'cat-enrichment-playbook', title: 'Cat Enrichment Playbook', excerpt: 'Rebuild the hunt indoors in twenty minutes a day: scheduled play, puzzle feeding, vertical territory, and scent rotation.', date: '2026-08-20' },
 ]
