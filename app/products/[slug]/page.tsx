@@ -9,7 +9,7 @@ import { ProductDetailClient } from './ProductDetailClient'
 // dynamic so product data + structured data always reflect the live DB.
 export const dynamic = 'force-dynamic'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
 const absolute = (u: string) => (u.startsWith('http') ? u : `${siteUrl}${u}`)
 
 // Dedupe the DB lookup across generateMetadata + the page render (same request).

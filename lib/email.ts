@@ -51,7 +51,7 @@ export async function sendNewsletterWelcomeEmail(email: string, discountCode: st
     return
   }
 
-  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
 
   await client.emails.send({
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
@@ -146,7 +146,7 @@ export async function sendOrderConfirmationEmail(
     return
   }
 
-  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
   const shortId = order.orderId.slice(-8).toUpperCase()
   const addr = order.shippingAddress
 
@@ -273,7 +273,7 @@ export async function sendAdminOrderNotificationEmail(order: {
     return
   }
 
-  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
   const shortId = order.orderId.slice(-8).toUpperCase()
   const addr = order.shippingAddress
 
@@ -364,7 +364,7 @@ export async function sendOrderShippedEmail(
     return
   }
 
-  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
   const shortId = order.orderId.slice(-8).toUpperCase()
 
   const itemList = order.items.map(i =>
@@ -449,7 +449,7 @@ export async function sendAdminCancellationRequestEmail(payload: {
     return
   }
 
-  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
   const shortId = payload.orderId.slice(-8).toUpperCase()
 
   await client.emails.send({
@@ -513,7 +513,7 @@ export async function sendOrderCancellationResultEmail(
     return
   }
 
-  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
   const shortId = payload.orderId.slice(-8).toUpperCase()
 
   const resolutionMap: Record<string, { title: string; body: string }> = {
@@ -599,7 +599,7 @@ export async function sendQuizGiftEmail(email: string, name: string, giftName: s
     return
   }
 
-  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
 
   await client.emails.send({
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
@@ -694,7 +694,7 @@ export async function sendShippingNotificationEmail(
     return
   }
 
-  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
   const shortId = data.orderId.slice(-8).toUpperCase()
   const carrierUpper = data.carrier.toUpperCase()
 

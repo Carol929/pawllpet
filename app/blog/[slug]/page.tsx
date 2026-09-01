@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { blogPosts } from '@/lib/static-data'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
 
 export function generateStaticParams() {
   return blogPosts.map(p => ({ slug: p.slug }))

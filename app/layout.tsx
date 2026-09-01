@@ -16,7 +16,7 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
 
 export const metadata: Metadata = {
   title: { default: 'PawLL Pet | Premium Pet Supplies', template: '%s | PawLL Pet' },
