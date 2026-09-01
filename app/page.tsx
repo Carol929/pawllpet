@@ -57,6 +57,9 @@ export default function HomePage() {
 
   return (
     <main className="container page-stack">
+      {/* The hero is pure imagery, so the page-level heading lives here for
+          search engines and screen readers. */}
+      <h1 className="sr-only">PawLL — Premium Pet Supplies for Dogs &amp; Cats</h1>
       <HeroCarousel />
       <TrustBar />
       <ShopByPet />

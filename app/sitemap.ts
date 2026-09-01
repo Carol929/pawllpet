@@ -1,21 +1,33 @@
 import { MetadataRoute } from 'next'
 import { getProducts } from '@/lib/products'
+import { blogPosts } from '@/lib/static-data'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
 
-  const staticPages = [
-    '', '/shop', '/about', '/faq', '/contact', '/help-center',
-    '/new-arrivals', '/best-sellers', '/shop-by-pet', '/shop-by-need',
-    '/mystery-boxes', '/bundles', '/limited-drops', '/rewards',
-    '/privacy-policy', '/terms-conditions', '/returns-policy',
-    '/shipping-policy', '/exchange-policy', '/track-order',
-  ].map(path => ({
+  const entry = (path: string, priority: number, changeFrequency: 'daily' | 'weekly' | 'monthly') => ({
     url: `${siteUrl}${path}`,
     lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: path === '' ? 1 : 0.8,
-  }))
+    changeFrequency,
+    priority,
+  })
+
+  const commercePages = [
+    '/shop', '/new-arrivals', '/best-sellers', '/shop-by-pet', '/shop-by-need',
+    '/mystery-boxes', '/bundles', '/limited-drops',
+  ].map(p => entry(p, 0.8, 'weekly'))
+
+  const contentPages = [
+    '/about', '/blog', '/faq', '/contact', '/help-center',
+    '/rewards', '/pet-quiz', '/store-locator', '/track-order',
+  ].map(p => entry(p, 0.6, 'weekly'))
+
+  const blogPostPages = blogPosts.map(post => entry(`/blog/${post.slug}`, 0.6, 'monthly'))
+
+  const policyPages = [
+    '/privacy-policy', '/terms-conditions', '/returns-policy', '/shipping-policy',
+    '/exchange-policy', '/cookie-policy', '/product-safety', '/accessibility',
+  ].map(p => entry(p, 0.4, 'monthly'))
 
   let productPages: MetadataRoute.Sitemap = []
   try {
@@ -30,5 +42,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB not available at build time
   }
 
-  return [...staticPages, ...productPages]
+  return [
+    entry('', 1, 'daily'),
+    ...commercePages,
+    ...productPages,
+    ...contentPages,
+    ...blogPostPages,
+    ...policyPages,
+  ]
 }
