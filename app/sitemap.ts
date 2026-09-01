@@ -3,7 +3,7 @@ import { getProducts } from '@/lib/products'
 import { blogPosts } from '@/lib/static-data'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
 
   const entry = (path: string, priority: number, changeFrequency: 'daily' | 'weekly' | 'monthly') => ({
     url: `${siteUrl}${path}`,
@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ].map(p => entry(p, 0.8, 'weekly'))
 
   const contentPages = [
-    '/about', '/blog', '/faq', '/contact', '/help-center',
+    '/about', '/giving', '/blog', '/faq', '/contact', '/help-center',
     '/rewards', '/pet-quiz', '/store-locator', '/track-order',
   ].map(p => entry(p, 0.6, 'weekly'))
 
