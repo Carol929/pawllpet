@@ -6,6 +6,7 @@ import Footer from '@/components/Footer'
 import { Providers } from '@/components/Providers'
 import { AdminRouteGuard } from '@/components/AdminRouteGuard'
 import { ScrollProgress } from '@/components/ScrollProgress'
+import { Analytics } from '@/components/Analytics'
 
 // The site names "Inter" in CSS but never bundled it, so it silently rendered
 // in system-ui. next/font self-hosts it (no external request, no layout shift).
@@ -114,6 +115,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </AdminRouteGuard>
         </Providers>
+        <Analytics />
       </body>
     </html>
   )

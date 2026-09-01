@@ -8,14 +8,21 @@ export const metadata: Metadata = {
   alternates: { canonical: '/blog' },
 }
 
+const formatDate = (iso: string) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+
 export default function Page() {
+  const posts = [...blogPosts].sort((a, b) => b.date.localeCompare(a.date))
   return (
     <main className="container page-stack">
       <h1>Journal</h1>
-      {blogPosts.map(p => (
-        <article key={p.slug}>
+      <p className="blog-tagline">Practical guides for living well with dogs and cats — from the PawLL team.</p>
+      {posts.map(p => (
+        <article key={p.slug} className="blog-card">
+          <p className="blog-meta">{formatDate(p.date)}</p>
           <h3><Link href={`/blog/${p.slug}`}>{p.title}</Link></h3>
           <p>{p.excerpt}</p>
+          <Link href={`/blog/${p.slug}`} className="blog-readmore">Read the guide →</Link>
         </article>
       ))}
     </main>
