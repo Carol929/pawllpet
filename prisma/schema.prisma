@@ -263,6 +263,24 @@ model EmailVerificationToken {
   @@map("email_verification_tokens")
 }
 
+// 慈善捐款记录表 — "PawLL Gives Back" 板块展示的实际捐款流水
+// 累计承诺捐款额（1% of paid orders）是从订单实时算出来的，不存表；
+// 这张表只记录每次真正捐出去的款项，由管理员在后台录入。
+model Donation {
+  id           String   @id @default(cuid())
+  organization String   // 受赠机构名称
+  amount       Float    // 捐款金额（USD）
+  donatedAt    DateTime // 实际捐出日期
+  note         String?  @db.Text // 说明（可选，前台会展示）
+  link         String?  // 机构官网或公示链接（可选）
+  imageUrl     String?  // 凭证/现场照片URL（可选）
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([donatedAt])
+  @@map("donations")
+}
+
 // 宠物档案表
 model Pet {
   id        String   @id @default(cuid())

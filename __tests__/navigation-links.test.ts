@@ -46,6 +46,7 @@ describe('Footer links all have pages', () => {
     '/accessibility',
     '/contact',
     '/about',
+    '/giving',
     '/help-center',
     '/new-arrivals',
     '/shop-by-pet',

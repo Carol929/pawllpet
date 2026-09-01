@@ -1502,6 +1502,47 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   PAWLL GIVES BACK — /giving page (1% pledge tracker)
+   ═══════════════════════════════════════════════════════════════════ */
+.giving-hero-badge { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .9rem; border-radius: var(--r-pill); background: #f5eee4; color: var(--gold-ink); font-size: .85rem; font-weight: 700; letter-spacing: .02em; margin-bottom: .9rem; }
+
+.giving-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+.giving-stat-card { display: flex; flex-direction: column; gap: .35rem; padding: 1.5rem 1.4rem; background: #fff; border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-soft); text-align: center; }
+.giving-stat-card--primary { background: linear-gradient(135deg, #1f2e44, #2a3f5c); border-color: transparent; }
+.giving-stat-card--primary .giving-stat-label { color: #cbd5e1; }
+.giving-stat-card--primary .giving-stat-value { color: var(--gold); }
+.giving-stat-card--primary .giving-stat-hint { color: #94a3b8; }
+.giving-stat-label { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #777; }
+.giving-stat-value { font-size: 2rem; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; }
+.giving-stat-hint { font-size: .8rem; color: var(--muted); }
+
+.giving-log { list-style: none; padding: 0; margin: 1.25rem 0 0; display: flex; flex-direction: column; gap: .75rem; }
+.giving-log-row { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.2rem; background: #fff; border: 1px solid var(--line); border-radius: var(--r-md); }
+.giving-log-img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; flex-shrink: 0; }
+.giving-log-body { flex: 1; min-width: 0; }
+.giving-log-date { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.giving-log-org { font-size: 1rem; font-weight: 700; color: var(--navy); margin: .15rem 0; display: flex; align-items: center; gap: .4rem; }
+.giving-log-org a { color: var(--gold-ink); display: inline-flex; }
+.giving-log-org a:hover { color: var(--gold-hover); }
+.giving-log-note { font-size: .88rem; color: #666; margin: 0; line-height: 1.5; }
+.giving-log-amount { font-size: 1.15rem; font-weight: 800; color: #16a34a; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.giving-log-empty { display: flex; flex-direction: column; align-items: center; gap: .6rem; text-align: center; padding: 2.25rem 1.5rem; background: var(--cream); border: 2px dashed #d1ccc4; border-radius: var(--r-lg); color: #999; margin-top: 1.25rem; }
+.giving-log-empty p { margin: 0; max-width: 460px; color: #777; line-height: 1.6; }
+.giving-log-empty svg { color: var(--gold); }
+
+.giving-fineprint { padding: 1.4rem 1.6rem; background: var(--cream); border-radius: var(--r-md); }
+.giving-fineprint h3 { font-size: .95rem; font-weight: 700; color: var(--navy); margin: 0 0 .5rem; }
+.giving-fineprint p { font-size: .85rem; color: #777; line-height: 1.65; margin: 0 0 .5rem; }
+.giving-fineprint p:last-child { margin-bottom: 0; }
+
+@media (max-width: 768px) {
+  .giving-stats { grid-template-columns: 1fr; }
+  .giving-log-row { flex-wrap: wrap; }
+  .giving-log-amount { width: 100%; text-align: right; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    STOREFRONT GLOW-UP — motion + engagement layer (additive)
    ═══════════════════════════════════════════════════════════════════ */
 
