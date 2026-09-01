@@ -5,7 +5,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
 
   const staticPages = [
-    '', '/shop', '/about', '/faq', '/contact', '/help-center',
+    '', '/shop', '/about', '/giving', '/faq', '/contact', '/help-center',
     '/new-arrivals', '/best-sellers', '/shop-by-pet', '/shop-by-need',
     '/mystery-boxes', '/bundles', '/limited-drops', '/rewards',
     '/privacy-policy', '/terms-conditions', '/returns-policy',

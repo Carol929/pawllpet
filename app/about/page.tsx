@@ -120,10 +120,10 @@ export default function AboutPage() {
           </div>
           <div className="about-shelter-card">
             <HandHeart size={24} />
-            <h3>{en ? 'Product Donations' : '产品捐赠'}</h3>
+            <h3>{en ? 'The 1% Pledge' : '1% 捐赠承诺'}</h3>
             <p>{en
-              ? 'A portion of our proceeds goes toward donating eco-friendly toys, beds, and supplies to animals in need.'
-              : '我们将部分收益用于向需要帮助的动物捐赠环保玩具、宠物床和用品。'}</p>
+              ? '1% of every order is automatically pledged to animal shelters and rescues — tallied live, donated regularly, and logged publicly.'
+              : '每笔订单的 1% 会自动计入捐款池，捐给动物收容所和救助组织 —— 实时累计、定期捐出、公开记录。'}</p>
           </div>
         </div>
 
@@ -137,6 +137,9 @@ export default function AboutPage() {
               ? 'Want to partner with us or suggest a shelter? Reach out at support@pawllpet.com'
               : '想与我们合作或推荐救助站？请联系 support@pawllpet.com'}
           </p>
+          <Link href="/giving" className="about-link">
+            {en ? 'See our live giving tracker →' : '查看实时捐赠追踪 →'}
+          </Link>
         </div>
       </section>
 
