@@ -21,6 +21,9 @@ export async function GET() {
     .map(p => {
       const description = (p.subtitle || p.description || p.name).replace(/\s+/g, ' ').trim().slice(0, 5000)
       const inStock = (p.stock ?? 0) > 0 || (p.variants?.some(v => v.stock > 0) ?? false)
+      // shipping_weight lets Merchant Center apply the same weight-tier rates
+      // the checkout uses (lib/shipping-rates.ts)
+      const shippingWeight = p.weight && p.weight > 0 ? `\n      <g:shipping_weight>${p.weight} lb</g:shipping_weight>` : ''
       return `    <item>
       <g:id>${escapeXml(p.id)}</g:id>
       <g:title>${escapeXml(p.name)}</g:title>
@@ -31,7 +34,8 @@ export async function GET() {
       <g:availability>${inStock ? 'in_stock' : 'out_of_stock'}</g:availability>
       <g:condition>new</g:condition>
       <g:brand>${escapeXml(p.brand || 'PawLL')}</g:brand>
-      <g:identifier_exists>no</g:identifier_exists>
+      <g:product_type>${escapeXml(p.category)}</g:product_type>
+      <g:identifier_exists>no</g:identifier_exists>${shippingWeight}
     </item>`
     })
 
