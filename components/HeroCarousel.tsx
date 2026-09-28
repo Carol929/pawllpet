@@ -114,7 +114,7 @@ export function HeroCarousel() {
       >
         {loopSlides.map((slide, i) => (
           <div key={i} className="hero-carousel-slide">
-            <Image src={slide.src} alt={slide.alt} width={1200} height={480} sizes="100vw" priority={i <= 2} style={{ width: '100%', height: '480px', objectFit: 'contain' }} />
+            <Image src={slide.src} alt={slide.alt} width={1200} height={480} sizes="100vw" priority={i <= 2} />
           </div>
         ))}
       </div>

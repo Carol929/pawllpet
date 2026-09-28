@@ -313,6 +313,9 @@ export default function Header() {
                 )}
               </div>
             ))}
+            <Link href="/about" className="mobile-dropdown-trigger" onClick={() => setMobileMenuOpen(false)}>
+              About Us
+            </Link>
           </nav>
 
           {/* Mobile auth / user section */}
