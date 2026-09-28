@@ -44,6 +44,36 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
   })
 }
 
+/**
+ * Sent once, right after a new account verifies its email: delivers the
+ * first-order promo code. The code itself is created/managed in the Stripe
+ * dashboard (10% off, $50 minimum, first transaction only).
+ */
+export async function sendWelcomeCouponEmail(email: string, name: string): Promise<void> {
+  const client = getResend()
+  if (!client) {
+    console.warn('RESEND_API_KEY is missing; skipping welcome coupon email.')
+    return
+  }
+
+  const code = process.env.WELCOME_PROMO_CODE || 'PAWLL10'
+  const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
+  await client.emails.send({
+    from: `${process.env.EMAIL_FROM_NAME || 'PawLL'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
+    to: email,
+    subject: 'Welcome to PawLL — here is 10% off your first order 🐾',
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 12px; color: #1c2333;">
+        <h2>Welcome to the pack, ${name}!</h2>
+        <p>Your account is verified. As a thank-you, here is <strong>10% off your first order of $50 or more</strong>:</p>
+        <p style="font-size: 28px; font-weight: 700; letter-spacing: 3px; background: #faf8f5; border: 2px dashed #D4B28C; border-radius: 8px; padding: 14px 18px; display: inline-block;">${code}</p>
+        <p>Enter it on the payment page at checkout. One use per customer, first order only.</p>
+        <p><a href="${shopUrl}/shop" style="color: #1f2e44; font-weight: 700;">Start shopping →</a></p>
+      </div>
+    `,
+  })
+}
+
 export async function sendNewsletterWelcomeEmail(email: string, discountCode: string): Promise<void> {
   const client = getResend()
   if (!client) {

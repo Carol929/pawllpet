@@ -92,6 +92,8 @@ export async function POST(request: NextRequest) {
         where: { id: orderId },
         data: {
           total: amountTotal,
+          // Stripe Tax is authoritative — replace the checkout-time estimate.
+          tax: (session.total_details?.amount_tax ?? 0) / 100,
           discountAmount: amountDiscount,
           discountCode,
         },

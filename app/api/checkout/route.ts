@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
   const dbUser = await prisma.user.findUnique({
     where: { id: userId },
-    select: { email: true },
+    select: { email: true, fullName: true, stripeCustomerId: true },
   })
   if (!dbUser?.email) {
     return NextResponse.json({ error: 'Account email not found. Please sign in again.' }, { status: 401 })
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     })
 
     const productMap = new Map(products.map(p => [p.id, p]))
-    const lineItems: { price_data: { currency: string; product_data: { name: string; images?: string[] }; unit_amount: number }; quantity: number }[] = []
+    const lineItems: { price_data: { currency: string; product_data: { name: string; images?: string[] }; unit_amount: number; tax_behavior: 'exclusive' }; quantity: number }[] = []
     const orderItems: { productId: string; variantId?: string; name: string; image: string; price: number; quantity: number }[] = []
     let subtotal = 0
 
@@ -117,6 +117,8 @@ export async function POST(request: NextRequest) {
             images: product.images[0] ? [product.images[0].url] : [],
           },
           unit_amount: Math.round(price * 100),
+          // Prices are tax-exclusive: Stripe Tax adds tax on top (post-discount).
+          tax_behavior: 'exclusive',
         },
         quantity: item.quantity,
       })
@@ -226,21 +228,12 @@ export async function POST(request: NextRequest) {
         : { minimum: { unit: 'business_day', value: 5 }, maximum: { unit: 'business_day', value: 7 } }
     }
 
-    // Calculate sales tax based on shipping state (only for nexus states)
-    const { rate: taxRate, amount: tax, stateAbbr } = calculateTax(subtotal, shippingAddress.state || '')
+    // Estimate sales tax for the pending order (display only). Stripe Tax
+    // computes the authoritative amount at payment time — on the post-discount
+    // total, using the registrations configured in the Stripe dashboard — and
+    // the webhook writes the real tax/total back onto the order.
+    const { amount: tax } = calculateTax(subtotal, shippingAddress.state || '')
     const total = subtotal + shipping + tax
-
-    // Add tax as a line item if applicable
-    if (tax > 0) {
-      lineItems.push({
-        price_data: {
-          currency: 'usd',
-          product_data: { name: `Sales Tax (${stateAbbr} ${(taxRate * 100).toFixed(1)}%)` },
-          unit_amount: Math.round(tax * 100),
-        },
-        quantity: 1,
-      })
-    }
 
     // Create order in DB first (pending until Stripe webhook confirms)
     const order = await prisma.order.create({
@@ -260,6 +253,37 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Checkout] Order ${order.id} created for user ${userId}, total: $${total.toFixed(2)}`)
 
+    // Reuse one Stripe Customer per account. This is what makes promotion codes
+    // with a first_time_transaction restriction actually mean "first order":
+    // with bare customer_email every checkout is a brand-new guest customer and
+    // the restriction never bites. The saved shipping address also gives
+    // Stripe Tax a location to compute tax from.
+    const stripeAddress = {
+      line1: shippingAddress.street,
+      ...(shippingAddress.street2 ? { line2: shippingAddress.street2 } : {}),
+      city: shippingAddress.city,
+      state: shippingAddress.state,
+      postal_code: shippingAddress.zip,
+      country: 'US',
+    }
+    let stripeCustomerId = dbUser.stripeCustomerId
+    if (stripeCustomerId) {
+      // Keep the saved address current so tax is computed for THIS shipment.
+      await getStripe().customers.update(stripeCustomerId, {
+        address: stripeAddress,
+        shipping: { name: shippingAddress.fullName || dbUser.fullName, address: stripeAddress },
+      })
+    } else {
+      const customer = await getStripe().customers.create({
+        email: dbUser.email,
+        name: dbUser.fullName,
+        address: stripeAddress,
+        shipping: { name: shippingAddress.fullName || dbUser.fullName, address: stripeAddress },
+      })
+      stripeCustomerId = customer.id
+      await prisma.user.update({ where: { id: userId }, data: { stripeCustomerId } })
+    }
+
     // Create Stripe Checkout Session with idempotency
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
     let session
@@ -272,6 +296,8 @@ export async function POST(request: NextRequest) {
             type: 'fixed_amount',
             fixed_amount: { amount: Math.round(shipping * 100), currency: 'usd' },
             display_name: shipping > 0 ? shippingDisplayName : 'Free Shipping',
+            // Stripe Tax decides per-state whether shipping is taxable.
+            tax_behavior: 'exclusive',
             ...(shippingDeliveryEstimate ? { delivery_estimate: shippingDeliveryEstimate } : {}),
           },
         }],
@@ -281,14 +307,14 @@ export async function POST(request: NextRequest) {
           orderId: order.id,
           ...(resolvedShippoRateId ? { shippoRateId: resolvedShippoRateId } : {}),
         },
-        customer_email: dbUser.email,
-        // Customer promotion codes are disabled: sales tax is passed as its own
-        // line item, and Stripe applies percentage coupons proportionally across
-        // ALL line items — including tax — which under-collects sales tax and
-        // makes Order.tax disagree with what was actually charged. Re-enabling
-        // coupons requires moving tax to Stripe Tax (automatic_tax) so the tax
-        // is computed on the post-discount amount and never itself discounted.
-        allow_promotion_codes: false,
+        customer: stripeCustomerId,
+        // Tax lives in Stripe Tax (automatic_tax), never as a line item, so
+        // percentage promotion codes discount only the merchandise and tax is
+        // computed on the post-discount amount. Registrations (which states
+        // collect) are managed in the Stripe dashboard — keep lib/tax-rates.ts
+        // NEXUS_STATES in sync for the on-site estimate.
+        automatic_tax: { enabled: true },
+        allow_promotion_codes: true,
         expires_at: Math.floor(Date.now() / 1000) + 1800, // 30 min expiry
       }, {
         idempotencyKey: `checkout_${order.id}`,
