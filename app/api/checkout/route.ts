@@ -144,6 +144,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Spend $10 or more to redeem your free gift' }, { status: 400 })
     }
 
+    // First-order perk: 10% off orders of $50+ for accounts with no paid order
+    // yet — applied by discounting the line-item prices themselves rather than
+    // a Stripe coupon, so the checkout promo-code box stays free for a promo
+    // code on top (Stripe only ever accepts one code per session). Recorded on
+    // the order as firstOrderDiscount, separate from code discounts. Free
+    // shipping ($80+) keys off the pre-discount subtotal.
+    const FIRST_ORDER_MIN_SUBTOTAL = 50
+    const paidOrderCount = await prisma.order.count({
+      where: {
+        userId,
+        status: { in: ['paid', 'processing', 'shipped', 'delivered', 'cancellation_requested'] },
+      },
+    })
+    let firstOrderDiscount = 0
+    if (paidOrderCount === 0 && subtotal >= FIRST_ORDER_MIN_SUBTOTAL) {
+      let discountCents = 0
+      for (const li of lineItems) {
+        if (li.price_data.unit_amount <= 0) continue // free gifts stay free
+        const discounted = Math.round(li.price_data.unit_amount * 0.9)
+        discountCents += (li.price_data.unit_amount - discounted) * li.quantity
+        li.price_data.unit_amount = discounted
+        li.price_data.product_data.name += ' — 10% first-order discount'
+      }
+      firstOrderDiscount = discountCents / 100
+    }
+
     // Enforce the "no shipping without weight" invariant server-side (the client
     // and /api/shipping/rates both check this, but a direct API call must not be
     // able to ship an unweighed cart at the tier-1 rate).
@@ -232,8 +258,8 @@ export async function POST(request: NextRequest) {
     // computes the authoritative amount at payment time — on the post-discount
     // total, using the registrations configured in the Stripe dashboard — and
     // the webhook writes the real tax/total back onto the order.
-    const { amount: tax } = calculateTax(subtotal, shippingAddress.state || '')
-    const total = subtotal + shipping + tax
+    const { amount: tax } = calculateTax(subtotal - firstOrderDiscount, shippingAddress.state || '')
+    const total = subtotal - firstOrderDiscount + shipping + tax
 
     // Create order in DB first (pending until Stripe webhook confirms)
     const order = await prisma.order.create({
@@ -244,6 +270,7 @@ export async function POST(request: NextRequest) {
         shipping,
         tax,
         total,
+        firstOrderDiscount,
         shippingAddress,
         items: { create: orderItems },
         ...(resolvedShippoRateId ? { shippoRateId: resolvedShippoRateId } : {}),
