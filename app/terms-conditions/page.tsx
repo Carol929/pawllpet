@@ -15,8 +15,8 @@ export default function TermsConditions() {
         <section>
           <h2>{en ? '1. Acceptance of Terms' : '1. 接受条款'}</h2>
           <p>{en
-            ? 'By accessing and using the PawLL Pet website (www.pawllpet.com), you agree to be bound by these Terms & Conditions. If you do not agree, please do not use our website or services.'
-            : '通过访问和使用 PawLL Pet 网站 (www.pawllpet.com)，您同意受这些服务条款的约束。如果您不同意，请勿使用我们的网站或服务。'
+            ? 'By accessing and using the PawLL Pet website (pawllpet.com), you agree to be bound by these Terms & Conditions. If you do not agree, please do not use our website or services.'
+            : '通过访问和使用 PawLL Pet 网站 (pawllpet.com)，您同意受这些服务条款的约束。如果您不同意，请勿使用我们的网站或服务。'
           }</p>
         </section>
 

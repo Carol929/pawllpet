@@ -7,7 +7,7 @@ import { getProducts } from '@/lib/products'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
 const absolute = (u: string) => (u.startsWith('http') ? u : `${siteUrl}${u}`)
 
 const escapeXml = (s: string) =>

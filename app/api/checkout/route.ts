@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
     console.log(`[Checkout] Order ${order.id} created for user ${userId}, total: $${total.toFixed(2)}`)
 
     // Create Stripe Checkout Session with idempotency
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pawllpet.com'
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
     let session
     try {
       session = await getStripe().checkout.sessions.create({
