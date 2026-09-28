@@ -143,7 +143,37 @@ export default function Header() {
 
   return (
     <header className={`site-header ${scrolled ? 'header--scrolled' : ''}`}>
-      <div className="top-banner">{t('header', 'topBanner')}</div>
+      {/* Scrolling promo ticker: two identical sets + translateX(-50%) loop
+          (same trick as ValueMarquee). Each set repeats the messages 3× so one
+          set is wider than any supported viewport — otherwise the -50% loop
+          runs out of content on desktop and a blank gap wipes across. Screen
+          readers hear each message once (everything after the first repeat is
+          aria-hidden); under prefers-reduced-motion the CSS collapses this to
+          a static, wrapping banner showing one copy of each message. */}
+      <div className="top-banner" role="region" aria-label="Store promotions">
+        <div className="top-banner-track">
+          {[0, 1].map(dup => (
+            <span
+              key={dup}
+              className={dup ? 'top-banner-set top-banner-set--dup' : 'top-banner-set'}
+              aria-hidden={dup === 1 || undefined}
+            >
+              {[0, 1, 2].map(rep => (
+                <span
+                  key={rep}
+                  className={rep ? 'top-banner-rep top-banner-rep--extra' : 'top-banner-rep'}
+                  aria-hidden={(dup === 0 && rep > 0) || undefined}
+                >
+                  <span className="top-banner-item">🐾 {t('header', 'promoFirstOrder')}</span>
+                  <span className="top-banner-dot" aria-hidden="true">•</span>
+                  <span className="top-banner-item">{t('header', 'topBanner')}</span>
+                  <span className="top-banner-dot" aria-hidden="true">•</span>
+                </span>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
       <div className="container header-inner">
         <div className="logo-group">
           <Link href="/" className="logo" aria-label="PawLL Pet Home">
