@@ -63,6 +63,12 @@ export async function sendFirstOrderPerkEmail(
 
   const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
   const isWelcome = variant === 'welcome'
+  const heading = isWelcome ? `Welcome to the pack, ${name}! 🐾` : `Hi ${name}, your perk is still waiting 🐾`
+  const intro = isWelcome
+    ? 'Your account is verified — and your welcome perk is already switched on:'
+    : 'You created a PawLL account but have not placed your first order yet. Your welcome perk is still active:'
+  // Email-client-safe markup: tables + inline styles only, absolute image URL,
+  // system fonts. Brand palette: navy #1f2e44, gold #D4B28C, cream #faf8f5.
   await client.emails.send({
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: email,
@@ -70,13 +76,52 @@ export async function sendFirstOrderPerkEmail(
       ? 'Welcome to PawLL — 10% off your first order is active 🐾'
       : 'Your 10% first-order discount is waiting at PawLL 🐾',
     html: `
-      <div style="font-family: Arial, sans-serif; padding: 12px; color: #1c2333;">
-        <h2>${isWelcome ? `Welcome to the pack, ${name}!` : `Hi ${name}, your first-order perk is live!`}</h2>
-        <p>${isWelcome ? 'Your account is verified, and your welcome perk is already switched on:' : 'You have a PawLL account but have not placed your first order yet — so this is still yours:'}</p>
-        <p style="font-size: 22px; font-weight: 700; background: #faf8f5; border: 2px dashed #D4B28C; border-radius: 8px; padding: 14px 18px; display: inline-block;">10% OFF your first order of $50+</p>
-        <p><strong>No code needed</strong> — the discount is applied automatically at checkout. It even stacks with promo codes and free shipping on orders over $80.</p>
-        <p><a href="${shopUrl}/shop" style="color: #1f2e44; font-weight: 700;">Start shopping →</a></p>
-      </div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf8f5;padding:32px 12px;">
+  <tr><td align="center">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #ececec;">
+      <tr>
+        <td style="background-color:#1f2e44;padding:30px 40px;text-align:center;">
+          <img src="${shopUrl}/logo.png" width="76" height="76" alt="PawLL" style="display:inline-block;border-radius:50%;background-color:#ffffff;">
+          <div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:800;color:#faf8f5;letter-spacing:2px;margin-top:12px;">PawLL</div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:36px 40px 6px;font-family:Arial,Helvetica,sans-serif;">
+          <h1 style="margin:0 0 12px;font-size:23px;line-height:1.3;color:#1c2333;">${heading}</h1>
+          <p style="margin:0;font-size:15px;line-height:1.65;color:#3c4453;">${intro}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:24px 40px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background-color:#1f2e44;border-radius:14px;padding:30px 20px;text-align:center;">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:38px;font-weight:800;color:#D4B28C;line-height:1;">10% OFF</div>
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#faf8f5;margin-top:10px;">your first order of $50+</div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 40px;font-family:Arial,Helvetica,sans-serif;">
+          <p style="margin:0;font-size:14px;line-height:1.7;color:#3c4453;"><strong style="color:#1c2333;">No code needed</strong> — the discount is applied automatically at checkout. It even stacks with promo codes, and orders over $80 ship free.</p>
+        </td>
+      </tr>
+      <tr>
+        <td align="center" style="padding:28px 40px 38px;">
+          <a href="${shopUrl}/shop" style="display:inline-block;background-color:#D4B28C;color:#1c2333;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;text-decoration:none;padding:15px 46px;border-radius:999px;">Start Shopping</a>
+        </td>
+      </tr>
+      <tr>
+        <td style="background-color:#f5f0ea;padding:20px 40px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:#8a8f98;">
+          PawLL Pet · Arlington, VA<br>
+          You are receiving this because you created an account at <a href="${shopUrl}" style="color:#8a6a3f;text-decoration:none;">pawllpet.com</a>.
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
     `,
   })
 }
