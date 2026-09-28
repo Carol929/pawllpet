@@ -26,6 +26,7 @@ model User {
   avatarUrl     String?   // 头像URL（预留）
   role          String    @default("user") // 用户角色："user" 或 "admin"
   isBlocked     Boolean   @default(false) // 是否被禁用
+  stripeCustomerId String? @unique // Stripe Customer id — reused across checkouts so promo first_time_transaction restrictions work
   createdAt     DateTime  @default(now()) // 创建时间
   updatedAt     DateTime  @updatedAt // 更新时间
   lastLoginAt   DateTime? // 最后登录时间

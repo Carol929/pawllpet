@@ -62,16 +62,18 @@ export const STATE_TAX_RATES: Record<string, number> = {
 }
 
 /**
- * States where sales tax is collected.
- * All states with sales tax are included for full compliance.
- * 5 states have no sales tax: AK, DE, MT, NH, OR (rate = 0 in table)
+ * States where PawLL actually collects sales tax.
+ *
+ * This drives the ON-SITE ESTIMATE only — Stripe Tax computes the amount
+ * actually charged, based on the registrations configured in the Stripe
+ * dashboard. Keep this set in sync with those registrations.
+ *
+ * Today that is physical nexus only: Virginia (Arlington warehouse).
+ * Collecting in a state without a registration is a bigger compliance
+ * problem than not collecting, so add states here (and in Stripe) only
+ * when an economic-nexus threshold is actually met.
  */
-export const NEXUS_STATES = new Set([
-  'AL','AZ','AR','CA','CO','CT','DC','FL','GA','HI','ID','IL','IN','IA',
-  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','NE','NV','NJ','NM',
-  'NY','NC','ND','OH','OK','PA','RI','SC','SD','TN','TX','UT','VT','VA',
-  'WA','WV','WI','WY',
-])
+export const NEXUS_STATES = new Set(['VA'])
 
 /**
  * Full state name → abbreviation mapping
