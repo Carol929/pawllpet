@@ -35,6 +35,7 @@ const translations = {
     logIn: { en: 'Log In', zh: '登录', es: 'Iniciar sesión', fr: 'Se connecter', ja: 'ログイン', ko: '로그인' },
     signUp: { en: 'Sign Up', zh: '注册', es: 'Registrarse', fr: "S'inscrire", ja: '新規登録', ko: '회원가입' },
     topBanner: { en: 'Free shipping on orders over $80', zh: '满$80免运费', es: 'Envío gratis en pedidos de más de $80', fr: 'Livraison gratuite dès 80 $', ja: '$80以上で送料無料', ko: '$80 이상 무료 배송' },
+    promoFirstOrder: { en: 'New customers: 10% off your first order of $50+ — auto-applied at checkout', zh: '新客首单满 $50 立减 10%，结账自动生效', es: 'Nuevos clientes: 10% de descuento en tu primer pedido de $50+ — aplicado automáticamente', fr: 'Nouveaux clients : 10 % de réduction sur votre première commande de 50 $+ — appliquée automatiquement', ja: '新規のお客様：$50以上の初回注文が10%OFF（自動適用）', ko: '신규 고객: $50 이상 첫 주문 10% 할인 — 자동 적용' },
     cartLabel: { en: 'Shopping cart', zh: '购物车', es: 'Carrito', fr: 'Panier', ja: 'カート', ko: '장바구니' },
     openMenu: { en: 'Open menu', zh: '打开菜单', es: 'Abrir menú', fr: 'Ouvrir le menu', ja: 'メニューを開く', ko: '메뉴 열기' },
     closeMenu: { en: 'Close menu', zh: '关闭菜单', es: 'Cerrar menú', fr: 'Fermer le menu', ja: 'メニューを閉じる', ko: '메뉴 닫기' },
