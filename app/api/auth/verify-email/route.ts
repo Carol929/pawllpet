@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
-import { sendWelcomeCouponEmail } from '@/lib/email'
+import { sendFirstOrderPerkEmail } from '@/lib/email'
 
 const verifySchema = z.object({
   email: z.string().email('Invalid email'),
@@ -54,13 +54,13 @@ export async function POST(request: NextRequest) {
     await prisma.user.update({ where: { id: user.id }, data: { emailVerified: true } })
 
     // First successful verification only (emailVerified was false until now):
-    // send the first-order promo code. Never let email delivery fail the
-    // verification response.
+    // tell them the automatic first-order perk is active. Never let email
+    // delivery fail the verification response.
     if (!user.emailVerified) {
       try {
-        await sendWelcomeCouponEmail(user.email, user.fullName)
+        await sendFirstOrderPerkEmail(user.email, user.fullName, 'welcome')
       } catch (e) {
-        console.error('[verify-email] welcome coupon email failed:', e)
+        console.error('[verify-email] first-order perk email failed:', e)
       }
     }
 

@@ -8,9 +8,9 @@ import { useAuth } from '@/lib/auth-context'
 const STORAGE_KEY = 'pawll-newsletter-dismissed'
 
 /**
- * First-order offer popup: sends visitors to create an account; the promo
- * code (10% off first order of $50+, managed in Stripe) is emailed after
- * they verify their address — see app/api/auth/verify-email/route.ts.
+ * First-order offer popup: sends visitors to create an account. The perk
+ * (10% off the first order of $50+) is applied automatically at checkout —
+ * no promo code — see the first-order block in app/api/checkout/route.ts.
  * Evergreen: no expiry. Never shown to signed-in users.
  */
 export function NewsletterPopup() {
@@ -46,7 +46,7 @@ export function NewsletterPopup() {
           <div className="nl-badge">NEW HERE?</div>
           <h2 className="nl-title">Get 10% OFF</h2>
           <p className="nl-subtitle">Your First Order of $50+</p>
-          <p className="nl-desc">Create a free PawLL account and we&apos;ll email you a 10% off code for your first order over $50 — plus early access to new drops.</p>
+          <p className="nl-desc">Create a free PawLL account and 10% off your first order over $50 is applied automatically at checkout — no code needed, and it stacks with promo codes.</p>
 
           <div className="nl-form">
             <Link href="/auth?tab=signup" className="nl-btn" onClick={dismiss}>
@@ -54,7 +54,7 @@ export function NewsletterPopup() {
             </Link>
           </div>
 
-          <p className="nl-privacy">Code arrives by email after you verify your address. One use, first order only.</p>
+          <p className="nl-privacy">Discount activates once you verify your email. First order only.</p>
         </div>
       </div>
     </div>

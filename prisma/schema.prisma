@@ -166,6 +166,7 @@ model Order {
   tax             Float       @default(0)
   discountAmount  Float       @default(0)
   discountCode    String?
+  firstOrderDiscount Float    @default(0) // automatic 10%-off-first-order perk (site-applied, separate from Stripe promo codes)
   shippingAddress Json
   stripeSessionId String?     @unique
   trackingNumber  String?
