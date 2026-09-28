@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ].map(p => entry(p, 0.8, 'weekly'))
 
   const contentPages = [
-    '/about', '/blog', '/faq', '/contact', '/help-center',
+    '/about', '/giving', '/blog', '/faq', '/contact', '/help-center',
     '/rewards', '/pet-quiz', '/store-locator', '/track-order',
   ].map(p => entry(p, 0.6, 'weekly'))
 

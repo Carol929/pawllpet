@@ -102,6 +102,7 @@ export default function Footer() {
         <div className="footer-col">
           <h4>{en ? 'ABOUT US' : '关于我们'}</h4>
           <Link href="/about">{en ? 'About' : '关于'}</Link>
+          <Link href="/giving">{en ? 'PawLL Gives Back' : '公益捐赠'}</Link>
           <Link href="/contact">{en ? 'Contact Us' : '联系我们'}</Link>
         </div>
 
