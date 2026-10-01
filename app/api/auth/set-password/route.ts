@@ -8,6 +8,7 @@ import { SignJWT, jwtVerify } from 'jose'
 import { z } from 'zod'
 import { getJwtSecret } from '@/lib/jwt'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
+import { normalizeEmail } from '@/lib/email-utils'
 
 const passwordSchema = z.string()
   .min(8, 'Password must be at least 8 characters')
@@ -17,7 +18,7 @@ const passwordSchema = z.string()
   .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
 
 const emailSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().transform(normalizeEmail),
   code: z.string().length(6, 'Code must be 6 digits'),
   password: passwordSchema,
 })

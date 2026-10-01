@@ -56,7 +56,15 @@ function AuthPageInner() {
 
   const searchParams = useSearchParams()
 
-  const redirectTo = searchParams.get('redirect') || '/'
+  // Open-redirect guard: only same-site paths. Anything absolute
+  // ("https://evil.com") or protocol-relative ("//evil.com", "/\evil.com")
+  // falls back to home — the raw value was previously fed to router.push()
+  // straight from the URL, a phishing vector flagged in the 2026-09 pentest.
+  const rawRedirect = searchParams.get('redirect') || '/'
+  const redirectTo =
+    rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') && !rawRedirect.startsWith('/\\')
+      ? rawRedirect
+      : '/'
 
   useEffect(() => {
     const tab = searchParams.get('tab')

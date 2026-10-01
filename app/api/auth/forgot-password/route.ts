@@ -6,9 +6,10 @@ import { prisma } from '@/lib/db'
 import { sendVerificationEmail } from '@/lib/email'
 import { generateVerificationCode } from '@/lib/verification-code'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
+import { normalizeEmail } from '@/lib/email-utils'
 import { z } from 'zod'
 
-const schema = z.object({ email: z.string().email('Invalid email') })
+const schema = z.object({ email: z.string().email('Invalid email').transform(normalizeEmail) })
 
 // Same message whether or not the account exists, so this endpoint cannot be
 // used to enumerate which emails are registered.

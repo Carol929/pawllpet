@@ -7,12 +7,13 @@ import { sendVerificationEmail } from '@/lib/email'
 import { generateUniqueUsername } from '@/lib/utils'
 import { generateVerificationCode } from '@/lib/verification-code'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
+import { normalizeEmail } from '@/lib/email-utils'
 import { z } from 'zod'
 
 const registerSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   username: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/, 'Username can only contain lowercase letters, numbers, and underscores').optional(),
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address').transform(normalizeEmail),
   petType: z.enum(['Dog', 'Cat', 'Both', 'None']).optional(),
   gender: z.string().optional(),
   phone: z.string().optional(),
@@ -22,7 +23,7 @@ const registerSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const ip = clientIp(request)
-    const limit = rateLimit(`register:ip:${ip}`, 10, 60 * 60 * 1000)
+    const limit = rateLimit(`register:ip:${ip}`, 5, 60 * 60 * 1000)
     if (!limit.ok) {
       return NextResponse.json({ error: 'Too many registration attempts. Please try again later.' }, {
         status: 429,
@@ -33,23 +34,31 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = registerSchema.parse(body)
 
-    const existingByEmail = await prisma.user.findUnique({ where: { email: data.email } })
-    if (existingByEmail) {
-      return NextResponse.json({ error: 'Email already exists' }, { status: 400 })
+    // Anti-enumeration: a taken email returns the exact same response as a
+    // successful registration (same shape, same message, no user object), so
+    // this endpoint cannot confirm which addresses have accounts. The real
+    // owner can always sign in or use forgot-password.
+    const SUCCESS_RESPONSE = {
+      message: 'Registration successful. A 6-digit verification code has been sent to your email.',
     }
 
+    const existingByEmail = await prisma.user.findUnique({ where: { email: data.email } })
+    if (existingByEmail) {
+      return NextResponse.json(SUCCESS_RESPONSE, { status: 201 })
+    }
+
+    // A taken username silently falls back to a generated variant instead of
+    // confirming it exists ("Username already taken" was an enumeration
+    // oracle for high-value names like "admin").
     let username: string
-    if (data.username) {
-      const existingByUsername = await prisma.user.findUnique({ where: { username: data.username } })
-      if (existingByUsername) {
-        return NextResponse.json({ error: 'Username already taken' }, { status: 400 })
-      }
+    const usernameTaken = async (candidate: string) => {
+      const hit = await prisma.user.findUnique({ where: { username: candidate } })
+      return Boolean(hit)
+    }
+    if (data.username && !(await usernameTaken(data.username))) {
       username = data.username
     } else {
-      username = await generateUniqueUsername(data.email, async (candidate) => {
-        const hit = await prisma.user.findUnique({ where: { username: candidate } })
-        return Boolean(hit)
-      })
+      username = await generateUniqueUsername(data.username || data.email, usernameTaken)
     }
 
     const user = await prisma.user.create({
@@ -80,13 +89,9 @@ export async function POST(request: NextRequest) {
       console.error('Failed to send verification email:', emailError)
     }
 
-    return NextResponse.json(
-      {
-        message: 'Registration successful. A 6-digit verification code has been sent to your email.',
-        user: { id: user.id, email: user.email, fullName: user.fullName },
-      },
-      { status: 201 }
-    )
+    // Must stay byte-identical to the taken-email branch above (the client
+    // only uses its own copy of the email to route to /verify-email).
+    return NextResponse.json(SUCCESS_RESPONSE, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
