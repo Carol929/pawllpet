@@ -6,9 +6,10 @@ import { prisma } from '@/lib/db'
 import { z } from 'zod'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
 import { sendFirstOrderPerkEmail } from '@/lib/email'
+import { normalizeEmail } from '@/lib/email-utils'
 
 const verifySchema = z.object({
-  email: z.string().email('Invalid email'),
+  email: z.string().email('Invalid email').transform(normalizeEmail),
   code: z.string().length(6, 'Code must be 6 digits'),
 })
 

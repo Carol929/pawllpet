@@ -2,6 +2,7 @@ import NextAuth from 'next-auth'
 import Google from 'next-auth/providers/google'
 import { prisma } from '@/lib/prisma'
 import { generateUniqueUsername } from '@/lib/utils'
+import { normalizeEmail } from '@/lib/email-utils'
 
 export const { handlers, auth } = NextAuth({
   providers: [
@@ -21,17 +22,18 @@ export const { handlers, auth } = NextAuth({
       if (account?.provider !== 'google' || !user.email) return true
 
       try {
-        const existing = await prisma.user.findUnique({ where: { email: user.email } })
+        const email = normalizeEmail(user.email)
+        const existing = await prisma.user.findUnique({ where: { email } })
 
         if (!existing) {
-          const username = await generateUniqueUsername(user.email, async (candidate) => {
+          const username = await generateUniqueUsername(email, async (candidate) => {
             const hit = await prisma.user.findUnique({ where: { username: candidate } })
             return Boolean(hit)
           })
 
           await prisma.user.create({
             data: {
-              email: user.email,
+              email,
               fullName: user.name || 'Google User',
               username,
               emailVerified: true,
@@ -59,7 +61,7 @@ export const { handlers, auth } = NextAuth({
     async jwt({ token, user, account }) {
       // On initial sign-in, look up the user's role from DB
       if (account && user?.email) {
-        const dbUser = await prisma.user.findUnique({ where: { email: user.email } })
+        const dbUser = await prisma.user.findUnique({ where: { email: normalizeEmail(user.email) } })
         if (dbUser) {
           token.userId = dbUser.id
           token.role = dbUser.role

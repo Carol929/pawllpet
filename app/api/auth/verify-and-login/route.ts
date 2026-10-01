@@ -8,9 +8,10 @@ import { SignJWT } from 'jose'
 import { z } from 'zod'
 import { getJwtSecret } from '@/lib/jwt'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
+import { normalizeEmail } from '@/lib/email-utils'
 
 const schema = z.object({
-  email: z.string().email(),
+  email: z.string().email().transform(normalizeEmail),
   code: z.string().length(6, 'Code must be 6 digits'),
   newPassword: z.string()
     .min(8)

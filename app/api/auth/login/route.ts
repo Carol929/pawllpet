@@ -47,22 +47,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 查找用户（通过username或email）
+    // 查找用户（通过username或email）。Usernames are lowercase by schema;
+    // emails are stored normalized — lowercasing the identifier makes lookup
+    // case-insensitive for both, so "Admin@x.com" cannot shadow "admin@x.com".
+    const identifier = validatedData.usernameOrEmail.trim().toLowerCase()
     const user = await prisma.user.findFirst({
       where: {
         OR: [
-          { username: validatedData.usernameOrEmail },
-          { email: validatedData.usernameOrEmail },
+          { username: identifier },
+          { email: identifier },
         ],
       },
     })
 
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid username/email or password' },
-        { status: 401 }
-      )
-    }
+    // Anti-enumeration: everything up to a CORRECT password returns the same
+    // generic 401. Account state (blocked / needs verification / Google-only)
+    // is only revealed to someone who already knows the password, so these
+    // responses can't be used to probe which accounts exist.
+    const GENERIC_401 = NextResponse.json(
+      { error: 'Invalid username/email or password' },
+      { status: 401 }
+    )
+
+    if (!user) return GENERIC_401
+
+    // 用户没有密码（Google 登录用户）：不泄露账户存在/类型，统一 401。
+    // Google users land on the "use Google login" path naturally.
+    if (!user.password) return GENERIC_401
+
+    const isPasswordValid = await bcrypt.compare(validatedData.password, user.password)
+    if (!isPasswordValid) return GENERIC_401
+
+    // ——以下状态检查只有持有正确密码才能到达——
 
     // 检查账号是否被禁用
     if (user.isBlocked) {
@@ -80,27 +96,6 @@ export async function POST(request: NextRequest) {
           requiresVerification: true,
         },
         { status: 403 }
-      )
-    }
-
-    // 检查密码（如果用户有密码）
-    if (user.password) {
-      const isPasswordValid = await bcrypt.compare(
-        validatedData.password,
-        user.password
-      )
-
-      if (!isPasswordValid) {
-        return NextResponse.json(
-          { error: 'Invalid username/email or password' },
-          { status: 401 }
-        )
-      }
-    } else {
-      // 用户没有密码（可能是Google登录用户），不允许密码登录
-      return NextResponse.json(
-        { error: 'This account is linked to Google. Please use Google login.' },
-        { status: 401 }
       )
     }
 

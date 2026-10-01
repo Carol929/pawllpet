@@ -9,6 +9,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { SignJWT } from 'jose'
 import { getJwtSecret } from '@/lib/jwt'
+import { normalizeEmail } from '@/lib/email-utils'
 
 export async function GET() {
   try {
@@ -19,7 +20,7 @@ export async function GET() {
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: normalizeEmail(session.user.email) },
       select: {
         id: true,
         fullName: true,
