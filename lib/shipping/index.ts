@@ -29,6 +29,7 @@ export type {
 export {
   calculateTotalWeight,
   hasUnweighedItems,
+  isFreeShippingSlug,
   isPOBox,
   isShippingEligible,
 } from '../shipping-rates'

@@ -101,6 +101,37 @@ describe('getShippingOptions — legacy mode', () => {
       }),
     ).rejects.toThrow(/Alaska|HI|not available/)
   })
+
+  it('ships free on standard when every item carries the free-shipping promo', async () => {
+    const result = await getShippingOptions({
+      to: baseAddress,
+      items: [{ productId: 'bed', quantity: 1, weight: 1.8, freeShipping: true }],
+      subtotal: 29.99, // well under the $80 threshold
+    })
+    const standard = result.options.find((o) => o.service === 'Standard')
+    expect(standard?.amount).toBe(0)
+    expect(standard?.displayName).toMatch(/free/i)
+    // Express is NOT free — the promo only covers standard, like the $80 perk
+    const express = result.options.find((o) => o.service === 'Express')
+    expect(express?.amount).toBeGreaterThan(0)
+  })
+
+  it('charges a mixed cart only for the non-promo items weight', async () => {
+    const result = await getShippingOptions({
+      to: baseAddress,
+      items: [
+        { productId: 'bed', quantity: 1, weight: 1.8, freeShipping: true },
+        { productId: 'toy', quantity: 1, weight: 0.5 }, // alone: 1lb tier = $7.99
+      ],
+      subtotal: 43.98,
+    })
+    const standard = result.options.find((o) => o.service === 'Standard')
+    // 2.3 lbs total would be $9.99 — billing only the 0.5 lb toy gives $7.99
+    expect(standard?.amount).toBe(7.99)
+    // Express still prices the full 2.3 lb parcel ($19.99 tier, not $15.99)
+    const express = result.options.find((o) => o.service === 'Express')
+    expect(express?.amount).toBe(19.99)
+  })
 })
 
 describe('getShippingOptions — shippo mode', () => {
@@ -140,6 +171,37 @@ describe('getShippingOptions — shippo mode', () => {
     expect(result.usedProvider).toBe('shippo')
     expect(result.options.map((o) => o.id)).toEqual(['r_usps', 'r_ups'])
     expect(mockGetShippoRates).toHaveBeenCalledTimes(1)
+  })
+
+  it('quotes only the non-promo items and zeroes the cheapest rate for an all-promo cart', async () => {
+    const freshRates = () => [
+      { id: 'r1', provider: 'shippo' as const, carrier: 'usps', service: 'Ground Advantage', displayName: 'USPS Ground Advantage', amount: 8.4, currency: 'USD' as const },
+      { id: 'r2', provider: 'shippo' as const, carrier: 'ups', service: 'Ground', displayName: 'UPS Ground', amount: 11.2, currency: 'USD' as const },
+    ]
+    mockGetShippoRates.mockImplementation(async () => freshRates())
+
+    // Mixed cart: the free-shipping bed must be excluded from the quoted parcel
+    await getShippingOptions({
+      to: baseAddress,
+      items: [
+        { productId: 'bed', quantity: 1, weight: 1.8, freeShipping: true },
+        { productId: 'toy', quantity: 2, weight: 0.5 },
+      ],
+      subtotal: 43.98,
+    })
+    expect(mockGetShippoRates).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({ weightLb: 1 }), // 2 × 0.5 lb — bed not counted
+    )
+
+    // All-promo cart: cheapest option becomes free even under the $80 threshold
+    const allFree = await getShippingOptions({
+      to: baseAddress,
+      items: [{ productId: 'bed', quantity: 1, weight: 1.8, freeShipping: true }],
+      subtotal: 29.99,
+    })
+    expect(allFree.options[0].amount).toBe(0)
+    expect(allFree.options[0].displayName).toMatch(/free/i)
   })
 
   it('falls back to legacy when Shippo throws (network error, bad key, etc)', async () => {
