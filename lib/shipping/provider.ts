@@ -67,15 +67,20 @@ export async function getShippingOptions(args: {
 
   if (provider === 'shippo') {
     try {
-      const parcel = buildParcel(items)
+      // Items with the free-shipping promo (beds/caves) don't count toward the
+      // customer's quote — in a mixed cart only the other items are priced.
+      // The merchant still ships one real parcel; the difference is absorbed,
+      // exactly like the $80 threshold promo.
+      const billableItems = items.filter((i) => !i.freeShipping)
+      const allItemsFree = items.length > 0 && billableItems.length === 0
+      const parcel = buildParcel(allItemsFree ? items : billableItems)
       const rates = await getShippoRates(to, parcel)
       // Sort cheapest first
       rates.sort((a, b) => a.amount - b.amount)
       // Honor the same free-standard-shipping promise the legacy table (and the
-      // storefront UI) make: at/above the threshold the cheapest option ships
-      // free. Without this, a customer who crossed $80 because the site told
-      // them to would still be quoted paid Shippo rates.
-      applyFreeStandardShipping(rates, subtotal)
+      // storefront UI) make: at/above the threshold — or when every item in the
+      // cart carries the free-shipping promo — the cheapest option ships free.
+      applyFreeStandardShipping(rates, subtotal, allItemsFree)
       return { options: rates, usedProvider: 'shippo' }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -202,8 +207,8 @@ function buildParcel(items: CartItemForShipping[]) {
  * $0 and relabelled. The merchant still buys the real label after payment — the
  * free shipping is absorbed, exactly like the legacy table's free tier.
  */
-function applyFreeStandardShipping(rates: ShippingRateOption[], subtotal: number) {
-  if (subtotal < FREE_STANDARD_THRESHOLD || rates.length === 0) return
+function applyFreeStandardShipping(rates: ShippingRateOption[], subtotal: number, allItemsFree = false) {
+  if ((subtotal < FREE_STANDARD_THRESHOLD && !allItemsFree) || rates.length === 0) return
   const cheapest = rates[0]
   cheapest.amount = 0
   if (!/free/i.test(cheapest.displayName)) {
@@ -218,13 +223,20 @@ function computeLegacyOptions(
   const totalWeight = calculateTotalWeight(
     items.map((i) => ({ quantity: i.quantity, weight: i.weight ?? undefined })),
   )
+  // Free-shipping promo items (beds/caves) are excluded from the standard
+  // quote; express always prices the full parcel, same as the $80 threshold.
+  const billableWeight = calculateTotalWeight(
+    items.map((i) => ({ quantity: i.quantity, weight: i.freeShipping ? undefined : (i.weight ?? undefined) })),
+  )
+  const allItemsFree = items.length > 0 && items.every((i) => i.freeShipping)
 
-  const standard = calculateShipping(totalWeight, 'standard', subtotal)
+  // The 50lb manual-review guard still looks at the REAL parcel weight.
+  if (calculateShipping(totalWeight, 'standard', subtotal).needsReview) return []
+
+  const standard = allItemsFree
+    ? { cost: 0, label: 'Standard Shipping (Free)', estimate: '5-7 business days', needsReview: false }
+    : calculateShipping(billableWeight, 'standard', subtotal)
   const express = calculateShipping(totalWeight, 'express', subtotal)
-
-  // If the weight is too heavy for flat-rate, signal that to the caller by
-  // returning empty — caller will surface the "contact support" error.
-  if (standard.needsReview) return []
 
   const opts: ShippingRateOption[] = [
     {

@@ -28,6 +28,19 @@ const MAX_STANDARD_WEIGHT = 50     // lbs — orders above this need manual revi
 // States that are NOT eligible for flat-rate shipping
 const RESTRICTED_STATES = new Set(['AK', 'HI'])
 
+// Product slugs whose STANDARD shipping is free regardless of order subtotal.
+// Mirrors the TikTok-shop "cat beds ship free" promotion so both channels make
+// the same promise. Express is unaffected, same as the $80 threshold perk.
+// In a mixed cart, shipping is charged only on the weight of the other items.
+const FREE_SHIPPING_SLUGS = new Set([
+  'cat-dog-cave-bamboo-charcoal-shell',
+  'calming-cat-dog-bed',
+])
+
+export function isFreeShippingSlug(slug: string | null | undefined): boolean {
+  return !!slug && FREE_SHIPPING_SLUGS.has(slug)
+}
+
 /**
  * Check if a shipping address is eligible for flat-rate shipping
  */

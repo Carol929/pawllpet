@@ -11,6 +11,7 @@ import { prisma } from '@/lib/db'
 import {
   getShippingOptions,
   hasUnweighedItems,
+  isFreeShippingSlug,
   isPOBox,
   isShippingEligible,
 } from '@/lib/shipping'
@@ -85,6 +86,7 @@ export async function POST(request: NextRequest) {
       where: { id: { in: productIds }, status: 'live' },
       select: {
         id: true,
+        slug: true,
         weight: true,
         length: true,
         width: true,
@@ -112,6 +114,7 @@ export async function POST(request: NextRequest) {
       length: p?.length ?? null,
       width: p?.width ?? null,
       height: p?.height ?? null,
+      freeShipping: isFreeShippingSlug(p?.slug),
     }
   })
 

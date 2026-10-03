@@ -14,6 +14,7 @@ import { ProductGrid } from '@/components/ProductGrid'
 import { RecentlyViewed } from '@/components/RecentlyViewed'
 import { useWishlist } from '@/lib/wishlist-context'
 import { recordView } from '@/lib/recently-viewed'
+import { isFreeShippingSlug } from '@/lib/shipping-rates'
 
 function parseDescription(desc: string) {
   // Split by • bullet points and filter empty
@@ -83,7 +84,10 @@ export function ProductDetailClient({ product }: { product: Product }) {
   const displayPrice = selectedVariant !== null && item.variants?.[selectedVariant]
     ? item.variants[selectedVariant].price
     : item.price
-  const freeShipping = displayPrice >= 80
+  // Beds/caves ship free at any order value (matches the TikTok-shop promo);
+  // everything else earns free shipping at the $80 threshold.
+  const alwaysFreeShipping = isFreeShippingSlug(item.slug)
+  const freeShipping = alwaysFreeShipping || displayPrice >= 80
 
   // Compute effective stock based on variant selection
   const effectiveStock = (() => {
@@ -222,7 +226,7 @@ export function ProductDetailClient({ product }: { product: Product }) {
           {freeShipping && (
             <div className="pdp-badge pdp-badge--shipping">
               <Truck size={14} />
-              <span>Free shipping over $80.00</span>
+              <span>{alwaysFreeShipping ? 'Free standard shipping' : 'Free shipping over $80.00'}</span>
             </div>
           )}
 

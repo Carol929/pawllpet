@@ -33,6 +33,8 @@ export interface CartItemForShipping {
   length?: number | null
   width?: number | null
   height?: number | null
+  /** Item ships free on standard (beds/caves promo) — set from isFreeShippingSlug(). */
+  freeShipping?: boolean
 }
 
 /**

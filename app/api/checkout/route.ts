@@ -7,7 +7,7 @@ export const maxDuration = 30
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { calculateTax } from '@/lib/tax-rates'
-import { calculateShipping, calculateTotalWeight, isShippingEligible, isPOBox, hasUnweighedItems } from '@/lib/shipping-rates'
+import { calculateShipping, calculateTotalWeight, isFreeShippingSlug, isShippingEligible, isPOBox, hasUnweighedItems } from '@/lib/shipping-rates'
 import { validateRateId } from '@/lib/shipping'
 import { prisma } from '@/lib/db'
 import { requireUser } from '@/lib/user-auth'
@@ -225,6 +225,7 @@ export async function POST(request: NextRequest) {
             length: p?.length ?? null,
             width: p?.width ?? null,
             height: p?.height ?? null,
+            freeShipping: isFreeShippingSlug(p?.slug),
           }
         }),
         subtotal,
@@ -243,10 +244,21 @@ export async function POST(request: NextRequest) {
         }
       }
     } else {
-      const shippingResult = calculateShipping(totalWeight, method, subtotal)
-      if (shippingResult.needsReview) {
+      // The 50lb manual-review guard looks at the real parcel weight.
+      if (calculateShipping(totalWeight, method, subtotal).needsReview) {
         return NextResponse.json({ error: 'Your order exceeds standard shipping limits. Please contact support@pawllpet.com for a custom shipping quote.' }, { status: 400 })
       }
+      // Free-shipping promo items (beds/caves) don't count toward the standard
+      // quote; express always prices the full parcel — same as the $80 perk.
+      const allItemsFreeShipping = orderItems.length > 0 &&
+        orderItems.every(i => isFreeShippingSlug(productMap.get(i.productId)?.slug))
+      const billableWeight = calculateTotalWeight(orderItems.map(i => {
+        const p = productMap.get(i.productId)
+        return { quantity: i.quantity, weight: isFreeShippingSlug(p?.slug) ? undefined : (p?.weight ?? undefined) }
+      }))
+      const shippingResult = method === 'standard' && allItemsFreeShipping
+        ? { cost: 0, label: 'Standard Shipping (Free)' }
+        : calculateShipping(method === 'standard' ? billableWeight : totalWeight, method, subtotal)
       shipping = shippingResult.cost
       shippingDisplayName = shippingResult.label
       shippingDeliveryEstimate = method === 'express'
