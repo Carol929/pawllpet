@@ -1,6 +1,7 @@
 'use client'
 
 import { useLocale } from '@/lib/i18n'
+import SupportLink from '@/components/SupportLink'
 
 export default function ReturnsPolicyPage() {
   const { locale } = useLocale()
@@ -44,7 +45,9 @@ export default function ReturnsPolicyPage() {
         <section>
           <h2>{en ? 'Return Process' : '退货流程'}</h2>
           <ol>
-            <li>{en ? 'Contact us at support@pawllpet.com with your order number, description of the issue, and photos/video evidence.' : '通过 support@pawllpet.com 联系我们，提供您的订单号、问题描述和照片/视频证据。'}</li>
+            <li>{en
+              ? <>Contact us at <SupportLink /> with your order number and a description of the issue. We reply by email, and you can send your photos/video evidence there.</>
+              : <>通过 <SupportLink /> 联系我们，提供您的订单号和问题描述。我们会通过邮件回复，届时您可以发送照片/视频证据。</>}</li>
             <li>{en ? 'Our team will review your request within 1-2 business days.' : '我们的团队将在1-2个工作日内审核您的申请。'}</li>
             <li>{en ? 'If approved, you will receive a prepaid return shipping label via email.' : '如获批准，您将通过电子邮件收到预付退货运费标签。'}</li>
             <li>{en ? 'Pack the product securely in its original packaging and ship it back.' : '将产品安全地装入原包装中并寄回。'}</li>
@@ -81,7 +84,7 @@ export default function ReturnsPolicyPage() {
 
         <section>
           <h2>{en ? 'Contact Us' : '联系我们'}</h2>
-          <p>{en ? 'Email: support@pawllpet.com' : '邮箱：support@pawllpet.com'}</p>
+          <p>{en ? 'Contact form: ' : '联系表单：'}<SupportLink /></p>
           <p>{en ? 'Please include your order number in all correspondence.' : '请在所有通信中包含您的订单号。'}</p>
         </section>
       </div>

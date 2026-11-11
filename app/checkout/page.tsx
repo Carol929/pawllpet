@@ -12,6 +12,7 @@ import { calculateTax } from '@/lib/tax-rates'
 import { calculateTotalWeight, isShippingEligible, isPOBox, hasUnweighedItems } from '@/lib/shipping-rates'
 import type { ShippingRateOption } from '@/lib/shipping'
 import { StateSelect, formatPhone } from '@/components/StateSelect'
+import SupportLink from '@/components/SupportLink'
 import './checkout.css'
 
 interface Addr {
@@ -439,7 +440,7 @@ export default function CheckoutPage() {
 
           {addressConfirmed && missingWeights ? (
             <div className="checkout-pay-placeholder" style={{ background: '#fff8e1', color: '#8b6914' }}>
-              Some items are missing weight info. Please contact support@pawllpet.com — we can&apos;t calculate shipping without weights.
+              Some items are missing weight info. Please contact us at <SupportLink /> — we can&apos;t calculate shipping without weights.
             </div>
           ) : null}
 

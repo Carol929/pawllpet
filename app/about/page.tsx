@@ -4,6 +4,7 @@ import { useLocale } from '@/lib/i18n'
 import { Heart, Shield, Leaf, Users, Home, HandHeart, Play } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import SupportLink from '@/components/SupportLink'
 
 export default function AboutPage() {
   const { locale } = useLocale()
@@ -134,8 +135,8 @@ export default function AboutPage() {
           </ul>
           <p className="about-shelter-note">
             {en
-              ? 'Want to partner with us or suggest a shelter? Reach out at support@pawllpet.com'
-              : '想与我们合作或推荐救助站？请联系 support@pawllpet.com'}
+              ? <>Want to partner with us or suggest a shelter? Reach out at <SupportLink /></>
+              : <>想与我们合作或推荐救助站？请通过 <SupportLink /> 联系我们</>}
           </p>
           <Link href="/giving" className="about-link">
             {en ? 'See our live giving tracker →' : '查看实时捐赠追踪 →'}

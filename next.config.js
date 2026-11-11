@@ -22,8 +22,13 @@ const nextConfig = {
     minimumCacheTTL: 86400,
     remotePatterns: [
       {
+        // Our Supabase project's public storage (product images, donation
+        // photos). Pinned to this project rather than `*.supabase.co`: a
+        // wildcard would let anyone point /_next/image at their own Supabase
+        // bucket and spend our image-optimization quota resizing their files.
         protocol: 'https',
-        hostname: '*.supabase.co',
+        hostname: 'edvnhzbfgoxqlurktumb.supabase.co',
+        pathname: '/storage/v1/object/public/**',
       },
       {
         protocol: 'https',

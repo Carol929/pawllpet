@@ -1,6 +1,7 @@
 'use client'
 
 import { useLocale } from '@/lib/i18n'
+import SupportLink from '@/components/SupportLink'
 
 export default function PrivacyPolicy() {
   const { locale } = useLocale()
@@ -89,7 +90,7 @@ export default function PrivacyPolicy() {
             ? 'If you have questions about this Privacy Policy or wish to exercise your data rights, please contact us at:'
             : '如果您对本隐私政策有疑问或希望行使您的数据权利，请通过以下方式联系我们：'
           }</p>
-          <p><strong>Email:</strong> support@pawllpet.com</p>
+          <p><strong>{en ? 'Contact form:' : '联系表单：'}</strong> <SupportLink /></p>
         </section>
       </div>
     </main>

@@ -1,9 +1,33 @@
 import { Resend } from 'resend'
+import { SUPPORT_LABEL, SUPPORT_URL } from '@/lib/support'
 
 function getResend() {
   const key = process.env.RESEND_API_KEY
   if (!key) return null
   return new Resend(key)
+}
+
+type SendPayload = Parameters<Resend['emails']['send']>[0]
+
+/**
+ * Send one email through Resend and surface a failure.
+ *
+ * Resend resolves with `{ error }` instead of throwing, so a rejected send
+ * (unverified domain, exhausted quota, bad key) would otherwise look exactly
+ * like a delivered one. Every failure is logged under the calling function's
+ * name. `throwOnError` is for callers that tell a person "sent" — they need
+ * the failure to reach them.
+ */
+async function deliver(
+  client: Resend,
+  label: string,
+  payload: SendPayload,
+  { throwOnError = false }: { throwOnError?: boolean } = {},
+): Promise<void> {
+  const { error } = await client.emails.send(payload)
+  if (!error) return
+  console.error(`[email] ${label} failed: ${error.name}: ${error.message}`)
+  if (throwOnError) throw new Error(`Email was not sent: ${error.message}`)
 }
 
 export async function sendVerificationEmail(email: string, name: string, code: string): Promise<void> {
@@ -13,7 +37,7 @@ export async function sendVerificationEmail(email: string, name: string, code: s
     return
   }
 
-  await client.emails.send({
+  await deliver(client, 'sendVerificationEmail', {
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: email,
     subject: 'Your PawLL Pet verification code',
@@ -36,7 +60,7 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
   }
 
   const resetUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/reset-password?token=${token}`
-  await client.emails.send({
+  await deliver(client, 'sendPasswordResetEmail', {
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: email,
     subject: 'Reset your PawLL Pet password',
@@ -69,7 +93,7 @@ export async function sendFirstOrderPerkEmail(
     : 'You created a PawLL account but have not placed your first order yet. Your welcome perk is still active:'
   // Email-client-safe markup: tables + inline styles only, absolute image URL,
   // system fonts. Brand palette: navy #1f2e44, gold #D4B28C, cream #faf8f5.
-  await client.emails.send({
+  await deliver(client, 'sendFirstOrderPerkEmail', {
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: email,
     subject: isWelcome
@@ -126,7 +150,12 @@ export async function sendFirstOrderPerkEmail(
   })
 }
 
-export async function sendNewsletterWelcomeEmail(email: string, discountCode: string): Promise<void> {
+/**
+ * Welcome email for a newsletter signup. It leads with the first-order perk
+ * that checkout applies on its own (10% off a first order of $50+, see
+ * app/api/checkout/route.ts), so there is no code here that can expire.
+ */
+export async function sendNewsletterWelcomeEmail(email: string): Promise<void> {
   const client = getResend()
   if (!client) {
     console.warn('RESEND_API_KEY is missing; skipping newsletter welcome email.')
@@ -135,10 +164,10 @@ export async function sendNewsletterWelcomeEmail(email: string, discountCode: st
 
   const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
 
-  await client.emails.send({
+  await deliver(client, 'sendNewsletterWelcomeEmail', {
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: email,
-    subject: '🎉 Grand Opening! Here\'s Your 25% Off Code',
+    subject: 'Welcome to PawLL — 10% off your first order 🐾',
     html: `
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fffdf8;">
         <!-- Header -->
@@ -149,26 +178,26 @@ export async function sendNewsletterWelcomeEmail(email: string, discountCode: st
 
         <!-- Body -->
         <div style="padding: 32px;">
-          <h2 style="color: #1f2e44; margin: 0 0 8px; font-size: 22px;">🎉 Grand Opening Special!</h2>
+          <h2 style="color: #1f2e44; margin: 0 0 8px; font-size: 22px;">Welcome to the pack! 🐾</h2>
           <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
-            Thanks for joining our newsletter! To celebrate our grand opening, here's your exclusive 25% discount code:
+            Thanks for joining our newsletter. Here is a welcome perk for your first order:
           </p>
 
-          <!-- Discount Code Card -->
+          <!-- Perk Card -->
           <div style="background: linear-gradient(135deg, #fef3e2, #fde8c8); border: 2px solid #D4B28C; border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px;">
-            <p style="color: #92600a; font-size: 14px; margin: 0 0 8px;">YOUR DISCOUNT CODE</p>
-            <p style="font-size: 28px; font-weight: 700; color: #1f2e44; letter-spacing: 3px; margin: 0 0 8px;">${discountCode}</p>
-            <p style="color: #92600a; font-size: 13px; margin: 0;">25% off your order &bull; Expires 5/31/2026</p>
+            <p style="color: #92600a; font-size: 14px; margin: 0 0 8px;">WELCOME PERK</p>
+            <p style="font-size: 28px; font-weight: 700; color: #1f2e44; letter-spacing: 3px; margin: 0 0 8px;">10% OFF</p>
+            <p style="color: #92600a; font-size: 13px; margin: 0;">your first order of $50 or more</p>
           </div>
 
           <p style="color: #555; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
-            Simply enter this code at checkout to save 25% on your order. This grand opening offer expires on May 31, 2026 — don't miss out!
+            <strong style="color: #1f2e44;">No code needed.</strong> Create your free PawLL account and the discount is applied automatically at checkout on your first order. Orders of $80 or more ship free.
           </p>
 
           <!-- CTA Button -->
           <div style="text-align: center; margin-bottom: 32px;">
             <a href="${shopUrl}/shop" style="display: inline-block; background: #1f2e44; color: #fff; padding: 14px 36px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 16px;">
-              Shop Now & Save 25%
+              Start Shopping
             </a>
           </div>
 
@@ -204,7 +233,7 @@ export async function sendNewsletterWelcomeEmail(email: string, discountCode: st
         </div>
       </div>
     `,
-  })
+  }, { throwOnError: true })
 }
 
 export async function sendOrderConfirmationEmail(
@@ -240,7 +269,7 @@ export async function sendOrderConfirmationEmail(
     </tr>`
   ).join('')
 
-  await client.emails.send({
+  await deliver(client, 'sendOrderConfirmationEmail', {
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: email,
     subject: `Order Confirmed #${shortId} 🎉`,
@@ -311,7 +340,7 @@ export async function sendOrderConfirmationEmail(
 
           <p style="color: #888; font-size: 13px; text-align: center;">
             📦 You'll receive a separate email with your tracking number within 3 business days.<br/>
-            Questions? Email us at <a href="mailto:support@pawllpet.com" style="color: #D4B28C;">support@pawllpet.com</a>
+            Questions? Contact us at <a href="${SUPPORT_URL}" style="color: #D4B28C;">${SUPPORT_LABEL}</a>
           </p>
         </div>
 
@@ -367,7 +396,7 @@ export async function sendAdminOrderNotificationEmail(order: {
     </tr>`
   ).join('')
 
-  await client.emails.send({
+  await deliver(client, 'sendAdminOrderNotificationEmail', {
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: adminEmail,
     subject: `🛒 New Order #${shortId} — $${order.total.toFixed(2)} from ${order.customerName}`,
@@ -453,7 +482,7 @@ export async function sendOrderShippedEmail(
     `<li style="margin-bottom: 4px;">${i.name} <span style="color: #888;">× ${i.quantity}</span></li>`
   ).join('')
 
-  await client.emails.send({
+  await deliver(client, 'sendOrderShippedEmail', {
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: email,
     subject: `Your PawLL order #${shortId} is on the way! 📦`,
@@ -492,7 +521,7 @@ export async function sendOrderShippedEmail(
           </div>
 
           <p style="color: #888; font-size: 13px; text-align: center;">
-            Questions about your delivery? Email us at <a href="mailto:support@pawllpet.com" style="color: #D4B28C;">support@pawllpet.com</a>
+            Questions about your delivery? Contact us at <a href="${SUPPORT_URL}" style="color: #D4B28C;">${SUPPORT_LABEL}</a>
           </p>
         </div>
 
@@ -534,7 +563,7 @@ export async function sendAdminCancellationRequestEmail(payload: {
   const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
   const shortId = payload.orderId.slice(-8).toUpperCase()
 
-  await client.emails.send({
+  await deliver(client, 'sendAdminCancellationRequestEmail', {
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: adminEmail,
     subject: `Cancellation Request - Order #${shortId} from ${payload.customerName}`,
@@ -623,7 +652,7 @@ export async function sendOrderCancellationResultEmail(
 
   const r = resolutionMap[payload.resolution] || resolutionMap.other
 
-  await client.emails.send({
+  await deliver(client, 'sendOrderCancellationResultEmail', {
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: email,
     subject: `${r.title} - Order #${shortId}`,
@@ -656,7 +685,7 @@ export async function sendOrderCancellationResultEmail(
           </div>
 
           <p style="color: #888; font-size: 13px; text-align: center; margin-top: 24px;">
-            Questions? Email us at <a href="mailto:support@pawllpet.com" style="color: #D4B28C;">support@pawllpet.com</a>
+            Questions? Contact us at <a href="${SUPPORT_URL}" style="color: #D4B28C;">${SUPPORT_LABEL}</a>
           </p>
         </div>
 
@@ -683,7 +712,7 @@ export async function sendQuizGiftEmail(email: string, name: string, giftName: s
 
   const shopUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pawllpet.com'
 
-  await client.emails.send({
+  await deliver(client, 'sendQuizGiftEmail', {
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: email,
     subject: 'Your Free Gift is Waiting! 🎁',
@@ -780,7 +809,7 @@ export async function sendShippingNotificationEmail(
   const shortId = data.orderId.slice(-8).toUpperCase()
   const carrierUpper = data.carrier.toUpperCase()
 
-  await client.emails.send({
+  await deliver(client, 'sendShippingNotificationEmail', {
     from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
     to: email,
     subject: `Your PawLL order #${shortId} is on the way`,
@@ -811,7 +840,7 @@ export async function sendShippingNotificationEmail(
           </div>
 
           <p style="color: #888; font-size: 13px; line-height: 1.6; text-align: center;">
-            Questions? Reply to this email or contact <a href="mailto:support@pawllpet.com" style="color: #1f2e44;">support@pawllpet.com</a>.
+            Questions? Contact us at <a href="${SUPPORT_URL}" style="color: #1f2e44;">${SUPPORT_LABEL}</a>.
           </p>
         </div>
         <div style="background: #1f2e44; padding: 16px 32px; text-align: center;">
@@ -823,4 +852,67 @@ export async function sendShippingNotificationEmail(
       </div>
     `,
   })
+}
+
+const CONTACT_TOPIC_LABELS: Record<string, string> = {
+  order: 'Order issue',
+  product: 'Product inquiry',
+  return: 'Returns & exchanges',
+  partnership: 'Partnership',
+  other: 'Other',
+}
+
+/**
+ * Forward a contact-form message to the store inbox (ADMIN_EMAIL).
+ *
+ * Reply-To is the customer, so answering from the inbox reaches them directly.
+ * Throws when the message cannot be delivered: the form must never tell a
+ * customer "sent" for a message nobody will receive.
+ */
+export async function sendContactFormEmail(msg: {
+  name: string
+  email: string
+  topic: string
+  message: string
+}): Promise<void> {
+  const client = getResend()
+  const adminEmail = process.env.ADMIN_EMAIL
+  if (!client || !adminEmail) {
+    throw new Error('Contact form email is not configured (RESEND_API_KEY / ADMIN_EMAIL).')
+  }
+
+  const topic = CONTACT_TOPIC_LABELS[msg.topic] || msg.topic
+  // A subject is a single line.
+  const subjectName = msg.name.replace(/[\r\n]+/g, ' ')
+
+  await deliver(client, 'sendContactFormEmail', {
+    from: `${process.env.EMAIL_FROM_NAME || 'PawLL Pet'} <${process.env.EMAIL_FROM || 'noreply@pawllpet.com'}>`,
+    to: adminEmail,
+    reply_to: msg.email,
+    subject: `Contact form: ${topic} — ${subjectName}`,
+    html: `
+      <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 640px; margin: 0 auto; background: #fff;">
+        <div style="background: #1f2e44; padding: 16px 24px;">
+          <h2 style="color: #fff; margin: 0; font-size: 18px;">New message from the contact form</h2>
+        </div>
+        <div style="padding: 24px;">
+          <p style="margin: 0 0 16px; font-size: 14px; color: #555;">
+            Reply to this email to answer ${escapeHtml(msg.name)} directly.
+          </p>
+
+          <h3 style="color: #1f2e44; font-size: 14px; margin: 16px 0 6px;">From</h3>
+          <p style="margin: 0; font-size: 14px; color: #333;">
+            ${escapeHtml(msg.name)}<br/>
+            <a href="mailto:${escapeHtml(msg.email)}" style="color: #D4B28C;">${escapeHtml(msg.email)}</a>
+          </p>
+
+          <h3 style="color: #1f2e44; font-size: 14px; margin: 16px 0 6px;">Topic</h3>
+          <p style="margin: 0; font-size: 14px; color: #333;">${escapeHtml(topic)}</p>
+
+          <h3 style="color: #1f2e44; font-size: 14px; margin: 16px 0 6px;">Message</h3>
+          <div style="background: #f8f6f2; border-radius: 8px; padding: 14px; font-size: 14px; color: #333; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(msg.message)}</div>
+        </div>
+      </div>
+    `,
+  }, { throwOnError: true })
 }

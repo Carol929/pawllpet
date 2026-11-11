@@ -8,6 +8,7 @@ export const maxDuration = 30
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
+import { clientIp, rateLimit } from '@/lib/rate-limit'
 import {
   getShippingOptions,
   hasUnweighedItems,
@@ -15,6 +16,15 @@ import {
   isPOBox,
   isShippingEligible,
 } from '@/lib/shipping'
+import { SUPPORT_LABEL } from '@/lib/support'
+
+// A real cart never comes close to this many distinct lines.
+const MAX_ITEMS = 50
+
+// This endpoint is public and every call fans out to the carrier API, so cap
+// how often one client can hit it. Checkout makes one call per address/cart
+// change, so 30/min is far above anything a shopper does.
+const RATE_LIMIT_PER_MINUTE = 30
 
 const requestSchema = z.object({
   to: z.object({
@@ -36,9 +46,26 @@ const requestSchema = z.object({
       }),
     )
     .min(1)
-    .max(50),
+    .max(MAX_ITEMS),
   subtotal: z.number().min(0).max(100000),
 })
+
+const INVALID_REQUEST = 'Invalid shipping request. Please check your address and try again.'
+const TOO_MANY_ITEMS = 'Too many items in this request.'
+
+/**
+ * True when `items` is present but too long to be a real cart.
+ *
+ * This has to run BEFORE zod: zod 3 validates every element of an array and
+ * records an issue for each failing one before it applies `.max()`, so a
+ * multi-megabyte array of junk costs seconds of CPU and ~1 GB of memory
+ * (GHSA-mrhx-c7xc-m3w5) on an endpoint anyone can call.
+ */
+function hasTooManyItems(body: unknown): boolean {
+  if (typeof body !== 'object' || body === null) return false
+  const items = (body as { items?: unknown }).items
+  return Array.isArray(items) && items.length > MAX_ITEMS
+}
 
 /**
  * POST /api/shipping/rates
@@ -52,13 +79,26 @@ const requestSchema = z.object({
  * based on SHIPPING_PROVIDER, with automatic fallback on Shippo failure.
  */
 export async function POST(request: NextRequest) {
+  const limit = rateLimit(`shipping-rates:ip:${clientIp(request)}`, RATE_LIMIT_PER_MINUTE, 60 * 1000)
+  if (!limit.ok) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait a moment and try again.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
+    )
+  }
+
   let parsed
   try {
     const body = await request.json()
+    if (hasTooManyItems(body)) {
+      return NextResponse.json({ error: TOO_MANY_ITEMS }, { status: 400 })
+    }
     parsed = requestSchema.parse(body)
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Invalid request body'
-    return NextResponse.json({ error: msg }, { status: 400 })
+  } catch {
+    // Deliberately not echoing the parser's message: a ZodError serialises
+    // every issue, so echoing it can make the response many times larger than
+    // the request.
+    return NextResponse.json({ error: INVALID_REQUEST }, { status: 400 })
   }
 
   const { to, items, subtotal } = parsed
@@ -123,7 +163,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          'Some items in your cart are missing weight information. Please contact support@pawllpet.com.',
+          `Some items in your cart are missing weight information. Please contact us at ${SUPPORT_LABEL}.`,
       },
       { status: 400 },
     )
@@ -140,7 +180,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Your order exceeds standard shipping limits. Please contact support@pawllpet.com for a custom shipping quote.',
+            `Your order exceeds standard shipping limits. Please contact us at ${SUPPORT_LABEL} for a custom shipping quote.`,
         },
         { status: 400 },
       )

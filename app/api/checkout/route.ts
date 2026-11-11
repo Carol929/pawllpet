@@ -10,6 +10,7 @@ import { calculateTax } from '@/lib/tax-rates'
 import { calculateShipping, calculateTotalWeight, isFreeShippingSlug, isShippingEligible, isPOBox, hasUnweighedItems } from '@/lib/shipping-rates'
 import { validateRateId } from '@/lib/shipping'
 import { prisma } from '@/lib/db'
+import { SUPPORT_LABEL } from '@/lib/support'
 import { requireUser } from '@/lib/user-auth'
 
 export async function POST(request: NextRequest) {
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
     // and /api/shipping/rates both check this, but a direct API call must not be
     // able to ship an unweighed cart at the tier-1 rate).
     if (hasUnweighedItems(orderItems.map(i => ({ weight: productMap.get(i.productId)?.weight ?? undefined })))) {
-      return NextResponse.json({ error: 'Some items are missing shipping weight. Please contact support@pawllpet.com.' }, { status: 400 })
+      return NextResponse.json({ error: `Some items are missing shipping weight. Please contact us at ${SUPPORT_LABEL}.` }, { status: 400 })
     }
 
     const totalWeight = calculateTotalWeight(orderItems.map(i => ({ quantity: i.quantity, weight: productMap.get(i.productId)?.weight ?? undefined })))
@@ -246,7 +247,7 @@ export async function POST(request: NextRequest) {
     } else {
       // The 50lb manual-review guard looks at the real parcel weight.
       if (calculateShipping(totalWeight, method, subtotal).needsReview) {
-        return NextResponse.json({ error: 'Your order exceeds standard shipping limits. Please contact support@pawllpet.com for a custom shipping quote.' }, { status: 400 })
+        return NextResponse.json({ error: `Your order exceeds standard shipping limits. Please contact us at ${SUPPORT_LABEL} for a custom shipping quote.` }, { status: 400 })
       }
       // Free-shipping promo items (beds/caves) don't count toward the standard
       // quote; express always prices the full parcel — same as the $80 perk.

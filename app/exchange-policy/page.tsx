@@ -1,6 +1,7 @@
 'use client'
 
 import { useLocale } from '@/lib/i18n'
+import SupportLink from '@/components/SupportLink'
 
 export default function ExchangePolicy() {
   const { locale } = useLocale()
@@ -33,8 +34,8 @@ export default function ExchangePolicy() {
         <section>
           <h2>{en ? 'How to Request an Exchange' : '如何申请换货'}</h2>
           <ol>
-            <li>{en ? 'Contact us at support@pawllpet.com with your order number' : '通过 support@pawllpet.com 联系我们并提供订单号'}</li>
-            <li>{en ? 'Include photos of the item and describe the issue' : '附上商品照片并描述问题'}</li>
+            <li>{en ? <>Contact us at <SupportLink /> with your order number</> : <>通过 <SupportLink /> 联系我们并提供订单号</>}</li>
+            <li>{en ? 'Describe the issue. We reply by email, and you can attach photos of the item there' : '描述问题。我们会通过邮件回复，届时您可以附上商品照片'}</li>
             <li>{en ? 'We will review your request within 1-2 business days' : '我们将在 1-2 个工作日内审核您的请求'}</li>
             <li>{en ? 'Once approved, we will provide a prepaid return label' : '审核通过后，我们将提供预付退货标签'}</li>
             <li>{en ? 'Ship the item back and we will send the replacement once received' : '寄回商品后，我们收到后将发送替换品'}</li>
@@ -63,7 +64,7 @@ export default function ExchangePolicy() {
         <section>
           <h2>{en ? 'Contact' : '联系方式'}</h2>
           <p>{en ? 'For exchange requests or questions:' : '如需换货或有疑问：'}</p>
-          <p><strong>Email:</strong> support@pawllpet.com</p>
+          <p><strong>{en ? 'Contact form:' : '联系表单：'}</strong> <SupportLink /></p>
         </section>
       </div>
     </main>

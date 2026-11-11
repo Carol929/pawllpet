@@ -7,6 +7,8 @@
  * TODO: Replace with live UPS API integration
  */
 
+import { SUPPORT_LABEL } from './support'
+
 interface ShippingRate {
   maxWeight: number // lbs
   standard: number  // UPS Ground (5-7 business days)
@@ -48,7 +50,7 @@ export function isShippingEligible(state: string, zip?: string): { eligible: boo
   const st = state.trim().toUpperCase()
 
   if (RESTRICTED_STATES.has(st)) {
-    return { eligible: false, reason: 'Shipping to Alaska and Hawaii is not available at this time. Please contact support@pawllpet.com for a custom quote.' }
+    return { eligible: false, reason: `Shipping to Alaska and Hawaii is not available at this time. Please contact us at ${SUPPORT_LABEL} for a custom quote.` }
   }
 
   // PO Box / APO / FPO detection (checked against street address in checkout)
