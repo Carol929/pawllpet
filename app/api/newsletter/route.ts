@@ -6,8 +6,6 @@ import { sendNewsletterWelcomeEmail } from '@/lib/email'
 import { normalizeEmail } from '@/lib/email-utils'
 import { clientIp, rateLimit } from '@/lib/rate-limit'
 
-const DISCOUNT_CODE = 'GRAND25'
-
 // Longest address SMTP will accept (RFC 5321).
 const MAX_EMAIL_LENGTH = 254
 
@@ -45,7 +43,7 @@ export async function POST(req: NextRequest) {
     // person is subscribed — they just don't trigger another email.
     const byAddress = rateLimit(`newsletter:email:${address}`, 2, 24 * HOUR)
     if (byAddress.ok) {
-      await sendNewsletterWelcomeEmail(address, DISCOUNT_CODE)
+      await sendNewsletterWelcomeEmail(address)
     }
 
     return NextResponse.json({ success: true })

@@ -1,5 +1,6 @@
 'use client'
 import { useLocale } from '@/lib/i18n'
+import SupportLink from '@/components/SupportLink'
 
 export default function AccessibilityPage() {
   const { locale } = useLocale()
@@ -33,7 +34,7 @@ export default function AccessibilityPage() {
           ? 'We welcome your feedback on the accessibility of PawLL Pet. Please let us know if you encounter accessibility barriers:'
           : '我们欢迎您对 PawLL Pet 无障碍性的反馈。如果您遇到无障碍障碍，请告知我们：'}</p>
         <ul>
-          <li>{en ? 'Email: support@pawllpet.com' : '邮箱：support@pawllpet.com'}</li>
+          <li>{en ? 'Contact form: ' : '联系表单：'}<SupportLink /></li>
           <li>{en ? 'We aim to respond to feedback within 2 business days.' : '我们力争在2个工作日内回复反馈。'}</li>
         </ul>
       </div>

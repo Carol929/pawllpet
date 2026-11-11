@@ -1,6 +1,7 @@
 'use client'
 
 import { useLocale } from '@/lib/i18n'
+import SupportLink from '@/components/SupportLink'
 
 export default function TermsConditions() {
   const { locale } = useLocale()
@@ -95,7 +96,7 @@ export default function TermsConditions() {
         <section>
           <h2>{en ? '10. Contact' : '10. 联系方式'}</h2>
           <p>{en ? 'For questions about these terms, contact us at:' : '如对这些条款有疑问，请联系：'}</p>
-          <p><strong>Email:</strong> support@pawllpet.com</p>
+          <p><strong>{en ? 'Contact form:' : '联系表单：'}</strong> <SupportLink /></p>
         </section>
       </div>
     </main>

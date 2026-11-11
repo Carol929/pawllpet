@@ -16,6 +16,7 @@ import {
   isPOBox,
   isShippingEligible,
 } from '@/lib/shipping'
+import { SUPPORT_LABEL } from '@/lib/support'
 
 // A real cart never comes close to this many distinct lines.
 const MAX_ITEMS = 50
@@ -162,7 +163,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          'Some items in your cart are missing weight information. Please contact support@pawllpet.com.',
+          `Some items in your cart are missing weight information. Please contact us at ${SUPPORT_LABEL}.`,
       },
       { status: 400 },
     )
@@ -179,7 +180,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Your order exceeds standard shipping limits. Please contact support@pawllpet.com for a custom shipping quote.',
+            `Your order exceeds standard shipping limits. Please contact us at ${SUPPORT_LABEL} for a custom shipping quote.`,
         },
         { status: 400 },
       )

@@ -1,5 +1,6 @@
 'use client'
 import { useLocale } from '@/lib/i18n'
+import SupportLink from '@/components/SupportLink'
 
 export default function ProductSafetyPage() {
   const { locale } = useLocale()
@@ -67,8 +68,8 @@ export default function ProductSafetyPage() {
 
         <h2>{en ? '12. Contact Us' : '12. 联系我们'}</h2>
         <p>{en
-          ? 'For product safety concerns or questions about this disclaimer, please contact us at support@pawllpet.com.'
-          : '如有产品安全问题或关于本免责声明的疑问，请通过 support@pawllpet.com 联系我们。'}</p>
+          ? <>For product safety concerns or questions about this disclaimer, please contact us at <SupportLink />.</>
+          : <>如有产品安全问题或关于本免责声明的疑问，请通过 <SupportLink /> 联系我们。</>}</p>
       </div>
     </main>
   )

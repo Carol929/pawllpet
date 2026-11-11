@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { HandHeart, ShoppingBag, Percent, PawPrint, ExternalLink } from 'lucide-react'
 import { useLocale } from '@/lib/i18n'
+import SupportLink from '@/components/SupportLink'
 
 interface DonationRecord {
   id: string
@@ -240,8 +241,8 @@ export default function GivingPage() {
         </p>
         <p>
           {en
-            ? 'Donations go to local animal shelters and rescues. Want to suggest a shelter? Reach out at support@pawllpet.com.'
-            : '款项将捐给本地动物收容所和救助组织。想推荐一家收容所？欢迎联系 support@pawllpet.com。'}
+            ? <>Donations go to local animal shelters and rescues. Want to suggest a shelter? Reach out at <SupportLink />.</>
+            : <>款项将捐给本地动物收容所和救助组织。想推荐一家收容所？欢迎通过 <SupportLink /> 联系我们。</>}
         </p>
       </section>
 

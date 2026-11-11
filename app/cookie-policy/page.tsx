@@ -1,5 +1,6 @@
 'use client'
 import { useLocale } from '@/lib/i18n'
+import SupportLink from '@/components/SupportLink'
 
 export default function CookiePolicyPage() {
   const { locale } = useLocale()
@@ -52,7 +53,9 @@ export default function CookiePolicyPage() {
           : '根据《加州消费者隐私法》(CCPA)，您有权选择退出个人信息的出售或共享。您可以通过点击我们页脚中的"请勿出售我的信息"来行使此权利。'}</p>
 
         <h2>{en ? 'Contact Us' : '联系我们'}</h2>
-        <p>{en ? 'If you have questions about our cookie practices, contact us at support@pawllpet.com.' : '如果您对我们的 Cookie 做法有任何疑问，请通过 support@pawllpet.com 联系我们。'}</p>
+        <p>{en
+          ? <>If you have questions about our cookie practices, contact us at <SupportLink />.</>
+          : <>如果您对我们的 Cookie 做法有任何疑问，请通过 <SupportLink /> 联系我们。</>}</p>
       </div>
     </main>
   )
