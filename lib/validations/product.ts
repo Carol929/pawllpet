@@ -23,6 +23,10 @@ export const productCreateSchema = z.object({
   price: z.number().min(0).default(0),
   compareAtPrice: z.number().min(0).optional().nullable(),
   weight: z.number().min(0).optional().nullable(),
+  // Packed box size in inches. Feeds carrier rate quotes and label purchase.
+  length: z.number().positive().max(108).optional().nullable(),
+  width: z.number().positive().max(108).optional().nullable(),
+  height: z.number().positive().max(108).optional().nullable(),
   stock: z.number().int().min(0).default(0),
   status: z.enum(['draft', 'live', 'archived']).default('draft'),
   isNew: z.boolean().default(false),

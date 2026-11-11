@@ -82,6 +82,9 @@ export async function POST(request: NextRequest) {
         isDrop: data.isDrop,
         isBundle: data.isBundle,
         weight: data.weight ?? null,
+        length: data.length ?? null,
+        width: data.width ?? null,
+        height: data.height ?? null,
         createdById: auth.userId,
         categories: {
           connect: allCategoryIds.map(id => ({ id })),
