@@ -93,6 +93,7 @@ table.admin-table { width: 100%; border-collapse: collapse; }
 .admin-unit-toggle button { padding: .4rem .6rem; border: none; background: #fff; font-size: .85rem; font-weight: 600; cursor: pointer; color: #6b7280; transition: all .15s; }
 .admin-unit-toggle button.active { background: #1f2e44; color: #fff; }
 .admin-unit-toggle button:not(.active):hover { background: #f3f4f6; }
+.admin-field-hint { font-size: .78rem; color: #6b7280; line-height: 1.4; }
 
 .admin-image-crop { position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8rem; z-index: 2; opacity: 0; transition: opacity .2s; }
 .admin-image-item:hover .admin-image-crop { opacity: 1; }

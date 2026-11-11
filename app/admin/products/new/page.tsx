@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Upload, X, Plus, GripVertical, Crop } from 'lucide-react'
 import Link from 'next/link'
 import ImageCropper from '@/components/admin/ImageCropper'
+import PackageSizeFields from '@/app/admin/products/PackageSizeFields'
+import { EMPTY_PACKAGE_SIZE, parsePackageSize, type DimensionUnit, type PackageSizeInput } from '@/lib/dimensions'
 
 interface Category { id: string; name: string; slug: string }
 interface Variant { name: string; price: number; stock: number; sku: string; imageIndex: number | null }
@@ -31,6 +33,8 @@ export default function NewProduct() {
   const [petDog, setPetDog] = useState(false)
   const [petCat, setPetCat] = useState(false)
   const [weightUnit, setWeightUnit] = useState<'lb' | 'g'>('g')
+  const [packageSize, setPackageSize] = useState<PackageSizeInput>(EMPTY_PACKAGE_SIZE)
+  const [sizeUnit, setSizeUnit] = useState<DimensionUnit>('cm')
 
   useEffect(() => {
     fetch('/api/admin/categories').then(r => r.json()).then(setCategories).catch(() => {})
@@ -168,11 +172,15 @@ export default function NewProduct() {
     if (selectedCategoryIds.length === 0) errors.push('At least one category is required')
     if (!computedPetType) errors.push('At least one pet type is required')
     if (Number(form.price) <= 0 && variants.filter(v => v.name).length === 0) errors.push('Price must be greater than 0 (or add variants with prices)')
+    const parsedSize = parsePackageSize(packageSize, sizeUnit)
+    if (!parsedSize.ok) errors.push(parsedSize.error)
     if (errors.length > 0) {
       setToast({ msg: errors.join('. '), type: 'error' })
       setTimeout(() => setToast(null), 5000)
       return
     }
+
+    const sizeInches = parsedSize.ok ? parsedSize.inches : null
 
     setSaving(true)
 
@@ -189,6 +197,9 @@ export default function NewProduct() {
           compareAtPrice: form.compareAtPrice ? Number(form.compareAtPrice) : null,
           stock: Number(form.stock),
           weight: weightUnit === 'g' ? Number(form.weight) / 453.592 : Number(form.weight),
+          length: sizeInches?.length ?? null,
+          width: sizeInches?.width ?? null,
+          height: sizeInches?.height ?? null,
           imageUrls,
           variants: variants.filter(v => v.name).map(v => ({
             ...v,
@@ -344,6 +355,11 @@ export default function NewProduct() {
                 </div>
               </div>
             </div>
+            <PackageSizeFields
+              size={packageSize}
+              unit={sizeUnit}
+              onChange={(size, unit) => { setPackageSize(size); setSizeUnit(unit) }}
+            />
             <div className="admin-form-group">
               <label>Status</label>
               <select value={form.status} onChange={e => updateField('status', e.target.value)}>
